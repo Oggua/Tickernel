@@ -121,7 +121,8 @@
         "iomanip": "c",
         "tkntext.h": "c",
         "ft2build.h": "c",
-        "tknfont.h": "c"
+        "tknfont.h": "c",
+        "ftheader.h": "c"
     },
     "cmake.sourceDirectory": "/Users/forgemastergua/Documents/GitHub/Tickernel"
 }

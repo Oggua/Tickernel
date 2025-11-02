@@ -1,5 +1,5 @@
 require("vulkan")
-local gfx = require("gfx")
+local tkn = require("tkn")
 local postprocessPipeline = {}
 function postprocessPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, assetsPath)
     local postprocessPipelineSpvPaths = {
@@ -39,15 +39,15 @@ function postprocessPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpass
         },
         blendConstants = { 0.0, 0.0, 0.0, 0.0 },
     }
-    return gfx.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, postprocessPipelineSpvPaths,
+    return tkn.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, postprocessPipelineSpvPaths,
         nil, nil, vkPipelineInputAssemblyStateCreateInfo,
-        gfx.defaultVkPipelineViewportStateCreateInfo,
-        gfx.defaultVkPipelineRasterizationStateCreateInfo, gfx.defaultVkPipelineMultisampleStateCreateInfo,
-        vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, gfx.defaultVkPipelineDynamicStateCreateInfo)
+        tkn.defaultVkPipelineViewportStateCreateInfo,
+        tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo,
+        vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
 function postprocessPipeline.destroyPipelinePtr(pGfxContext, pRenderPass)
-    gfx.destroyPipelinePtr(pGfxContext, pRenderPass)
+    tkn.destroyPipelinePtr(pGfxContext, pRenderPass)
 end
 
 return postprocessPipeline

@@ -2,7 +2,7 @@
 -- For Node's Layout, if we choose to update on real-time add/delete/modify operations, there might be cases where children are updated before parents, leading to redundant calculations. Therefore, we adopt a unified update approach during the update phase.
 -- The creation, deletion, and modification of drawcalls and meshes depend on the add/delete/modify operations of nodes and components.
 -- Updating mesh requires layout update first, so it always happens after the update layout phase.
-local gfx = require("gfx")
+local tkn = require("tkn")
 local image = require("image")
 local text = require("text")
 local uiRenderPass = require("uiRenderPass")
@@ -119,7 +119,7 @@ local function addComponent(pGfxContext, node, component)
                     return false
                 end
             end)
-            gfx.insertDrawCallPtr(node.component.pDrawCall, drawCallIndex)
+            tkn.insertDrawCallPtr(node.component.pDrawCall, drawCallIndex)
         end
     end
 end
@@ -139,7 +139,7 @@ local function removeComponent(pGfxContext, node)
                     return false
                 end
             end)
-            gfx.removeDrawCallAt(drawCallIndex)
+            tkn.removeDrawCallAt(drawCallIndex)
         end
     else
         print("ui.removeComponent: node has no component")
@@ -149,7 +149,7 @@ end
 
 local function destroyMaterials()
     for _, material in ipairs(ui.materials) do
-        gfx.destroyPipelineMaterialPtr(ui.pGfxContext, material)
+        tkn.destroyPipelineMaterialPtr(ui.pGfxContext, material)
     end
     ui.materials = {}
 end
@@ -158,18 +158,18 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
     ui.pGfxContext = pGfxContext
     ui.vertexFormat = {{
         name = "position",
-        type = gfx.type.float,
+        type = tkn.type.float,
         count = 2,
     }, {
         name = "uv",
-        type = gfx.type.float,
+        type = tkn.type.float,
         count = 2,
     }, {
         name = "color",
-        type = gfx.type.uint32,
+        type = tkn.type.uint32,
         count = 1,
     }}
-    ui.vertexFormat.pVertexInputLayout = gfx.createVertexInputLayoutPtr(pGfxContext, ui.vertexFormat)
+    ui.vertexFormat.pVertexInputLayout = tkn.createVertexInputLayoutPtr(pGfxContext, ui.vertexFormat)
     uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, ui.vertexFormat.pVertexInputLayout, renderPassIndex)
     ui.rootNode = {
         name = "root",
@@ -190,7 +190,7 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
         },
     }
     ui.nodePool = {}
-    ui.pSampler = gfx.createSamplerPtr(pGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
+    ui.pSampler = tkn.createSamplerPtr(pGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
     ui.materials = {}
 end
@@ -198,12 +198,12 @@ end
 function ui.teardown(pGfxContext)
     ui.removeNode(pGfxContext, ui.rootNode)
     ui.renderPass = nil
-    gfx.destroySamplerPtr(pGfxContext, ui.pSampler)
+    tkn.destroySamplerPtr(pGfxContext, ui.pSampler)
     ui.pSampler = nil
     ui.nodePool = nil
     ui.rootNode = nil
     uiRenderPass.teardown(pGfxContext)
-    gfx.destroyVertexInputLayoutPtr(pGfxContext, ui.vertexFormat.pVertexInputLayout)
+    tkn.destroyVertexInputLayoutPtr(pGfxContext, ui.vertexFormat.pVertexInputLayout)
     ui.vertexFormat.pVertexInputLayout = nil
     ui.vertexFormat = nil
 end
@@ -337,7 +337,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
 
         for i = #drawCalls, 1, -1 do
             local removeIndex = drawCallStartIndex + i - 1
-            gfx.removeDrawCallAt(removeIndex)
+            tkn.removeDrawCallAt(removeIndex)
         end
 
         local originalIndex = ui.getNodeIndex(node)
@@ -359,7 +359,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
 
         for i, dc in ipairs(drawCalls) do
             local insertIndex = drawCallStartIndex + i - 1
-            gfx.insertDrawCallPtr(dc, insertIndex)
+            tkn.insertDrawCallPtr(dc, insertIndex)
         end
         node.layout.dirty = true
         return true
@@ -367,7 +367,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
 end
 
 function ui.addImageComponent(pGfxContext, color, slice, pMaterial, node)
-    local component = image.createComponent(pGfxContext, color, slice, pMaterial, ui.vertexFormat, node)
+    local component = image.createComponent(pGfxContext, color, slice, pMaterial, ui.vertexFormat, ui.renderPass.pPipeline, node)
     addComponent(pGfxContext, node, component)
     return component
 end
@@ -380,7 +380,7 @@ function ui.removeImageComponent(pGfxContext, node)
 end
 
 function ui.createMaterialPtr(pGfxContext, pImage)
-    local material = gfx.createPipelineMaterialPtr(pGfxContext, ui.renderPass.pPipeline)
+    local material = tkn.createPipelineMaterialPtr(pGfxContext, ui.renderPass.pPipeline)
     if pImage then
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -388,7 +388,7 @@ function ui.createMaterialPtr(pGfxContext, pImage)
             pSampler = ui.pSampler,
             binding = 0,
         }}
-        gfx.updateMaterialPtr(pGfxContext, material, inputBindings)
+        tkn.updateMaterialPtr(pGfxContext, material, inputBindings)
     end
     table.insert(ui.materials, material)
     return material

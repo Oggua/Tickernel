@@ -1,4 +1,4 @@
-local gfx = require("gfx")
+local tkn = require("tkn")
 local text = {}
 
 function text.createComponent(pGfxContext, text, font, vertexFormat)

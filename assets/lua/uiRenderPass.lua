@@ -1,4 +1,4 @@
-local gfx = require("gfx")
+local tkn = require("tkn")
 local uiPipeline = require("uiPipeline")
 local uiRenderPass = {}
 
@@ -51,14 +51,14 @@ function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVe
         dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
     }}
 
-    uiRenderPass.pRenderPass = gfx.createRenderPassPtr(pGfxContext, vkAttachmentDescriptions, {pSwapchainAttachment}, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
+    uiRenderPass.pRenderPass = tkn.createRenderPassPtr(pGfxContext, vkAttachmentDescriptions, {pSwapchainAttachment}, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
     uiRenderPass.pPipeline = uiPipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout)
     print(pUIVertexInputLayout)
 end
 
 function uiRenderPass.teardown(pGfxContext)
     uiPipeline.destroyPipelinePtr(pGfxContext, uiRenderPass.pPipeline)
-    gfx.destroyRenderPassPtr(pGfxContext, uiRenderPass.pRenderPass)
+    tkn.destroyRenderPassPtr(pGfxContext, uiRenderPass.pRenderPass)
     uiRenderPass.pRenderPass = nil
     uiRenderPass.pPipeline = nil
 end

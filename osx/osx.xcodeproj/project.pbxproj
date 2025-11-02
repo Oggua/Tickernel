@@ -50,28 +50,28 @@
 			path = osx;
 			sourceTree = "<group>";
 		};
-		DEA54FD52E6CFA8F00F53F25 /* lua */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			name = lua;
-			path = ../lua;
-			sourceTree = SOURCE_ROOT;
-		};
-		DEDB5A532E6AD0DF0023753A /* external */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			name = external;
-			path = ../tkn/external;
-			sourceTree = SOURCE_ROOT;
-		};
 		DEDB5A552E6AD0DF0023753A /* include */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = include;
 			path = ../tkn/include;
 			sourceTree = SOURCE_ROOT;
 		};
-		DEDB5A652E6AD0DF0023753A /* src */ = {
+		DEE1DDBE2EB7E2560017F4F9 /* include */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			name = src;
-			path = ../tkn/src;
+			name = include;
+			path = ../lua/include;
+			sourceTree = SOURCE_ROOT;
+		};
+		DEE1DE272EB7E2650017F4F9 /* include */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = include;
+			path = ../freetype/include;
+			sourceTree = SOURCE_ROOT;
+		};
+		DEE1DEF12EB7E2710017F4F9 /* include */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = include;
+			path = ../cglm/include;
 			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -94,10 +94,10 @@
 		DE6CC08C2D39397000D80E9A = {
 			isa = PBXGroup;
 			children = (
-				DEA54FD52E6CFA8F00F53F25 /* lua */,
-				DEDB5A532E6AD0DF0023753A /* external */,
+				DEE1DEF12EB7E2710017F4F9 /* include */,
+				DEE1DE272EB7E2650017F4F9 /* include */,
+				DEE1DDBE2EB7E2560017F4F9 /* include */,
 				DEDB5A552E6AD0DF0023753A /* include */,
-				DEDB5A652E6AD0DF0023753A /* src */,
 				DEE96E042E3FC89D003ED6AF /* assets */,
 				DE6CC0972D39397000D80E9A /* osx */,
 				DE6CC3392D3950F500D80E9A /* Frameworks */,
@@ -142,10 +142,10 @@
 			);
 			fileSystemSynchronizedGroups = (
 				DE6CC0972D39397000D80E9A /* osx */,
-				DEA54FD52E6CFA8F00F53F25 /* lua */,
-				DEDB5A532E6AD0DF0023753A /* external */,
 				DEDB5A552E6AD0DF0023753A /* include */,
-				DEDB5A652E6AD0DF0023753A /* src */,
+				DEE1DDBE2EB7E2560017F4F9 /* include */,
+				DEE1DE272EB7E2650017F4F9 /* include */,
+				DEE1DEF12EB7E2710017F4F9 /* include */,
 			);
 			name = osx;
 			packageProductDependencies = (
@@ -351,7 +351,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
-					"$(SRCROOT)/../lua/include",
+					"$(SRCROOT)/../include",
 				);
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
@@ -392,7 +392,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
-					"$(SRCROOT)/../lua/include",
+					"$(SRCROOT)/../include",
 				);
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;

@@ -1,5 +1,5 @@
 require("vulkan")
-local gfx = require("gfx")
+local tkn = require("tkn")
 local uiPipeline = {}
 
 function uiPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, assetsPath, pUIVertexInputLayout)
@@ -34,11 +34,11 @@ function uiPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, as
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return gfx.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, uiPipelineSpvPaths, pUIVertexInputLayout, nil, vkPipelineInputAssemblyStateCreateInfo, gfx.defaultVkPipelineViewportStateCreateInfo, gfx.defaultVkPipelineRasterizationStateCreateInfo, gfx.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, gfx.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, uiPipelineSpvPaths, pUIVertexInputLayout, nil, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
 function uiPipeline.destroyPipelinePtr(pGfxContext, pPipeline)
-    gfx.destroyPipelinePtr(pGfxContext, pPipeline)
+    tkn.destroyPipelinePtr(pGfxContext, pPipeline)
 end
 
 return uiPipeline

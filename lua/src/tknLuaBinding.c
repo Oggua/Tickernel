@@ -1787,5 +1787,5 @@ void bindFunctions(lua_State *pLuaState)
         {NULL, NULL},
     };
     luaL_newlib(pLuaState, regs);
-    lua_setglobal(pLuaState, "gfx");
+    lua_setglobal(pLuaState, "tkn");
 }

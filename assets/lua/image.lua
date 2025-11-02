@@ -1,15 +1,14 @@
-local gfx = require("gfx")
-local ui = require("ui")
+local tkn = require("tkn")
 local image = {
     pool = {},
 }
 
-function image.createComponent(pGfxContext, color, slice, pMaterial, vertexFormat, node)
+function image.createComponent(pGfxContext, color, slice, pMaterial, vertexFormat, pPipeline, node)
     local component = nil
-    local pMesh = gfx.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
+    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
     -- Get pipeline from the UI render pass
 
-    local pDrawCall = gfx.createDrawCallPtr(pGfxContext, ui.renderPass.pPipeline, pMaterial, pMesh, nil)
+    local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, nil)
 
     if #image.pool > 0 then
         component = table.remove(image.pool)
@@ -31,8 +30,8 @@ function image.createComponent(pGfxContext, color, slice, pMaterial, vertexForma
     return component
 end
 function image.destroyComponent(pGfxContext, component)
-    gfx.destroyDrawCallPtr(pGfxContext, component.pDrawCall)
-    gfx.destroyMeshPtr(pGfxContext, component.pMesh)
+    tkn.destroyDrawCallPtr(pGfxContext, component.pDrawCall)
+    tkn.destroyMeshPtr(pGfxContext, component.pMesh)
 
     component.pMaterial = nil
     component.pMesh = nil
@@ -69,7 +68,7 @@ function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
             table.insert(indices, base + 3)
             table.insert(indices, base)
         end
-        gfx.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     else
         -- Regular quad: 4 vertices
         local vertices = {
@@ -78,7 +77,7 @@ function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
             color = {component.color, component.color, component.color, component.color},
         }
         local indices = {0, 1, 2, 2, 3, 0}
-        gfx.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
 end
 

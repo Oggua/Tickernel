@@ -1,5 +1,5 @@
 require("vulkan")
-local gfx = require("gfx")
+local tkn = require("tkn")
 local lightingPipeline = {}
 function lightingPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, assetsPath)
     local lightingPipelineSpvPaths = {assetsPath .. "/shaders/opaqueLighting.vert.spv", assetsPath .. "/shaders/opaqueLighting.frag.spv"}
@@ -35,11 +35,11 @@ function lightingPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassInd
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return gfx.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, lightingPipelineSpvPaths, nil, nil, vkPipelineInputAssemblyStateCreateInfo, gfx.defaultVkPipelineViewportStateCreateInfo, gfx.defaultVkPipelineRasterizationStateCreateInfo, gfx.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, gfx.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, lightingPipelineSpvPaths, nil, nil, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
 function lightingPipeline.destroyPipelinePtr(pGfxContext, pRenderPass)
-    gfx.destroyPipelinePtr(pGfxContext, pRenderPass)
+    tkn.destroyPipelinePtr(pGfxContext, pRenderPass)
 end
 
 return lightingPipeline
