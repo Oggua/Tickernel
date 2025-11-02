@@ -350,7 +350,7 @@ if not gfx.destroyTknFontLibraryPtr then
 end
 
 if not gfx.createTknFontPtr then
-    function gfx.createTknFontPtr(pTknFontLibrary, fontPath, fontSize, initialCharCapacity, maxAtlasLength)
+    function gfx.createTknFontPtr(pTknFontLibrary, fontPath, fontSize, atlasLength)
         error("gfx.createTknFontPtr: C binding not loaded")
     end
 end

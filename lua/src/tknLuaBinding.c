@@ -1666,40 +1666,43 @@ static int luaDestroyASTCImage(lua_State *pLuaState)
     return 0;
 }
 
-// Font library functions
-static int luaCreateTknFontLibraryPtr(lua_State *pLuaState)
-{
-    TknFontLibrary *pTknFontLibrary = createTknFontLibraryPtr();
-    lua_pushlightuserdata(pLuaState, pTknFontLibrary);
-    return 1;
-}
+// // Font library functions
+// static int luaCreateTknFontLibraryPtr(lua_State *pLuaState)
+// {
+//     TknFontLibrary *pTknFontLibrary = createTknFontLibraryPtr();
+//     lua_pushlightuserdata(pLuaState, pTknFontLibrary);
+//     return 1;
+// }
 
-static int luaDestroyTknFontLibraryPtr(lua_State *pLuaState)
-{
-    TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -1);
-    destroyTknFontLibraryPtr(pTknFontLibrary);
-    return 0;
-}
+// static int luaDestroyTknFontLibraryPtr(lua_State *pLuaState)
+// {
+//     TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -1);
+//     destroyTknFontLibraryPtr(pTknFontLibrary);
+//     return 0;
+// }
 
-static int luaCreateTknFontPtr(lua_State *pLuaState)
-{
-    TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -5);
-    const char *fontPath = lua_tostring(pLuaState, -4);
-    uint32_t fontSize = (uint32_t)lua_tointeger(pLuaState, -3);
-    uint32_t initialCharCapacity = (uint32_t)lua_tointeger(pLuaState, -2);
-    uint32_t maxAtlasLength = (uint32_t)lua_tointeger(pLuaState, -1);
+// static int luaCreateTknFontPtr(lua_State *pLuaState)
+// {
+//     TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -4);
+//     const char *fontPath = lua_tostring(pLuaState, -3);
+//     uint32_t fontSize = (uint32_t)lua_tointeger(pLuaState, -2);
+//     uint32_t atlasLength = (uint32_t)lua_tointeger(pLuaState, -1);
 
-    TknFont *pTknFont = createTknFontPtr(pTknFontLibrary, fontPath, fontSize, initialCharCapacity, maxAtlasLength);
-    lua_pushlightuserdata(pLuaState, pTknFont);
-    return 1;
-}
+//     TknFont *pTknFont = createTknFontPtr(pTknFontLibrary, fontPath, fontSize, atlasLength);
+//     lua_pushlightuserdata(pLuaState, pTknFont);                                                              // 1: pTknFont
+//     lua_pushlstring(pLuaState, pTknFont->atlas, sizeof(char) * pTknFont->atlasLength * pTknFont->atlasLength); // 2: atlasData
+//     lua_pushinteger(pLuaState, pTknFont->atlasLength);                                                       // 3: width
+//     lua_pushinteger(pLuaState, pTknFont->atlasLength);                                                       // 4: height
+//     lua_pushinteger(pLuaState, VK_FORMAT_R8_UNORM);                                                          // 5: format
+//     return 5;
+// }
 
-static int luaDestroyTknFontPtr(lua_State *pLuaState)
-{
-    TknFont *pTknFont = (TknFont *)lua_touserdata(pLuaState, -1);
-    destroyTknFontPtr(pTknFont);
-    return 0;
-}
+// static int luaDestroyTknFontPtr(lua_State *pLuaState)
+// {
+//     TknFont *pTknFont = (TknFont *)lua_touserdata(pLuaState, -1);
+//     destroyTknFontPtr(pTknFont);
+//     return 0;
+// }
 
 static int luaLoadTknChar(lua_State *pLuaState)
 {
@@ -1768,10 +1771,10 @@ void bindFunctions(lua_State *pLuaState)
         {"destroyPipelineMaterialPtr", luaDestroyPipelineMaterialPtr},
         {"updateMaterialPtr", luaUpdateMaterialPtr},
         {"updateMeshPtr", luaUpdateMeshPtr},
-        {"createTknFontLibraryPtr", luaCreateTknFontLibraryPtr},
-        {"destroyTknFontLibraryPtr", luaDestroyTknFontLibraryPtr},
-        {"createTknFontPtr", luaCreateTknFontPtr},
-        {"destroyTknFontPtr", luaDestroyTknFontPtr},
+        // {"createTknFontLibraryPtr", luaCreateTknFontLibraryPtr},
+        // {"destroyTknFontLibraryPtr", luaDestroyTknFontLibraryPtr},
+        // {"createTknFontPtr", luaCreateTknFontPtr},
+        // {"destroyTknFontPtr", luaDestroyTknFontPtr},
         {"loadTknChar", luaLoadTknChar},
         {NULL, NULL},
     };

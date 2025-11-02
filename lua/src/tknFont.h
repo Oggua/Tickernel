@@ -10,7 +10,13 @@ typedef struct TknChar
     uint32_t width, height;
     int32_t bearingX, bearingY;
     uint32_t advance;
+    
+    // Cached bitmap data for batch upload
+    unsigned char *bitmapBuffer;
+    uint32_t bitmapSize;
+    
     struct TknChar *pNext;
+    struct TknChar *pNextDirty;
 } TknChar;
 
 typedef struct TknFont
@@ -19,10 +25,10 @@ typedef struct TknFont
     uint32_t tknCharCapacity;
     uint32_t tknCharCount;
     TknChar **tknCharPtrs;
-
-    char *atlasData;
-    uint32_t maxAtlasLength; // Maximum texture dimension (width is fixed, height expands up to this)
-    uint32_t atlasHeight;    // Current texture height (dynamically expandable)
+    uint32_t dirtyTknCharPtrCount;
+    TknChar *pDirtyTknChar;
+    Image *pImage;
+    uint32_t atlasLength;
     uint32_t penX, penY;
     uint32_t maxRowHeight;
 
@@ -36,9 +42,14 @@ typedef struct
 } TknFontLibrary;
 
 TknFontLibrary *createTknFontLibraryPtr();
-void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary);
+void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext);
 
 TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode);
+void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
 
-TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, const char *fontPath, uint32_t fontSize, uint32_t initialCharCapacity, uint32_t maxAtlasLength);
-void destroyTknFontPtr(TknFont *pTknFont);
+// Get dirty row info for atlas update (returns false if no dirty row)
+bool getTknFontDirtyRow(TknFont *pTknFont, uint32_t *outY, uint32_t *outWidth, uint32_t *outHeight);
+void clearTknFontDirtyRow(TknFont *pTknFont);
+
+TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength);
+void destroyTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
