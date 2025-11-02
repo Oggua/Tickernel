@@ -47,9 +47,5 @@ void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxC
 TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode);
 void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
 
-// Get dirty row info for atlas update (returns false if no dirty row)
-bool getTknFontDirtyRow(TknFont *pTknFont, uint32_t *outY, uint32_t *outWidth, uint32_t *outHeight);
-void clearTknFontDirtyRow(TknFont *pTknFont);
-
 TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength);
 void destroyTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
