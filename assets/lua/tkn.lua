@@ -361,6 +361,12 @@ if not tkn.destroyTknFontPtr then
     end
 end
 
+if not tkn.flushTknFontPtr then
+    function tkn.flushTknFontPtr(pTknFont, pGfxContext)
+        error("tkn.flushTknFontPtr: C binding not loaded")
+    end
+end
+
 if not tkn.loadTknChar then
     function tkn.loadTknChar(pTknFont, unicode)
         error("tkn.loadTknChar: C binding not loaded")

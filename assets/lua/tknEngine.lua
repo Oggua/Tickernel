@@ -75,6 +75,7 @@ function tknEngine.start(pGfxContext, assetsPath)
     tknEngine.pDefaultUIMaterial = ui.createMaterialPtr(pGfxContext, tknEngine.pDefaultImage)
     tknEngine.currentNode = ui.rootNode
 
+    tknEngine.font = ui.createFont(pGfxContext, assetsPath .. "/fonts/Monaco.ttf", 32, 2048)
 end
 
 function tknEngine.stop()
@@ -82,6 +83,7 @@ function tknEngine.stop()
 end
 
 function tknEngine.stopGfx(pGfxContext)
+    ui.destroyFont(pGfxContext, tknEngine.font)
     print("Lua stopGfx")
     ui.teardown(pGfxContext)
     tknEngine.pDefaultUIMaterial = nil
@@ -110,9 +112,7 @@ end
 
 function tknEngine.updateUI(pGfxContext)
     local aKeyState = input.getKeyState(input.keyCode.a)
-    if aKeyState == input.keyState.down then
-        print("A key was just pressed this frame")
-    elseif aKeyState == input.keyState.up then
+    if aKeyState == input.keyState.up then
         print("A key was just released this frame")
         tknEngine.currentNode = ui.addNode(pGfxContext, tknEngine.currentNode, 1, "testNode", {
             dirty = true,
@@ -129,14 +129,31 @@ function tknEngine.updateUI(pGfxContext)
             rect = {},
         })
         ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultUIMaterial, tknEngine.currentNode)
-    elseif aKeyState == input.keyState.idle then
-        -- Key is idle, no action needed
+    end
+    local bKeyState = input.getKeyState(input.keyCode.b)
+    if bKeyState == input.keyState.up then
+        print("B key was just released this frame")
+        tknEngine.currentNode = ui.addNode(pGfxContext, tknEngine.currentNode, 1, "testNode", {
+            dirty = true,
+            horizontal = {
+                type = "relative",
+                left = 100,
+                right = 100,
+            },
+            vertical = {
+                type = "relative",
+                bottom = 100,
+                top = 100,
+            },
+            rect = {},
+        })
+        ui.addTextComponent(pGfxContext, "ABCDabcd", tknEngine.font, 0xFFFFFFFF, tknEngine.currentNode)
     end
 end
 
 function tknEngine.updateGfx(pGfxContext, width, height)
     tknEngine.updateUI(pGfxContext)
-    ui.updateLayout(pGfxContext, width, height)
+    ui.update(pGfxContext, width, height)
     print("Lua updateGfx")
 end
 

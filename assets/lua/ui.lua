@@ -15,6 +15,18 @@ local fullScreenRect = {
     top = 1,
 }
 
+local function traverseNode(node, callback)
+    local result = callback(node)
+    if result then
+        return result
+    end
+    for _, child in ipairs(node.children) do
+        if traverseNode(child, callback) then
+            return true
+        end
+    end
+    return false
+end
 local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDirty)
     if node.layout.dirty or parentDirty then
         local parentRect = node == ui.rootNode and fullScreenRect or node.parent.layout.rect
@@ -85,7 +97,9 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
         -- Update mesh
         if node.component and node.component.pMesh then
             if node.component.type == "image" then
-                image.updateMeshPtr(ui.pGfxContext, node.component, node.layout.rect, ui.vertexFormat)
+                image.updateMeshPtr(pGfxContext, node.component, node.layout.rect, ui.vertexFormat)
+            elseif node.component.type == "text" then
+                text.updateMeshPtr(pGfxContext, node.component, node.layout.rect, ui.vertexFormat)
             else
                 error("ui.updateRect: unsupported component type " .. tostring(node.component.type))
             end
@@ -101,7 +115,6 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
         end
     end
 end
-
 local function addComponent(pGfxContext, node, component)
     if node.component then
         print("WARNING: ui.addComponent: node already has a component")
@@ -109,7 +122,7 @@ local function addComponent(pGfxContext, node, component)
         node.component = component
         if component.pDrawCall then
             local drawCallIndex = 0
-            ui.traverseNode(ui.rootNode, function(child)
+            traverseNode(ui.rootNode, function(child)
                 if child == node then
                     return true
                 else
@@ -123,13 +136,12 @@ local function addComponent(pGfxContext, node, component)
         end
     end
 end
-
 local function removeComponent(pGfxContext, node)
     local component = node.component
     if component then
         if component.pDrawCall then
             local drawCallIndex = 0
-            ui.traverseNode(ui.rootNode, function(child)
+            traverseNode(ui.rootNode, function(child)
                 if child == node then
                     return true
                 else
@@ -146,16 +158,14 @@ local function removeComponent(pGfxContext, node)
         return
     end
 end
-
 local function destroyMaterials()
     for _, material in ipairs(ui.materials) do
-        tkn.destroyPipelineMaterialPtr(ui.pGfxContext, material)
+        tkn.destroyPipelineMaterialPtr(pGfxContext, material)
     end
     ui.materials = {}
 end
 
 function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
-    ui.pGfxContext = pGfxContext
     ui.vertexFormat = {{
         name = "position",
         type = tkn.type.float,
@@ -193,9 +203,10 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
     ui.pSampler = tkn.createSamplerPtr(pGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
     ui.materials = {}
+    text.setup(pGfxContext)
 end
-
 function ui.teardown(pGfxContext)
+
     ui.removeNode(pGfxContext, ui.rootNode)
     ui.renderPass = nil
     tkn.destroySamplerPtr(pGfxContext, ui.pSampler)
@@ -206,15 +217,16 @@ function ui.teardown(pGfxContext)
     tkn.destroyVertexInputLayoutPtr(pGfxContext, ui.vertexFormat.pVertexInputLayout)
     ui.vertexFormat.pVertexInputLayout = nil
     ui.vertexFormat = nil
+    text.teardown(pGfxContext)
 end
-
-function ui.updateLayout(pGfxContext, screenWidth, screenHeight)
+function ui.update(pGfxContext, screenWidth, screenHeight)
     if ui.width ~= screenWidth or ui.height ~= screenHeight then
         ui.width = screenWidth
         ui.height = screenHeight
         ui.rootNode.layout.dirty = true
     end
     updateRect(pGfxContext, screenWidth, screenHeight, ui.rootNode, false)
+    text.update(pGfxContext)
 end
 
 function ui.getNodeIndex(node)
@@ -223,19 +235,6 @@ function ui.getNodeIndex(node)
             return i
         end
     end
-end
-
-function ui.traverseNode(node, callback)
-    local result = callback(node)
-    if result then
-        return result
-    end
-    for _, child in ipairs(node.children) do
-        if ui.traverseNode(child, callback) then
-            return true
-        end
-    end
-    return false
 end
 
 function ui.addNode(pGfxContext, parent, index, name, layout)
@@ -261,7 +260,6 @@ function ui.addNode(pGfxContext, parent, index, name, layout)
     table.insert(parent.children, index, node)
     return node
 end
-
 function ui.removeNode(pGfxContext, node)
     print("Removing node: " .. node.name)
     for i = #node.children, 1, -1 do
@@ -291,7 +289,6 @@ function ui.removeNode(pGfxContext, node)
     node.layout = nil
     table.insert(ui.nodePool, node)
 end
-
 function ui.moveNode(pGfxContext, node, parent, index)
     assert(node, "ui.moveNode: node is nil")
     assert(node ~= ui.rootNode, "ui.moveNode: cannot move root node")
@@ -309,7 +306,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
     end
 
     local drawCalls = {}
-    ui.traverseNode(node, function(child)
+    traverseNode(node, function(child)
         if child.component and child.component.pDrawCall then
             table.insert(drawCalls, child.component.pDrawCall)
         end
@@ -324,7 +321,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
         return true
     else
         local drawCallStartIndex = 0
-        ui.traverseNode(ui.rootNode, function(child)
+        traverseNode(ui.rootNode, function(child)
             if child == node then
                 return true
             else
@@ -346,7 +343,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
         node.parent = parent
 
         drawCallStartIndex = 0
-        ui.traverseNode(ui.rootNode, function(child)
+        traverseNode(ui.rootNode, function(child)
             if child == node then
                 return true
             else
@@ -371,7 +368,6 @@ function ui.addImageComponent(pGfxContext, color, slice, pMaterial, node)
     addComponent(pGfxContext, node, component)
     return component
 end
-
 function ui.removeImageComponent(pGfxContext, node)
     assert(node.component and node.component.type == "image", "ui.removeImageComponent: node has no image component")
     print("Removing image component")
@@ -380,7 +376,7 @@ function ui.removeImageComponent(pGfxContext, node)
 end
 
 function ui.createMaterialPtr(pGfxContext, pImage)
-    local material = tkn.createPipelineMaterialPtr(pGfxContext, ui.renderPass.pPipeline)
+    local pMaterial = tkn.createPipelineMaterialPtr(pGfxContext, ui.renderPass.pPipeline)
     if pImage then
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -388,10 +384,36 @@ function ui.createMaterialPtr(pGfxContext, pImage)
             pSampler = ui.pSampler,
             binding = 0,
         }}
-        tkn.updateMaterialPtr(pGfxContext, material, inputBindings)
+        tkn.updateMaterialPtr(pGfxContext, pMaterial, inputBindings)
     end
-    table.insert(ui.materials, material)
-    return material
+    table.insert(ui.materials, pMaterial)
+    return pMaterial
+end
+function ui.destroyMaterialPtr(pGfxContext, pMaterial)
+    tkn.destroyPipelineMaterialPtr(pGfxContext, pMaterial)
+    table.remove(ui.materials, table.indexOf(ui.materials, pMaterial))
 end
 
+function ui.createFont(pGfxContext, path, fontSize, atlasLength)
+    local font = text.createFont(pGfxContext, path, fontSize, atlasLength)
+    font.pMaterial = ui.createMaterialPtr(pGfxContext, font.pImage)
+    return font
+end
+function ui.destroyFont(pGfxContext, font)
+    ui.destroyMaterialPtr(pGfxContext, font.pMaterial)
+    font.pMaterial = nil
+    text.destroyFont(pGfxContext, font)
+end
+
+function ui.addTextComponent(pGfxContext, textString, font, color, node)
+    local component = text.createComponent(pGfxContext, textString, font, color, font.pMaterial, ui.vertexFormat, ui.renderPass.pPipeline, node)
+    addComponent(pGfxContext, node, component)
+    return component
+end
+function ui.removeTextComponent(pGfxContext, node)
+    assert(node.component and node.component.type == "text", "ui.removeTextComponent: node has no text component")
+    print("Removing text component")
+    text.destroyComponent(pGfxContext, node.component)
+    removeComponent(pGfxContext, node)
+end
 return ui
