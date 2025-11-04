@@ -103,8 +103,33 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
         // Clean up staging buffer
         destroyVkBuffer(pGfxContext, stagingBuffer, stagingBufferMemory);
     }
-    // Note: Empty images (data == NULL) remain in VK_IMAGE_LAYOUT_UNDEFINED state
-    // Layout transitions will be handled when the image is actually used
+    else
+    {
+        // Empty image - transition from UNDEFINED to SHADER_READ_ONLY for initial state
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pGfxContext);
+
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = pImage->vkImage;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             0, 0, NULL, 0, NULL, 1, &barrier);
+
+        endSingleTimeCommands(pGfxContext, commandBuffer);
+    }
     return pImage;
 }
 void destroyImagePtr(GfxContext *pGfxContext, Image *pImage)

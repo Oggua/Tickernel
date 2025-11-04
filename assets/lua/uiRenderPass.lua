@@ -1,5 +1,6 @@
 local tkn = require("tkn")
-local uiPipeline = require("uiPipeline")
+local imagePipeline = require("imagePipeline")
+local textPipeline = require("textPipeline")
 local uiRenderPass = {}
 
 function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVertexInputLayout, renderPassIndex)
@@ -52,15 +53,18 @@ function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVe
     }}
 
     uiRenderPass.pRenderPass = tkn.createRenderPassPtr(pGfxContext, vkAttachmentDescriptions, {pSwapchainAttachment}, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
-    uiRenderPass.pPipeline = uiPipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout)
+    uiRenderPass.pImagePipeline = imagePipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout)
+    uiRenderPass.pTextPipeline = textPipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout)
     print(pUIVertexInputLayout)
 end
 
 function uiRenderPass.teardown(pGfxContext)
-    uiPipeline.destroyPipelinePtr(pGfxContext, uiRenderPass.pPipeline)
+    textPipeline.destroyPipelinePtr(pGfxContext, uiRenderPass.pTextPipeline)
+    imagePipeline.destroyPipelinePtr(pGfxContext, uiRenderPass.pImagePipeline)
     tkn.destroyRenderPassPtr(pGfxContext, uiRenderPass.pRenderPass)
     uiRenderPass.pRenderPass = nil
-    uiRenderPass.pPipeline = nil
+    uiRenderPass.pImagePipeline = nil
+    uiRenderPass.pTextPipeline = nil
 end
 
 return uiRenderPass

@@ -104,12 +104,6 @@ function tkn.createDefaultMeshPtr(pGfxContext, format, pMeshVertexInputLayout, v
         vertices[fieldFormat.name] = fieldData
     end
 
-    -- Print vertices table for debugging
-    print("vertices table contents:")
-    for fieldName, fieldData in pairs(vertices) do
-        print("  " .. fieldName .. ": [" .. table.concat(fieldData, ", ") .. "]")
-    end
-
     -- Initialize indices with zeros (0-based for C compatibility)
     for i = 1, indexCount do
         table.insert(indices, 0)

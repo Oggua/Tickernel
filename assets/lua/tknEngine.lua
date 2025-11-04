@@ -72,7 +72,7 @@ function tknEngine.start(pGfxContext, assetsPath)
     ui.setup(pGfxContext, tknRenderPipeline.pSwapchainAttachment, assetsPath, renderPassIndex)
 
     tknEngine.pDefaultImage = tkn.createImagePtrWithPath(pGfxContext, assetsPath .. "/textures/default.astc")
-    tknEngine.pDefaultUIMaterial = ui.createMaterialPtr(pGfxContext, tknEngine.pDefaultImage)
+    tknEngine.pDefaultImageMaterial = ui.createMaterialPtr(pGfxContext, tknEngine.pDefaultImage, ui.renderPass.pImagePipeline)
     tknEngine.currentNode = ui.rootNode
 
     tknEngine.font = ui.createFont(pGfxContext, assetsPath .. "/fonts/Monaco.ttf", 32, 2048)
@@ -83,11 +83,10 @@ function tknEngine.stop()
 end
 
 function tknEngine.stopGfx(pGfxContext)
-    ui.destroyFont(pGfxContext, tknEngine.font)
     print("Lua stopGfx")
     ui.teardown(pGfxContext)
-    tknEngine.pDefaultUIMaterial = nil
-    -- tkn.destroyPipelineMaterialPtr(pGfxContext, tknEngine.pDefaultUIMaterial)
+    tknEngine.pDefaultImageMaterial = nil
+    
     tkn.destroyImagePtr(pGfxContext, tknEngine.pDefaultImage)
     print("Destroying draw call and instance")
     tkn.destroyDrawCallPtr(pGfxContext, tknEngine.pGeometryDrawCall)
@@ -128,7 +127,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultUIMaterial, tknEngine.currentNode)
+        ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, tknEngine.currentNode)
     end
     local bKeyState = input.getKeyState(input.keyCode.b)
     if bKeyState == input.keyState.up then
@@ -147,7 +146,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "ABCDabcd", tknEngine.font, 0xFFFFFFFF, tknEngine.currentNode)
+        ui.addTextComponent(pGfxContext, "HelloWorld!HaChiMi!", tknEngine.font, 32, 0xFFFFFFFF, tknEngine.currentNode)
     end
 end
 

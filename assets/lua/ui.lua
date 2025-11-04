@@ -11,8 +11,8 @@ local ui = {}
 local fullScreenRect = {
     left = -1,
     right = 1,
-    bottom = -1,
-    top = 1,
+    top = -1,    -- Vulkan NDC: Y=-1 is top
+    bottom = 1,  -- Vulkan NDC: Y=1 is bottom
 }
 
 local function traverseNode(node, callback)
@@ -67,29 +67,29 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
             local anchor = layout.vertical.anchor
             local pivot = layout.vertical.pivot
             local height = layout.vertical.height
-            local y = parentRect.bottom + (parentRect.top - parentRect.bottom) * anchor - height * pivot
-            node.layout.rect.bottom = y
-            node.layout.rect.top = y + height / screenHeight * 2
+            local y = parentRect.top + (parentRect.bottom - parentRect.top) * anchor - height * pivot
+            node.layout.rect.top = y
+            node.layout.rect.bottom = y + height / screenHeight * 2
         elseif layout.vertical.type == "relative" then
             local bottom, top
-            if math.type(layout.vertical.bottom) == "integer" then
-                bottom = parentRect.bottom + layout.vertical.bottom / screenHeight * 2
-            else
-                bottom = parentRect.bottom + (parentRect.top - parentRect.bottom) * layout.vertical.bottom
-            end
             if math.type(layout.vertical.top) == "integer" then
-                top = parentRect.top - layout.vertical.top / screenHeight * 2
+                top = parentRect.top + layout.vertical.top / screenHeight * 2
             else
-                top = parentRect.top - (parentRect.top - parentRect.bottom) * layout.vertical.top
+                top = parentRect.top + (parentRect.bottom - parentRect.top) * layout.vertical.top
             end
-            -- 确保bottom不会超过top
-            if bottom > top then
-                local center = (bottom + top) * 0.5
-                bottom = center
+            if math.type(layout.vertical.bottom) == "integer" then
+                bottom = parentRect.bottom - layout.vertical.bottom / screenHeight * 2
+            else
+                bottom = parentRect.bottom - (parentRect.bottom - parentRect.top) * layout.vertical.bottom
+            end
+            -- 确保top不会超过bottom (Vulkan: top < bottom)
+            if top > bottom then
+                local center = (top + bottom) * 0.5
                 top = center
+                bottom = center
             end
-            node.layout.rect.bottom = bottom
             node.layout.rect.top = top
+            node.layout.rect.bottom = bottom
         else
             error("ui.calculateRect: unknown vertical layout type " .. tostring(layout.vertical.type))
         end
@@ -99,7 +99,7 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
             if node.component.type == "image" then
                 image.updateMeshPtr(pGfxContext, node.component, node.layout.rect, ui.vertexFormat)
             elseif node.component.type == "text" then
-                text.updateMeshPtr(pGfxContext, node.component, node.layout.rect, ui.vertexFormat)
+                text.updateMeshPtr(pGfxContext, node.component, node.layout.rect, ui.vertexFormat, screenWidth, screenHeight)
             else
                 error("ui.updateRect: unsupported component type " .. tostring(node.component.type))
             end
@@ -166,6 +166,7 @@ local function destroyMaterials()
 end
 
 function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
+    text.setup()
     ui.vertexFormat = {{
         name = "position",
         type = tkn.type.float,
@@ -203,10 +204,8 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
     ui.pSampler = tkn.createSamplerPtr(pGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
     ui.materials = {}
-    text.setup(pGfxContext)
 end
 function ui.teardown(pGfxContext)
-
     ui.removeNode(pGfxContext, ui.rootNode)
     ui.renderPass = nil
     tkn.destroySamplerPtr(pGfxContext, ui.pSampler)
@@ -364,7 +363,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
 end
 
 function ui.addImageComponent(pGfxContext, color, slice, pMaterial, node)
-    local component = image.createComponent(pGfxContext, color, slice, pMaterial, ui.vertexFormat, ui.renderPass.pPipeline, node)
+    local component = image.createComponent(pGfxContext, color, slice, pMaterial, ui.vertexFormat, ui.renderPass.pImagePipeline, node)
     addComponent(pGfxContext, node, component)
     return component
 end
@@ -375,8 +374,8 @@ function ui.removeImageComponent(pGfxContext, node)
     removeComponent(pGfxContext, node)
 end
 
-function ui.createMaterialPtr(pGfxContext, pImage)
-    local pMaterial = tkn.createPipelineMaterialPtr(pGfxContext, ui.renderPass.pPipeline)
+function ui.createMaterialPtr(pGfxContext, pImage, pPipeline)
+    local pMaterial = tkn.createPipelineMaterialPtr(pGfxContext, pPipeline)
     if pImage then
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -396,7 +395,7 @@ end
 
 function ui.createFont(pGfxContext, path, fontSize, atlasLength)
     local font = text.createFont(pGfxContext, path, fontSize, atlasLength)
-    font.pMaterial = ui.createMaterialPtr(pGfxContext, font.pImage)
+    font.pMaterial = ui.createMaterialPtr(pGfxContext, font.pImage, ui.renderPass.pTextPipeline)
     return font
 end
 function ui.destroyFont(pGfxContext, font)
@@ -405,8 +404,8 @@ function ui.destroyFont(pGfxContext, font)
     text.destroyFont(pGfxContext, font)
 end
 
-function ui.addTextComponent(pGfxContext, textString, font, color, node)
-    local component = text.createComponent(pGfxContext, textString, font, color, font.pMaterial, ui.vertexFormat, ui.renderPass.pPipeline, node)
+function ui.addTextComponent(pGfxContext, textString, font, size, color, node)
+    local component = text.createComponent(pGfxContext, textString, font, size, color, font.pMaterial, ui.vertexFormat, ui.renderPass.pTextPipeline, node)
     addComponent(pGfxContext, node, component)
     return component
 end

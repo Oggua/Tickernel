@@ -4,15 +4,16 @@ local text = {
     fonts = {},
 }
 
-function text.setup(pGfxContext)
-    text.pGfxContext = pGfxContext
+function text.setup()
     text.pTknFontLibrary = tkn.createTknFontLibraryPtr()
 end
 
 function text.teardown(pGfxContext)
+    for _, font in ipairs(text.fonts) do
+        text.destroyFont(pGfxContext, font)
+    end
     tkn.destroyTknFontLibraryPtr(pGfxContext, text.pTknFontLibrary)
     text.pTknFontLibrary = nil
-    text.pGfxContext = nil
 end
 
 function text.update(pGfxContext)
@@ -37,10 +38,9 @@ end
 function text.destroyFont(pGfxContext, font)
     tkn.destroyTknFontPtr(font.pTknFont, pGfxContext)
     font = nil
-
 end
 
-function text.createComponent(pGfxContext, textString, font, color, pMaterial, vertexFormat, pPipeline, node)
+function text.createComponent(pGfxContext, textString, font, size, color, pMaterial, vertexFormat, pPipeline, node)
     local component = nil
 
     -- Calculate max character count (estimate 4 vertices per character)
@@ -55,6 +55,7 @@ function text.createComponent(pGfxContext, textString, font, color, pMaterial, v
         component = table.remove(text.pool)
         component.text = textString
         component.font = font
+        component.size = size
         component.color = color
         component.pMaterial = pMaterial
         component.pMesh = pMesh
@@ -64,6 +65,7 @@ function text.createComponent(pGfxContext, textString, font, color, pMaterial, v
             type = "text",
             text = textString,
             font = font,
+            size = size,
             color = color,
             pMaterial = pMaterial,
             pMesh = pMesh,
@@ -82,11 +84,12 @@ function text.destroyComponent(pGfxContext, component)
     component.pDrawCall = nil
     component.font = nil
     component.text = ""
+    component.size = 0
     component.color = 0xFFFFFFFF
     table.insert(text.pool, component)
 end
 
-function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
+function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
     local vertices = {
         position = {},
         uv = {},
@@ -97,12 +100,14 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
     local font = component.font
     local textString = component.text
     local color = component.color
+    local size = component.size
 
-    -- Calculate text layout
+    -- Calculate text layout - size determines character pixel size
+    -- Vulkan NDC: Y=-1 is top, Y=1 is bottom, Y increases downward
+    local sizeScale = size / font.fontSize
     local penX = rect.left
-    local penY = rect.bottom
+    local penY = rect.top  -- Start from top (Y=-1 in Vulkan)
     local rectWidth = rect.right - rect.left
-    local rectHeight = rect.top - rect.bottom
 
     local charIndex = 0
     for i = 1, #textString do
@@ -113,6 +118,19 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
         local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.loadTknChar(font.pTknFont, unicode)
 
         if pTknChar then
+            -- Calculate character size in normalized screen space
+            local charWidthNorm = width * sizeScale / screenWidth * 2
+            local charHeightNorm = height * sizeScale / screenHeight * 2
+            local bearingXNorm = bearingX * sizeScale / screenWidth * 2
+            local bearingYNorm = bearingY * sizeScale / screenHeight * 2
+            local advanceNorm = advance * sizeScale / screenWidth * 2
+
+            -- Check if character would exceed rect width (word wrap)
+            if penX + bearingXNorm + charWidthNorm > rect.right then
+                penX = rect.left
+                penY = penY + size / screenHeight * 2 -- Move to next line
+            end
+
             -- Calculate character position in screen space
             local atlasU0 = x / font.atlasLength
             local atlasV0 = y / font.atlasLength
@@ -120,30 +138,32 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
             local atlasV1 = (y + height) / font.atlasLength
 
             -- Character position (normalized screen coordinates)
-            local charLeft = penX + bearingX * rectWidth / font.fontSize
-            local charRight = charLeft + width * rectWidth / font.fontSize
-            local charBottom = penY + (bearingY - height) * rectHeight / font.fontSize
-            local charTop = penY + bearingY * rectHeight / font.fontSize
-
-            -- Add vertices for this character (quad)
-            table.insert(vertices.position, charLeft)
-            table.insert(vertices.position, charBottom)
-            table.insert(vertices.position, charRight)
-            table.insert(vertices.position, charBottom)
-            table.insert(vertices.position, charRight)
-            table.insert(vertices.position, charTop)
+            -- Vulkan: Y increases downward. penY is baseline.
+            -- bearingY is distance from baseline UP to char top (so subtract in Vulkan)
+            local charLeft = penX + bearingXNorm
+            local charRight = charLeft + charWidthNorm
+            local charTop = penY - bearingYNorm  -- baseline - up distance (up means smaller Y)
+            local charBottom = penY + (charHeightNorm - bearingYNorm)  -- baseline + down distance
+            
+            -- Add vertices for this character (quad): left-top, right-top, right-bottom, left-bottom
             table.insert(vertices.position, charLeft)
             table.insert(vertices.position, charTop)
+            table.insert(vertices.position, charRight)
+            table.insert(vertices.position, charTop)
+            table.insert(vertices.position, charRight)
+            table.insert(vertices.position, charBottom)
+            table.insert(vertices.position, charLeft)
+            table.insert(vertices.position, charBottom)
 
-            -- UV coordinates
-            table.insert(vertices.uv, atlasU0)
-            table.insert(vertices.uv, atlasV1)
-            table.insert(vertices.uv, atlasU1)
-            table.insert(vertices.uv, atlasV1)
-            table.insert(vertices.uv, atlasU1)
-            table.insert(vertices.uv, atlasV0)
+            -- UV coordinates: match image.lua pattern
             table.insert(vertices.uv, atlasU0)
             table.insert(vertices.uv, atlasV0)
+            table.insert(vertices.uv, atlasU1)
+            table.insert(vertices.uv, atlasV0)
+            table.insert(vertices.uv, atlasU1)
+            table.insert(vertices.uv, atlasV1)
+            table.insert(vertices.uv, atlasU0)
+            table.insert(vertices.uv, atlasV1)
 
             -- Colors
             table.insert(vertices.color, color)
@@ -161,7 +181,7 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
             table.insert(indices, base + 0)
 
             -- Advance pen position
-            penX = penX + advance * rectWidth / font.fontSize
+            penX = penX + advanceNorm
             charIndex = charIndex + 1
         end
     end

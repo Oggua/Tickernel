@@ -52,7 +52,7 @@ function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
         -- Simplified implementation: fill 16 vertices with default data
         for i = 1, 16 do
             table.insert(vertices.position, rect.left)
-            table.insert(vertices.position, rect.bottom)
+            table.insert(vertices.position, rect.top)
             table.insert(vertices.uv, 0.0)
             table.insert(vertices.uv, 0.0)
             table.insert(vertices.color, component.color)
@@ -70,9 +70,9 @@ function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
         end
         tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     else
-        -- Regular quad: 4 vertices
+        -- Regular quad: 4 vertices (left-top, right-top, right-bottom, left-bottom)
         local vertices = {
-            position = {rect.left, rect.bottom, rect.right, rect.bottom, rect.right, rect.top, rect.left, rect.top},
+            position = {rect.left, rect.top, rect.right, rect.top, rect.right, rect.bottom, rect.left, rect.bottom},
             uv = {0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0},
             color = {component.color, component.color, component.color, component.color},
         }

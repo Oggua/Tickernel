@@ -324,7 +324,7 @@
     self = [super initWithFrame:frameRect device:device];
     self.delegate = self;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-    self.preferredFramesPerSecond = 120;
+    self.preferredFramesPerSecond = 1;
     self.keyCodeStates = calloc(KEY_CODE_COUNT, sizeof(KeyState));
     self.pEngineBinding = [[EngineBinding alloc] init];
 
