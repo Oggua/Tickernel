@@ -146,7 +146,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "HelloWorld!HaChiMi!", tknEngine.font, 32, 0xFFFFFFFF, tknEngine.currentNode)
+        ui.addTextComponent(pGfxContext, "HelloWorld!HaChiMi!", tknEngine.font, 32, 0xFFFF0000, tknEngine.currentNode)
     end
 end
 
