@@ -1,6 +1,6 @@
 #include "gfxCore.h"
 
-static Subpass createSubpass(GfxContext *pGfxContext, uint32_t subpassIndex, uint32_t attachmentCount, Attachment **attachmentPtrs, uint32_t inputVkAttachmentReferenceCount, const VkAttachmentReference *inputVkAttachmentReferences, uint32_t spvPathCount, const char **spvPaths)
+static struct Subpass createSubpass(GfxContext *pGfxContext, uint32_t subpassIndex, uint32_t attachmentCount, Attachment **attachmentPtrs, uint32_t inputVkAttachmentReferenceCount, const VkAttachmentReference *inputVkAttachmentReferences, uint32_t spvPathCount, const char **spvPaths)
 {
     VkImageLayout *inputAttachmentIndexToVkImageLayout = tknMalloc(sizeof(VkImageLayout) * inputVkAttachmentReferenceCount);
     for (uint32_t inputVkAttachmentReferenceIndex = 0; inputVkAttachmentReferenceIndex < inputVkAttachmentReferenceCount; inputVkAttachmentReferenceIndex++)
@@ -61,19 +61,27 @@ static Subpass createSubpass(GfxContext *pGfxContext, uint32_t subpassIndex, uin
 
     bindAttachmentsToMaterialPtr(pGfxContext, pMaterial);
 
-    TknDynamicArray pipelinePtrDynamicArray = tknCreateDynamicArray(sizeof(Pipeline *), TKN_DEFAULT_COLLECTION_SIZE);
-    Subpass subpass = {
+    TknHashSet pipelinePtrHashSet = tknCreateHashSet(sizeof(Pipeline *));
+    TknDynamicArray drawCallPtrDynamicArray = tknCreateDynamicArray(sizeof(DrawCall *), TKN_DEFAULT_COLLECTION_SIZE);
+    struct Subpass subpass = {
         .pSubpassDescriptorSet = pSubpassDescriptorSet,
-        .pipelinePtrDynamicArray = pipelinePtrDynamicArray,
+        .pipelinePtrHashSet = pipelinePtrHashSet,
+        .drawCallPtrDynamicArray = drawCallPtrDynamicArray,
     };
     return subpass;
 }
-static void destroySubpass(GfxContext *pGfxContext, Subpass subpass)
+static void destroySubpass(GfxContext *pGfxContext, struct Subpass subpass)
 {
-    for (uint32_t pipelinePtrIndex = 0; pipelinePtrIndex < subpass.pipelinePtrDynamicArray.count; pipelinePtrIndex++)
+    for (uint32_t i = 0; i < subpass.pipelinePtrHashSet.capacity; i++)
     {
-        Pipeline *pPipeline = *(Pipeline **)tknGetFromDynamicArray(&subpass.pipelinePtrDynamicArray, pipelinePtrIndex);
-        destroyPipelinePtr(pGfxContext, pPipeline);
+        TknListNode *node = subpass.pipelinePtrHashSet.nodePtrs[i];
+        while (node)
+        {
+            TknListNode *nextNode = node->pNextNode;
+            Pipeline *pPipeline = *(Pipeline **)node->data;
+            destroyPipelinePtr(pGfxContext, pPipeline);
+            node = nextNode;
+        }
     }
     tknAssert(subpass.pSubpassDescriptorSet->materialPtrHashSet.count == 1, "Subpass must have exactly one material");
     for (uint32_t i = 0; i < subpass.pSubpassDescriptorSet->materialPtrHashSet.capacity; i++)
@@ -91,14 +99,15 @@ static void destroySubpass(GfxContext *pGfxContext, Subpass subpass)
         }
     }
     destroyDescriptorSetPtr(pGfxContext, subpass.pSubpassDescriptorSet);
-    tknDestroyDynamicArray(subpass.pipelinePtrDynamicArray);
+    tknDestroyHashSet(subpass.pipelinePtrHashSet);
+    tknDestroyDynamicArray(subpass.drawCallPtrDynamicArray);
 }
 
 RenderPass *createRenderPassPtr(GfxContext *pGfxContext, uint32_t attachmentCount, VkAttachmentDescription *vkAttachmentDescriptions, Attachment **inputAttachmentPtrs, VkClearValue *vkClearValues, uint32_t subpassCount, VkSubpassDescription *vkSubpassDescriptions, uint32_t *spvPathCounts, const char ***spvPathsArray, uint32_t vkSubpassDependencyCount, VkSubpassDependency *vkSubpassDependencies, uint32_t renderPassIndex)
 {
     RenderPass *pRenderPass = tknMalloc(sizeof(RenderPass));
     Attachment **attachmentPtrs = tknMalloc(sizeof(Attachment *) * attachmentCount);
-    Subpass *subpasses = tknMalloc(sizeof(Subpass) * subpassCount);
+    struct Subpass *subpasses = tknMalloc(sizeof(struct Subpass) * subpassCount);
     VkRenderPass vkRenderPass = VK_NULL_HANDLE;
     // Create vkRenderPass
     VkDevice vkDevice = pGfxContext->vkDevice;
@@ -152,7 +161,7 @@ void destroyRenderPassPtr(GfxContext *pGfxContext, RenderPass *pRenderPass)
     vkDestroyRenderPass(pGfxContext->vkDevice, pRenderPass->vkRenderPass, NULL);
     for (uint32_t i = 0; i < pRenderPass->subpassCount; i++)
     {
-        Subpass *pSubpass = &pRenderPass->subpasses[i];
+        struct Subpass *pSubpass = &pRenderPass->subpasses[i];
         destroySubpass(pGfxContext, *pSubpass);
     }
     for (uint32_t i = 0; i < pRenderPass->attachmentCount; i++)

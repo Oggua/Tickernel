@@ -590,69 +590,73 @@ static void recordCommandBuffer(GfxContext *pGfxContext, uint32_t swapchainIndex
             {
                 vkCmdNextSubpass(vkCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
             }
-            Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+            struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
             Material *pSubpassMaterial = getSubpassMaterialPtr(pGfxContext, pRenderPass, subpassIndex);
-            for (uint32_t pipelineIndex = 0; pipelineIndex < pSubpass->pipelinePtrDynamicArray.count; pipelineIndex++)
+            Pipeline *pCurrentPipeline = NULL;
+            // Iterate all drawcalls in subpass order, switching pipelines as needed
+            for (uint32_t drawCallIndex = 0; drawCallIndex < pSubpass->drawCallPtrDynamicArray.count; drawCallIndex++)
             {
-                Pipeline *pPipeline = *(Pipeline **)tknGetFromDynamicArray(&pSubpass->pipelinePtrDynamicArray, pipelineIndex);
-                vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipeline);
-                for (uint32_t drawCallIndex = 0; drawCallIndex < pPipeline->drawCallPtrDynamicArray.count; drawCallIndex++)
+                DrawCall *pDrawCall = *(DrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, drawCallIndex);
+                Pipeline *pPipeline = pDrawCall->pPipeline;
+                // Switch pipeline if different from previous drawcall
+                if (pPipeline != pCurrentPipeline)
                 {
-                    DrawCall *pDrawCall = *(DrawCall **)tknGetFromDynamicArray(&pPipeline->drawCallPtrDynamicArray, drawCallIndex);
-                    VkDescriptorSet *vkDescriptorSets = tknMalloc(sizeof(VkDescriptorSet) * TKN_MAX_DESCRIPTOR_SET);
-                    vkDescriptorSets[TKN_GLOBAL_DESCRIPTOR_SET] = pGlobalMaterial->vkDescriptorSet;
-                    vkDescriptorSets[TKN_SUBPASS_DESCRIPTOR_SET] = pSubpassMaterial->vkDescriptorSet;
-                    if (pDrawCall->pMaterial != NULL)
+                    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipeline);
+                    pCurrentPipeline = pPipeline;
+                }
+                VkDescriptorSet *vkDescriptorSets = tknMalloc(sizeof(VkDescriptorSet) * TKN_MAX_DESCRIPTOR_SET);
+                vkDescriptorSets[TKN_GLOBAL_DESCRIPTOR_SET] = pGlobalMaterial->vkDescriptorSet;
+                vkDescriptorSets[TKN_SUBPASS_DESCRIPTOR_SET] = pSubpassMaterial->vkDescriptorSet;
+                if (pDrawCall->pMaterial != NULL)
+                {
+                    vkDescriptorSets[TKN_PIPELINE_DESCRIPTOR_SET] = pDrawCall->pMaterial->vkDescriptorSet;
+                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET, vkDescriptorSets, 0, NULL);
+                }
+                else
+                {
+                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET - 1, vkDescriptorSets, 0, NULL);
+                }
+                tknFree(vkDescriptorSets);
+                Mesh *pMesh = pDrawCall->pMesh;
+                if (pMesh != NULL)
+                {
+                    if (pDrawCall->pInstance != NULL && pDrawCall->pInstance->instanceCount > 0)
                     {
-                        vkDescriptorSets[TKN_PIPELINE_DESCRIPTOR_SET] = pDrawCall->pMaterial->vkDescriptorSet;
-                        vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET, vkDescriptorSets, 0, NULL);
-                    }
-                    else
-                    {
-                        vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET - 1, vkDescriptorSets, 0, NULL);
-                    }
-                    tknFree(vkDescriptorSets);
-                    Mesh *pMesh = pDrawCall->pMesh;
-                    if (pMesh != NULL)
-                    {
-                        if (pDrawCall->pInstance != NULL && pDrawCall->pInstance->instanceCount > 0)
+                        tknAssert(pDrawCall->pMesh->vertexCount > 0, "Mesh has no vertices");
+                        VkBuffer vertexBuffers[] = {pMesh->vertexVkBuffer, pDrawCall->pInstance->instanceVkBuffer};
+                        VkDeviceSize offsets[] = {0, 0};
+                        vkCmdBindVertexBuffers(vkCommandBuffer, 0, 2, vertexBuffers, offsets);
+                        if (pMesh->indexCount > 0)
                         {
-                            tknAssert(pDrawCall->pMesh->vertexCount > 0, "Mesh has no vertices");
-                            VkBuffer vertexBuffers[] = {pMesh->vertexVkBuffer, pDrawCall->pInstance->instanceVkBuffer};
-                            VkDeviceSize offsets[] = {0, 0};
-                            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 2, vertexBuffers, offsets);
-                            if (pMesh->indexCount > 0)
-                            {
-                                vkCmdBindIndexBuffer(vkCommandBuffer, pMesh->indexVkBuffer, 0, pMesh->vkIndexType);
-                                vkCmdDrawIndexed(vkCommandBuffer, pMesh->indexCount, pDrawCall->pInstance->instanceCount, 0, 0, 0);
-                            }
-                            else
-                            {
-                                vkCmdDraw(vkCommandBuffer, pMesh->vertexCount, pDrawCall->pInstance->instanceCount, 0, 0);
-                            }
+                            vkCmdBindIndexBuffer(vkCommandBuffer, pMesh->indexVkBuffer, 0, pMesh->vkIndexType);
+                            vkCmdDrawIndexed(vkCommandBuffer, pMesh->indexCount, pDrawCall->pInstance->instanceCount, 0, 0, 0);
                         }
                         else
                         {
-                            // Simple case: only bind vertex buffer (no instancing)
-                            VkBuffer vertexBuffers[] = {pMesh->vertexVkBuffer};
-                            VkDeviceSize offsets[] = {0};
-                            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
-
-                            if (pMesh->indexCount > 0)
-                            {
-                                vkCmdBindIndexBuffer(vkCommandBuffer, pMesh->indexVkBuffer, 0, pMesh->vkIndexType);
-                                vkCmdDrawIndexed(vkCommandBuffer, pMesh->indexCount, 1, 0, 0, 0);
-                            }
-                            else
-                            {
-                                vkCmdDraw(vkCommandBuffer, pMesh->vertexCount, 1, 0, 0);
-                            }
+                            vkCmdDraw(vkCommandBuffer, pMesh->vertexCount, pDrawCall->pInstance->instanceCount, 0, 0);
                         }
                     }
                     else
                     {
-                        vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
+                        // Simple case: only bind vertex buffer (no instancing)
+                        VkBuffer vertexBuffers[] = {pMesh->vertexVkBuffer};
+                        VkDeviceSize offsets[] = {0};
+                        vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
+
+                        if (pMesh->indexCount > 0)
+                        {
+                            vkCmdBindIndexBuffer(vkCommandBuffer, pMesh->indexVkBuffer, 0, pMesh->vkIndexType);
+                            vkCmdDrawIndexed(vkCommandBuffer, pMesh->indexCount, 1, 0, 0, 0);
+                        }
+                        else
+                        {
+                            vkCmdDraw(vkCommandBuffer, pMesh->vertexCount, 1, 0, 0);
+                        }
                     }
+                }
+                else
+                {
+                    vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
                 }
             }
         }

@@ -105,9 +105,12 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     -- Calculate text layout - size determines character pixel size
     -- Vulkan NDC: Y=-1 is top, Y=1 is bottom, Y increases downward
     local sizeScale = size / font.fontSize
+    
     local penX = rect.left
-    local penY = rect.top  -- Start from top (Y=-1 in Vulkan)
+    local penY = rect.top  -- Baseline, will be adjusted on first character
     local rectWidth = rect.right - rect.left
+    local lineHeight = size / screenHeight * 2
+    local firstChar = true
 
     local charIndex = 0
     for i = 1, #textString do
@@ -125,10 +128,16 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
             local bearingYNorm = bearingY * sizeScale / screenHeight * 2
             local advanceNorm = advance * sizeScale / screenWidth * 2
 
+            -- Adjust baseline on first character to align top with rect.top
+            if firstChar then
+                penY = rect.top + bearingYNorm
+                firstChar = false
+            end
+
             -- Check if character would exceed rect width (word wrap)
             if penX + bearingXNorm + charWidthNorm > rect.right then
                 penX = rect.left
-                penY = penY + size / screenHeight * 2 -- Move to next line
+                penY = penY + lineHeight
             end
 
             -- Calculate character position in screen space

@@ -86,7 +86,7 @@ function tknEngine.stopGfx(pGfxContext)
     print("Lua stopGfx")
     ui.teardown(pGfxContext)
     tknEngine.pDefaultImageMaterial = nil
-    
+
     tkn.destroyImagePtr(pGfxContext, tknEngine.pDefaultImage)
     print("Destroying draw call and instance")
     tkn.destroyDrawCallPtr(pGfxContext, tknEngine.pGeometryDrawCall)
@@ -109,44 +109,47 @@ function tknEngine.updateGameplay()
     print("Lua updateGameplay")
 end
 
+local idx = 1
 function tknEngine.updateUI(pGfxContext)
     local aKeyState = input.getKeyState(input.keyCode.a)
     if aKeyState == input.keyState.up then
         print("A key was just released this frame")
-        tknEngine.currentNode = ui.addNode(pGfxContext, tknEngine.currentNode, 1, "testNode", {
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "imageNode", {
             dirty = true,
             horizontal = {
                 type = "relative",
-                left = 100,
-                right = 100,
+                left = 0,
+                right = 0,
             },
             vertical = {
                 type = "relative",
-                bottom = 100,
-                top = 100,
+                bottom = 0,
+                top = 0,
             },
             rect = {},
         })
-        ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, tknEngine.currentNode)
+        ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, newNode)
+        idx = idx + 1
     end
     local bKeyState = input.getKeyState(input.keyCode.b)
     if bKeyState == input.keyState.up then
         print("B key was just released this frame")
-        tknEngine.currentNode = ui.addNode(pGfxContext, tknEngine.currentNode, 1, "testNode", {
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode", {
             dirty = true,
             horizontal = {
                 type = "relative",
-                left = 100,
-                right = 100,
+                left = 0,
+                right = 0,
             },
             vertical = {
                 type = "relative",
-                bottom = 100,
-                top = 100,
+                bottom = 0,
+                top = 0,
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "HelloWorld!HaChiMi!", tknEngine.font, 32, 0xFFFF0000, tknEngine.currentNode)
+        ui.addTextComponent(pGfxContext, "HelloWorld!HaChiMi!", tknEngine.font, 32, 0xFFFF0000, newNode)
+        idx = idx + 1
     end
 end
 

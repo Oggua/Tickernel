@@ -49,10 +49,12 @@ DrawCall *createDrawCallPtr(GfxContext *pGfxContext, Pipeline *pPipeline, Materi
 
 void destroyDrawCallPtr(GfxContext *pGfxContext, DrawCall *pDrawCall)
 {
-    // Remove from pipeline if associated
+    // Remove from subpass drawcall queue
     if (pDrawCall->pPipeline != NULL)
     {
-        tknRemoveFromDynamicArray(&pDrawCall->pPipeline->drawCallPtrDynamicArray, &pDrawCall);
+        RenderPass *pRenderPass = pDrawCall->pPipeline->pRenderPass;
+        struct Subpass *pSubpass = &pRenderPass->subpasses[pDrawCall->pPipeline->subpassIndex];
+        tknRemoveFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pDrawCall);
         tknRemoveFromHashSet(&pDrawCall->pPipeline->drawCallPtrHashSet, &pDrawCall);
     }
     if (pDrawCall->pMaterial != NULL)
@@ -68,34 +70,46 @@ void destroyDrawCallPtr(GfxContext *pGfxContext, DrawCall *pDrawCall)
 void insertDrawCallPtr(DrawCall *pDrawCall, uint32_t index)
 {
     tknAssert(pDrawCall->pPipeline != NULL, "DrawCall must be associated with a Pipeline");
-    tknInsertIntoDynamicArray(&pDrawCall->pPipeline->drawCallPtrDynamicArray, &pDrawCall, index);
+    RenderPass *pRenderPass = pDrawCall->pPipeline->pRenderPass;
+    struct Subpass *pSubpass = &pRenderPass->subpasses[pDrawCall->pPipeline->subpassIndex];
+    tknInsertIntoDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pDrawCall, index);
 }
 
 void removeDrawCallPtr(DrawCall *pDrawCall)
 {
     tknAssert(pDrawCall->pPipeline != NULL, "DrawCall must be associated with a Pipeline");
-    tknRemoveFromDynamicArray(&pDrawCall->pPipeline->drawCallPtrDynamicArray, &pDrawCall);
+    RenderPass *pRenderPass = pDrawCall->pPipeline->pRenderPass;
+    struct Subpass *pSubpass = &pRenderPass->subpasses[pDrawCall->pPipeline->subpassIndex];
+    tknRemoveFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pDrawCall);
     // Keep pipeline reference for hashset relationship tracking
 }
 
-void removeDrawCallAtIndex(Pipeline *pPipeline, uint32_t index)
+void removeDrawCallAtIndex(RenderPass *pRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    if (index >= pPipeline->drawCallPtrDynamicArray.count)
+    tknAssert(subpassIndex < pRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+    if (index >= pSubpass->drawCallPtrDynamicArray.count)
     {
         return;
     }
-    DrawCall *pDrawCall = *(DrawCall **)tknGetFromDynamicArray(&pPipeline->drawCallPtrDynamicArray, index);
+    DrawCall *pDrawCall = *(DrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, index);
     destroyDrawCallPtr(NULL, pDrawCall);
 }
-DrawCall *getDrawCallAtIndex(Pipeline *pPipeline, uint32_t index)
+
+DrawCall *getDrawCallAtIndex(RenderPass *pRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    if (index >= pPipeline->drawCallPtrDynamicArray.count)
+    tknAssert(subpassIndex < pRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+    if (index >= pSubpass->drawCallPtrDynamicArray.count)
     {
         return NULL;
     }
-    return *(DrawCall **)tknGetFromDynamicArray(&pPipeline->drawCallPtrDynamicArray, index);
+    return *(DrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, index);
 }
-uint32_t getDrawCallCount(Pipeline *pPipeline)
+
+uint32_t getDrawCallCount(RenderPass *pRenderPass, uint32_t subpassIndex)
 {
-    return pPipeline->drawCallPtrDynamicArray.count;
+    tknAssert(subpassIndex < pRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+    return pSubpass->drawCallPtrDynamicArray.count;
 }

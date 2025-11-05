@@ -96,9 +96,9 @@ DrawCall *createDrawCallPtr(GfxContext *pGfxContext, Pipeline *pPipeline, Materi
 void destroyDrawCallPtr(GfxContext *pGfxContext, DrawCall *pDrawCall);
 void insertDrawCallPtr(DrawCall *pDrawCall, uint32_t index);
 void removeDrawCallPtr(DrawCall *pDrawCall);
-void removeDrawCallAtIndex(Pipeline *pPipeline, uint32_t index);
-DrawCall *getDrawCallAtIndex(Pipeline *pPipeline, uint32_t index);
-uint32_t getDrawCallCount(Pipeline *pPipeline);
+void removeDrawCallAtIndex(RenderPass *pRenderPass, uint32_t subpassIndex, uint32_t index);
+DrawCall *getDrawCallAtIndex(RenderPass *pRenderPass, uint32_t subpassIndex, uint32_t index);
+uint32_t getDrawCallCount(RenderPass *pRenderPass, uint32_t subpassIndex);
 
 Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize);
 void destroyImagePtr(GfxContext *pGfxContext, Image *pImage);

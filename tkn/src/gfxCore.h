@@ -231,15 +231,15 @@ struct Pipeline
 
     VertexInputLayout *pMeshVertexInputLayout;
     VertexInputLayout *pInstanceVertexInputLayout;
-    TknDynamicArray drawCallPtrDynamicArray;
-    TknHashSet drawCallPtrHashSet;
+    TknHashSet drawCallPtrHashSet;  // Only track which drawcalls belong to this pipeline
 };
 
-typedef struct
+struct Subpass
 {
     DescriptorSet *pSubpassDescriptorSet;
-    TknDynamicArray pipelinePtrDynamicArray;
-} Subpass;
+    TknHashSet pipelinePtrHashSet;
+    TknDynamicArray drawCallPtrDynamicArray;  // Shared drawcall queue for all pipelines in this subpass
+};
 
 struct RenderPass
 {
@@ -251,7 +251,7 @@ struct RenderPass
     VkFramebuffer *vkFramebuffers;
     VkRect2D renderArea;
     uint32_t subpassCount;
-    Subpass *subpasses;
+    struct Subpass *subpasses;
 };
 
 struct GfxContext

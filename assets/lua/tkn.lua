@@ -198,19 +198,19 @@ if not tkn.removeDrawCallPtr then
 end
 
 if not tkn.removeDrawCallAtIndex then
-    function tkn.removeDrawCallAtIndex(pPipeline, index)
+    function tkn.removeDrawCallAtIndex(pRenderPass, subpassIndex, index)
         error("tkn.removeDrawCallAtIndex: C binding not loaded")
     end
 end
 
 if not tkn.getDrawCallAtIndex then
-    function tkn.getDrawCallAtIndex(pPipeline, index)
+    function tkn.getDrawCallAtIndex(pRenderPass, subpassIndex, index)
         error("tkn.getDrawCallAtIndex: C binding not loaded")
     end
 end
 
 if not tkn.getDrawCallCount then
-    function tkn.getDrawCallCount(pPipeline)
+    function tkn.getDrawCallCount(pRenderPass, subpassIndex)
         error("tkn.getDrawCallCount: C binding not loaded")
     end
 end

@@ -1121,25 +1121,28 @@ static int luaDestroyVertexInputLayoutPtr(lua_State *pLuaState)
 
 static int luaRemoveDrawCallAtIndex(lua_State *pLuaState)
 {
-    Pipeline *pPipeline = (Pipeline *)lua_touserdata(pLuaState, -2);
+    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -3);
+    uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -2);
     uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    removeDrawCallAtIndex(pPipeline, index);
+    removeDrawCallAtIndex(pRenderPass, subpassIndex, index);
     return 0;
 }
 
 static int luaGetDrawCallAtIndex(lua_State *pLuaState)
 {
-    Pipeline *pPipeline = (Pipeline *)lua_touserdata(pLuaState, -2);
+    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -3);
+    uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -2);
     uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    DrawCall *pDrawCall = getDrawCallAtIndex(pPipeline, index);
+    DrawCall *pDrawCall = getDrawCallAtIndex(pRenderPass, subpassIndex, index);
     lua_pushlightuserdata(pLuaState, pDrawCall);
     return 1;
 }
 
 static int luaGetDrawCallCount(lua_State *pLuaState)
 {
-    Pipeline *pPipeline = (Pipeline *)lua_touserdata(pLuaState, -1);
-    uint32_t count = getDrawCallCount(pPipeline);
+    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -2);
+    uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -1);
+    uint32_t count = getDrawCallCount(pRenderPass, subpassIndex);
     lua_pushinteger(pLuaState, (lua_Integer)count);
     return 1;
 }
