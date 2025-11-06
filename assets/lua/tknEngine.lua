@@ -151,31 +151,54 @@ function tknEngine.updateUI(pGfxContext)
             rect = {},
         })
         -- Center alignment
-        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, "center", "center", newNode)
+        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, "center", "center", true, newNode)
         idx = idx + 1
     end
     
-    -- Q key: Top-Left
+    -- B key: Bold text test
+    local bKeyState = input.getKeyState(input.keyCode.b)
+    if bKeyState == input.keyState.up then
+        print("B key: Bold text")
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_Bold", {
+            dirty = true,
+            horizontal = {
+                type = "anchored",
+                anchor = 0.5,
+                pivot = 0.5,
+                width = 800,
+            },
+            vertical = {
+                type = "anchored",
+                anchor = 0.3,
+                pivot = 0.5,
+                height = 150,
+            },
+            rect = {},
+        })
+        ui.addTextComponent(pGfxContext, "B - BOLD TEXT: This is a bold text example!", tknEngine.font, 28, 0xFFFFFFFF, "center", "center", true, newNode)
+        idx = idx + 1
+    end
+    
+    -- Q key: Top-Left with margin
     local qKeyState = input.getKeyState(input.keyCode.q)
     if qKeyState == input.keyState.up then
         print("Q key: Top-Left alignment")
         local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_TL", {
             dirty = true,
             horizontal = {
-                type = "anchored",
-                anchor = 0,
-                pivot = 0,
-                width = 400,
+                type = "relative",
+                left = 20,       -- 20 pixels from left edge
+                right = 0.7,     -- 70% from right edge (or use pixels)
             },
             vertical = {
-                type = "anchored",
-                anchor = 0,
-                pivot = 0,
-                height = 150,
+                type = "relative",
+                top = 20,        -- 20 pixels from top edge
+                bottom = 0.8,    -- 80% from bottom edge (or use pixels)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 20, 0xFF00FF00, "left", "top", newNode)
+        -- Text alignment within the rect
+        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 20, 0xFF00FF00, "left", "top", false, newNode)
         idx = idx + 1
     end
     
@@ -199,7 +222,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 20, 0xFF0000FF, "right", "top", newNode)
+        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 20, 0xFF0000FF, "right", "top", false, newNode)
         idx = idx + 1
     end
     
@@ -223,7 +246,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 20, 0xFFFFFF00, "left", "bottom", newNode)
+        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 20, 0xFFFFFF00, "left", "bottom", false, newNode)
         idx = idx + 1
     end
     
@@ -241,13 +264,13 @@ function tknEngine.updateUI(pGfxContext)
             },
             vertical = {
                 type = "anchored",
-                anchor = 1,
+                anchor = 0.9,
                 pivot = 1,
                 height = 150,
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 20, 0xFFFF00FF, "right", "bottom", newNode)
+        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 20, 0xFFFF00FF, "right", "bottom", false, newNode)
         idx = idx + 1
     end
 end

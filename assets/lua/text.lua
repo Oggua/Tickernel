@@ -39,9 +39,12 @@ function text.destroyFont(pGfxContext, font)
     font = nil
 end
 
-function text.createComponent(pGfxContext, textString, font, size, color, alignH, alignV, pMaterial, vertexFormat, pPipeline, node)
+function text.createComponent(pGfxContext, textString, font, size, color, alignH, alignV, bold, pMaterial, vertexFormat, pPipeline, node)
     local maxChars = #textString
-    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * 4, VK_INDEX_TYPE_UINT16, maxChars * 6)
+    -- Bold text needs more vertices (4x for each character)
+    local verticesPerChar = bold and 16 or 4
+    local indicesPerChar = bold and 24 or 6
+    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
     local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, nil)
 
     local component = #text.pool > 0 and table.remove(text.pool) or { type = "text" }
@@ -51,6 +54,7 @@ function text.createComponent(pGfxContext, textString, font, size, color, alignH
     component.color = color
     component.alignH = alignH
     component.alignV = alignV
+    component.bold = bold
     component.pMaterial = pMaterial
     component.pMesh = pMesh
     component.pDrawCall = pDrawCall
@@ -71,6 +75,7 @@ function text.destroyComponent(pGfxContext, component)
     component.color = 0xFFFFFFFF
     component.alignH = "left"
     component.alignV = "top"
+    component.bold = false
     table.insert(text.pool, component)
 end
 
@@ -81,6 +86,10 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     local scaleY = sizeScale / screenHeight * 2
     local lineHeight = component.size / screenHeight * 2
     local atlasScale = 1 / font.atlasLength
+    
+    -- Bold offset in pixels (converted to NDC)
+    local boldOffsetX = component.bold and (1 / screenWidth * 2) or 0
+    local boldOffsetY = component.bold and (1 / screenHeight * 2) or 0
     
     -- First pass: calculate line widths and total text bounds
     local lines = {{chars = {}, width = 0}}
@@ -156,33 +165,53 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
             local top = penY - char.bearingYNDC
             local bottom = top + char.heightNDC
             
-            -- Vertices (positions)
-            local pos = vertices.position
-            pos[#pos+1], pos[#pos+2] = left, top
-            pos[#pos+1], pos[#pos+2] = right, top
-            pos[#pos+1], pos[#pos+2] = right, bottom
-            pos[#pos+1], pos[#pos+2] = left, bottom
-            
-            -- UVs
+            -- UV coordinates
             local u0, v0 = char.x * atlasScale, char.y * atlasScale
             local u1, v1 = (char.x + char.width) * atlasScale, (char.y + char.height) * atlasScale
-            local uv = vertices.uv
-            uv[#uv+1], uv[#uv+2] = u0, v0
-            uv[#uv+1], uv[#uv+2] = u1, v0
-            uv[#uv+1], uv[#uv+2] = u1, v1
-            uv[#uv+1], uv[#uv+2] = u0, v1
             
-            -- Colors
-            local col = vertices.color
-            col[#col+1], col[#col+2], col[#col+3], col[#col+4] = component.color, component.color, component.color, component.color
+            -- Helper function to add a character quad
+            local function addCharQuad(offsetX, offsetY)
+                local l, r = left + offsetX, right + offsetX
+                local t, b = top + offsetY, bottom + offsetY
+                
+                -- Vertices (positions)
+                local pos = vertices.position
+                pos[#pos+1], pos[#pos+2] = l, t
+                pos[#pos+1], pos[#pos+2] = r, t
+                pos[#pos+1], pos[#pos+2] = r, b
+                pos[#pos+1], pos[#pos+2] = l, b
+                
+                -- UVs
+                local uv = vertices.uv
+                uv[#uv+1], uv[#uv+2] = u0, v0
+                uv[#uv+1], uv[#uv+2] = u1, v0
+                uv[#uv+1], uv[#uv+2] = u1, v1
+                uv[#uv+1], uv[#uv+2] = u0, v1
+                
+                -- Colors
+                local col = vertices.color
+                col[#col+1], col[#col+2], col[#col+3], col[#col+4] = component.color, component.color, component.color, component.color
+                
+                -- Indices
+                local base = charIndex * 4
+                local idx = indices
+                idx[#idx+1], idx[#idx+2], idx[#idx+3] = base, base + 1, base + 2
+                idx[#idx+1], idx[#idx+2], idx[#idx+3] = base + 2, base + 3, base
+                
+                charIndex = charIndex + 1
+            end
             
-            -- Indices
-            local base = charIndex * 4
-            local idx = indices
-            idx[#idx+1], idx[#idx+2], idx[#idx+3] = base, base + 1, base + 2
-            idx[#idx+1], idx[#idx+2], idx[#idx+3] = base + 2, base + 3, base
-            
-            charIndex = charIndex + 1
+            -- Render character (multiple times if bold)
+            if component.bold then
+                -- Render 4 times with slight offsets for bold effect
+                addCharQuad(0, 0)
+                addCharQuad(boldOffsetX, 0)
+                addCharQuad(0, boldOffsetY)
+                addCharQuad(boldOffsetX, boldOffsetY)
+            else
+                -- Regular rendering
+                addCharQuad(0, 0)
+            end
         end
         
         penY = penY + lineHeight

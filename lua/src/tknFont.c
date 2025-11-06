@@ -178,12 +178,20 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxConte
     memset(pTknFont->tknCharPtrs, 0, sizeof(TknChar *) * pTknFont->tknCharCapacity);
 
     pTknFont->atlasLength = atlasLength;
+    
+    // Create initial zero-filled buffer for atlas texture
+    uint32_t atlasSize = atlasLength * atlasLength;
+    unsigned char *pZeroBuffer = tknMalloc(atlasSize);
+    memset(pZeroBuffer, 0, atlasSize);
+    
     pTknFont->pImage = createImagePtr(pGfxContext, (VkExtent3D){atlasLength, atlasLength, 1},
                                       VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                       VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                       VK_IMAGE_ASPECT_COLOR_BIT,
-                                      NULL, 0);
+                                      pZeroBuffer, atlasSize);
+    
+    tknFree(pZeroBuffer);
 
     pTknFont->penX = 0;
     pTknFont->penY = 0;
