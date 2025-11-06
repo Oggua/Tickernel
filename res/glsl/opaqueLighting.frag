@@ -14,10 +14,9 @@ void main() {
     vec3 normal = normalize((subpassLoad(i_normal).xyz - 0.5) * 2);
     vec4 albedo = subpassLoad(i_albedo);
 
-    // float ndl = max(dot(normal, -normalize(lightsUniform.directionalLight.direction)), 0.0);
-    // float halfLambert = ndl * 0.5 + 0.5;
-    // vec3 o_rgb = albedo.rgb * lightsUniform.directionalLight.color.rgb * lightsUniform.directionalLight.color.a * halfLambert;
-    vec3 o_rgb = albedo.rgb;
+    float ndl = max(dot(normal, -normalize(lightsUniform.directionalLight.direction)), 0.0);
+    float halfLambert = ndl * 0.5 + 0.5;
+    vec3 o_rgb = albedo.rgb * lightsUniform.directionalLight.color.rgb * lightsUniform.directionalLight.color.a * halfLambert;
     for(int i = 0; i < lightsUniform.pointLightCount; i++) {
         PointLight light = lightsUniform.pointLights[i];
         vec3 toLight = position - light.position;
@@ -31,7 +30,5 @@ void main() {
 
         o_rgb += albedo.rgb * light.color.rgb * light.color.a * pointHalfLambert * attenuation;
     }
-    float linearDepth = (2.0 * globalUniform.near * globalUniform.far) / (globalUniform.far + globalUniform.near - depth * (globalUniform.far - globalUniform.near)) / globalUniform.far;
-    o_rgb = mix(o_rgb, vec3(0.6, 0.6, 0.6), linearDepth * linearDepth * linearDepth);
     o_color = vec4(o_rgb, 1.0);
 }

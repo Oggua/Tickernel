@@ -9,9 +9,6 @@ function text.setup()
 end
 
 function text.teardown(pGfxContext)
-    for _, font in ipairs(text.fonts) do
-        text.destroyFont(pGfxContext, font)
-    end
     tkn.destroyTknFontLibraryPtr(pGfxContext, text.pTknFontLibrary)
     text.pTknFontLibrary = nil
 end
@@ -23,6 +20,7 @@ function text.update(pGfxContext)
 end
 
 function text.createFont(pGfxContext, path, fontSize, atlasLength)
+    print("createFont")
     local pTknFont, pImage = tkn.createTknFontPtr(text.pTknFontLibrary, pGfxContext, path, fontSize, atlasLength)
     local font = {
         path = path,
@@ -36,6 +34,7 @@ function text.createFont(pGfxContext, path, fontSize, atlasLength)
 end
 
 function text.destroyFont(pGfxContext, font)
+    print("destroyFont")
     tkn.destroyTknFontPtr(font.pTknFont, pGfxContext)
     font = nil
 end
@@ -105,9 +104,9 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     -- Calculate text layout - size determines character pixel size
     -- Vulkan NDC: Y=-1 is top, Y=1 is bottom, Y increases downward
     local sizeScale = size / font.fontSize
-    
+
     local penX = rect.left
-    local penY = rect.top  -- Baseline, will be adjusted on first character
+    local penY = rect.top -- Baseline, will be adjusted on first character
     local rectWidth = rect.right - rect.left
     local lineHeight = size / screenHeight * 2
     local firstChar = true
@@ -151,9 +150,9 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
             -- bearingY is distance from baseline UP to char top (so subtract in Vulkan)
             local charLeft = penX + bearingXNorm
             local charRight = charLeft + charWidthNorm
-            local charTop = penY - bearingYNorm  -- baseline - up distance (up means smaller Y)
-            local charBottom = penY + (charHeightNorm - bearingYNorm)  -- baseline + down distance
-            
+            local charTop = penY - bearingYNorm -- baseline - up distance (up means smaller Y)
+            local charBottom = penY + (charHeightNorm - bearingYNorm) -- baseline + down distance
+
             -- Add vertices for this character (quad): left-top, right-top, right-bottom, left-bottom
             table.insert(vertices.position, charLeft)
             table.insert(vertices.position, charTop)

@@ -11,8 +11,8 @@ local ui = {}
 local fullScreenRect = {
     left = -1,
     right = 1,
-    top = -1,    -- Vulkan NDC: Y=-1 is top
-    bottom = 1,  -- Vulkan NDC: Y=1 is bottom
+    top = -1, -- Vulkan NDC: Y=-1 is top
+    bottom = 1, -- Vulkan NDC: Y=1 is bottom
 }
 
 local function traverseNode(node, callback)
@@ -268,6 +268,8 @@ function ui.removeNode(pGfxContext, node)
     if node.component then
         if node.component.type == "image" then
             ui.removeImageComponent(pGfxContext, node)
+        elseif node.component.type == "text" then
+            ui.removeTextComponent(pGfxContext, node)
         else
             error("ui.removeNode: unsupported component type " .. tostring(node.component.type))
         end
