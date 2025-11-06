@@ -40,37 +40,19 @@ function text.destroyFont(pGfxContext, font)
 end
 
 function text.createComponent(pGfxContext, textString, font, size, color, pMaterial, vertexFormat, pPipeline, node)
-    local component = nil
-
-    -- Calculate max character count (estimate 4 vertices per character)
     local maxChars = #textString
-    local vertexCount = maxChars * 4
-    local indexCount = maxChars * 6
-
-    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, vertexCount, VK_INDEX_TYPE_UINT16, indexCount)
+    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * 4, VK_INDEX_TYPE_UINT16, maxChars * 6)
     local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, nil)
 
-    if #text.pool > 0 then
-        component = table.remove(text.pool)
-        component.text = textString
-        component.font = font
-        component.size = size
-        component.color = color
-        component.pMaterial = pMaterial
-        component.pMesh = pMesh
-        component.pDrawCall = pDrawCall
-    else
-        component = {
-            type = "text",
-            text = textString,
-            font = font,
-            size = size,
-            color = color,
-            pMaterial = pMaterial,
-            pMesh = pMesh,
-            pDrawCall = pDrawCall,
-        }
-    end
+    local component = #text.pool > 0 and table.remove(text.pool) or { type = "text" }
+    component.text = textString
+    component.font = font
+    component.size = size
+    component.color = color
+    component.pMaterial = pMaterial
+    component.pMesh = pMesh
+    component.pDrawCall = pDrawCall
+    
     return component
 end
 
@@ -89,115 +71,75 @@ function text.destroyComponent(pGfxContext, component)
 end
 
 function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
-    local vertices = {
-        position = {},
-        uv = {},
-        color = {},
-    }
+    local vertices = { position = {}, uv = {}, color = {} }
     local indices = {}
 
     local font = component.font
-    local textString = component.text
-    local color = component.color
-    local size = component.size
-
-    -- Calculate text layout - size determines character pixel size
-    -- Vulkan NDC: Y=-1 is top, Y=1 is bottom, Y increases downward
-    local sizeScale = size / font.fontSize
-
+    local sizeScale = component.size / font.fontSize
+    local scaleX = sizeScale / screenWidth * 2
+    local scaleY = sizeScale / screenHeight * 2
+    local lineHeight = component.size / screenHeight * 2
+    local atlasScale = 1 / font.atlasLength
+    
     local penX = rect.left
-    local penY = rect.top -- Baseline, will be adjusted on first character
-    local rectWidth = rect.right - rect.left
-    local lineHeight = size / screenHeight * 2
-    local firstChar = true
-
+    local penY = rect.top + lineHeight
     local charIndex = 0
-    for i = 1, #textString do
-        local char = textString:sub(i, i)
-        local unicode = string.byte(char)
 
-        -- Load character from font
-        local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.loadTknChar(font.pTknFont, unicode)
+    for i = 1, #component.text do
+        local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.loadTknChar(font.pTknFont, string.byte(component.text, i))
 
         if pTknChar then
-            -- Calculate character size in normalized screen space
-            local charWidthNorm = width * sizeScale / screenWidth * 2
-            local charHeightNorm = height * sizeScale / screenHeight * 2
-            local bearingXNorm = bearingX * sizeScale / screenWidth * 2
-            local bearingYNorm = bearingY * sizeScale / screenHeight * 2
-            local advanceNorm = advance * sizeScale / screenWidth * 2
+            local widthNDC = width * scaleX
+            local heightNDC = height * scaleY
+            local bearingXNDC = bearingX * scaleX
+            local bearingYNDC = bearingY * scaleY
+            local advanceNDC = advance * scaleX
 
-            -- Adjust baseline on first character to align top with rect.top
-            if firstChar then
-                penY = rect.top + bearingYNorm
-                firstChar = false
-            end
-
-            -- Check if character would exceed rect width (word wrap)
-            if penX + bearingXNorm + charWidthNorm > rect.right then
+            -- Word wrap
+            if penX + bearingXNDC + widthNDC > rect.right then
                 penX = rect.left
                 penY = penY + lineHeight
             end
 
-            -- Calculate character position in screen space
-            local atlasU0 = x / font.atlasLength
-            local atlasV0 = y / font.atlasLength
-            local atlasU1 = (x + width) / font.atlasLength
-            local atlasV1 = (y + height) / font.atlasLength
+            -- Character quad
+            local left = penX + bearingXNDC
+            local right = left + widthNDC
+            local top = penY - bearingYNDC
+            local bottom = top + heightNDC
 
-            -- Character position (normalized screen coordinates)
-            -- Vulkan: Y increases downward. penY is baseline.
-            -- bearingY is distance from baseline UP to char top (so subtract in Vulkan)
-            local charLeft = penX + bearingXNorm
-            local charRight = charLeft + charWidthNorm
-            local charTop = penY - bearingYNorm -- baseline - up distance (up means smaller Y)
-            local charBottom = penY + (charHeightNorm - bearingYNorm) -- baseline + down distance
+            -- Vertices (positions)
+            local pos = vertices.position
+            pos[#pos+1], pos[#pos+2] = left, top
+            pos[#pos+1], pos[#pos+2] = right, top
+            pos[#pos+1], pos[#pos+2] = right, bottom
+            pos[#pos+1], pos[#pos+2] = left, bottom
 
-            -- Add vertices for this character (quad): left-top, right-top, right-bottom, left-bottom
-            table.insert(vertices.position, charLeft)
-            table.insert(vertices.position, charTop)
-            table.insert(vertices.position, charRight)
-            table.insert(vertices.position, charTop)
-            table.insert(vertices.position, charRight)
-            table.insert(vertices.position, charBottom)
-            table.insert(vertices.position, charLeft)
-            table.insert(vertices.position, charBottom)
-
-            -- UV coordinates: match image.lua pattern
-            table.insert(vertices.uv, atlasU0)
-            table.insert(vertices.uv, atlasV0)
-            table.insert(vertices.uv, atlasU1)
-            table.insert(vertices.uv, atlasV0)
-            table.insert(vertices.uv, atlasU1)
-            table.insert(vertices.uv, atlasV1)
-            table.insert(vertices.uv, atlasU0)
-            table.insert(vertices.uv, atlasV1)
+            -- UVs
+            local u0, v0 = x * atlasScale, y * atlasScale
+            local u1, v1 = (x + width) * atlasScale, (y + height) * atlasScale
+            local uv = vertices.uv
+            uv[#uv+1], uv[#uv+2] = u0, v0
+            uv[#uv+1], uv[#uv+2] = u1, v0
+            uv[#uv+1], uv[#uv+2] = u1, v1
+            uv[#uv+1], uv[#uv+2] = u0, v1
 
             -- Colors
-            table.insert(vertices.color, color)
-            table.insert(vertices.color, color)
-            table.insert(vertices.color, color)
-            table.insert(vertices.color, color)
+            local col = vertices.color
+            col[#col+1], col[#col+2], col[#col+3], col[#col+4] = component.color, component.color, component.color, component.color
 
-            -- Indices for this quad
+            -- Indices
             local base = charIndex * 4
-            table.insert(indices, base + 0)
-            table.insert(indices, base + 1)
-            table.insert(indices, base + 2)
-            table.insert(indices, base + 2)
-            table.insert(indices, base + 3)
-            table.insert(indices, base + 0)
+            local idx = indices
+            idx[#idx+1], idx[#idx+2], idx[#idx+3] = base, base + 1, base + 2
+            idx[#idx+1], idx[#idx+2], idx[#idx+3] = base + 2, base + 3, base
 
-            -- Advance pen position
-            penX = penX + advanceNorm
+            penX = penX + advanceNDC
             charIndex = charIndex + 1
         end
     end
 
-    -- Flush font atlas updates
     tkn.flushTknFontPtr(font.pTknFont, pGfxContext)
-
-    -- Update mesh with generated vertices
+    
     if charIndex > 0 then
         tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end

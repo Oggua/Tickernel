@@ -36,9 +36,10 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
             local anchor = layout.horizontal.anchor
             local pivot = layout.horizontal.pivot
             local width = layout.horizontal.width
-            local x = parentRect.left + (parentRect.right - parentRect.left) * anchor - width * pivot
+            local widthNDC = width / screenWidth * 2
+            local x = parentRect.left + (parentRect.right - parentRect.left) * anchor - widthNDC * pivot
             node.layout.rect.left = x
-            node.layout.rect.right = x + width / screenWidth * 2
+            node.layout.rect.right = x + widthNDC
         elseif layout.horizontal.type == "relative" then
             local left, right
             if math.type(layout.horizontal.left) == "integer" then
@@ -67,9 +68,10 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
             local anchor = layout.vertical.anchor
             local pivot = layout.vertical.pivot
             local height = layout.vertical.height
-            local y = parentRect.top + (parentRect.bottom - parentRect.top) * anchor - height * pivot
+            local heightNDC = height / screenHeight * 2
+            local y = parentRect.top + (parentRect.bottom - parentRect.top) * anchor - heightNDC * pivot
             node.layout.rect.top = y
-            node.layout.rect.bottom = y + height / screenHeight * 2
+            node.layout.rect.bottom = y + heightNDC
         elseif layout.vertical.type == "relative" then
             local bottom, top
             if math.type(layout.vertical.top) == "integer" then
@@ -82,7 +84,6 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
             else
                 bottom = parentRect.bottom - (parentRect.bottom - parentRect.top) * layout.vertical.bottom
             end
-            -- 确保top不会超过bottom (Vulkan: top < bottom)
             if top > bottom then
                 local center = (top + bottom) * 0.5
                 top = center

@@ -137,18 +137,20 @@ function tknEngine.updateUI(pGfxContext)
         local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode", {
             dirty = true,
             horizontal = {
-                type = "relative",
-                left = 0,
-                right = 0,
+                type = "anchored",
+                anchor = 0.5,
+                pivot = 0.5,
+                width = 600,
             },
             vertical = {
-                type = "relative",
-                bottom = 0,
-                top = 0,
+                type = "anchored",
+                anchor = 0.5,
+                pivot = 0.5,
+                height = 200,
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "HelloWorld!HaChiMi!", tknEngine.font, 32, 0xFFFF0000, newNode)
+        ui.addTextComponent(pGfxContext, "The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 32, 0xFFFF0000, newNode)
         idx = idx + 1
     end
 end

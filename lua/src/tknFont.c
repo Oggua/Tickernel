@@ -80,27 +80,64 @@ void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext)
         return;
     }
 
-    void **datas = tknMalloc(sizeof(void *) * pTknFont->dirtyTknCharPtrCount);
-    VkOffset3D *offsets = tknMalloc(sizeof(VkOffset3D) * pTknFont->dirtyTknCharPtrCount);
-    VkExtent3D *extents = tknMalloc(sizeof(VkExtent3D) * pTknFont->dirtyTknCharPtrCount);
-    VkDeviceSize *sizes = tknMalloc(sizeof(VkDeviceSize) * pTknFont->dirtyTknCharPtrCount);
-
+    // First, count how many dirty chars actually have bitmap data
+    uint32_t validCharCount = 0;
     TknChar *pCurrent = pTknFont->pDirtyTknChar;
+    while (pCurrent)
+    {
+        if (pCurrent->width > 0 && pCurrent->height > 0 && pCurrent->bitmapBuffer)
+        {
+            validCharCount++;
+        }
+        pCurrent = pCurrent->pNextDirty;
+    }
+
+    // If no valid chars to upload, just clean up
+    if (validCharCount == 0)
+    {
+        pCurrent = pTknFont->pDirtyTknChar;
+        while (pCurrent)
+        {
+            TknChar *pNext = pCurrent->pNextDirty;
+            
+            if (pCurrent->bitmapBuffer)
+            {
+                tknFree(pCurrent->bitmapBuffer);
+                pCurrent->bitmapBuffer = NULL;
+            }
+            pCurrent->bitmapSize = 0;
+            pCurrent->pNextDirty = NULL;
+            pCurrent = pNext;
+        }
+        pTknFont->pDirtyTknChar = NULL;
+        pTknFont->dirtyTknCharPtrCount = 0;
+        return;
+    }
+
+    void **datas = tknMalloc(sizeof(void *) * validCharCount);
+    VkOffset3D *offsets = tknMalloc(sizeof(VkOffset3D) * validCharCount);
+    VkExtent3D *extents = tknMalloc(sizeof(VkExtent3D) * validCharCount);
+    VkDeviceSize *sizes = tknMalloc(sizeof(VkDeviceSize) * validCharCount);
+
+    pCurrent = pTknFont->pDirtyTknChar;
     uint32_t index = 0;
     
     while (pCurrent)
     {
-        datas[index] = pCurrent->bitmapBuffer;
-        offsets[index] = (VkOffset3D){pCurrent->x, pCurrent->y, 0};
-        extents[index] = (VkExtent3D){pCurrent->width, pCurrent->height, 1};
-        sizes[index] = pCurrent->bitmapSize;
-        
-        index++;
+        // Only copy chars with valid bitmap data
+        if (pCurrent->width > 0 && pCurrent->height > 0 && pCurrent->bitmapBuffer)
+        {
+            datas[index] = pCurrent->bitmapBuffer;
+            offsets[index] = (VkOffset3D){pCurrent->x, pCurrent->y, 0};
+            extents[index] = (VkExtent3D){pCurrent->width, pCurrent->height, 1};
+            sizes[index] = pCurrent->bitmapSize;
+            index++;
+        }
         pCurrent = pCurrent->pNextDirty;
     }
 
     updateImagePtr(pGfxContext, pTknFont->pImage, 
-                   pTknFont->dirtyTknCharPtrCount, 
+                   validCharCount, 
                    datas, offsets, extents, sizes);
 
     pCurrent = pTknFont->pDirtyTknChar;
