@@ -52,7 +52,7 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
             else
                 right = parentRect.right - (parentRect.right - parentRect.left) * layout.horizontal.right
             end
-            -- 确保left不会超过right
+            -- Ensure left doesn't exceed right
             if left > right then
                 local center = (left + right) * 0.5
                 left = center
@@ -407,8 +407,10 @@ function ui.destroyFont(pGfxContext, font)
     text.destroyFont(pGfxContext, font)
 end
 
-function ui.addTextComponent(pGfxContext, textString, font, size, color, node)
-    local component = text.createComponent(pGfxContext, textString, font, size, color, font.pMaterial, ui.vertexFormat, ui.renderPass.pTextPipeline, node)
+function ui.addTextComponent(pGfxContext, textString, font, size, color, alignH, alignV, node)
+    -- alignH: "left", "center", "right"
+    -- alignV: "top", "center", "bottom"
+    local component = text.createComponent(pGfxContext, textString, font, size, color, alignH or "left", alignV or "top", font.pMaterial, ui.vertexFormat, ui.renderPass.pTextPipeline, node)
     addComponent(pGfxContext, node, component)
     return component
 end

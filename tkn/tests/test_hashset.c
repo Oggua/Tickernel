@@ -21,7 +21,7 @@ static void test_struct_hashset()
     printf("Contains a? %d\n", tknContainsInHashSet(&set, &a));
     printf("Contains b? %d\n", tknContainsInHashSet(&set, &b));
     printf("Contains c? %d\n", tknContainsInHashSet(&set, &c));
-    printf("遍历 struct hashset:\n");
+    printf("Iterate through struct hashset:\n");
     for (size_t i = 0; i < set.capacity; i++)
     {
         TknListNode *node = set.nodePtrs[i];
@@ -47,7 +47,7 @@ static void test_pointer_hashset()
     printf("Contains px:%p? %d\n", px, tknContainsInHashSet(&set, &px));
     printf("Contains py:%p? %d\n", py, tknContainsInHashSet(&set, &py));
     printf("Contains pz:%p? %d\n", pz, tknContainsInHashSet(&set, &pz));
-    printf("遍历 pointer hashset:\n");
+    printf("Iterate through pointer hashset:\n");
     for (size_t i = 0; i < set.capacity; i++)
     {
         TknListNode *node = set.nodePtrs[i];

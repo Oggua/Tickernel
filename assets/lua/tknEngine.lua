@@ -111,9 +111,9 @@ end
 
 local idx = 1
 function tknEngine.updateUI(pGfxContext)
-    local aKeyState = input.getKeyState(input.keyCode.a)
-    if aKeyState == input.keyState.up then
-        print("A key was just released this frame")
+    local spaceKeyState = input.getKeyState(input.keyCode.space)
+    if spaceKeyState == input.keyState.up then
+        print("Space key was just released this frame")
         local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "imageNode", {
             dirty = true,
             horizontal = {
@@ -131,9 +131,9 @@ function tknEngine.updateUI(pGfxContext)
         ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, newNode)
         idx = idx + 1
     end
-    local bKeyState = input.getKeyState(input.keyCode.b)
-    if bKeyState == input.keyState.up then
-        print("B key was just released this frame")
+    local sKeyState = input.getKeyState(input.keyCode.s)
+    if sKeyState == input.keyState.up then
+        print("S key was just released this frame")
         local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode", {
             dirty = true,
             horizontal = {
@@ -150,7 +150,104 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 32, 0xFFFF0000, newNode)
+        -- Center alignment
+        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, "center", "center", newNode)
+        idx = idx + 1
+    end
+    
+    -- Q key: Top-Left
+    local qKeyState = input.getKeyState(input.keyCode.q)
+    if qKeyState == input.keyState.up then
+        print("Q key: Top-Left alignment")
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_TL", {
+            dirty = true,
+            horizontal = {
+                type = "anchored",
+                anchor = 0,
+                pivot = 0,
+                width = 400,
+            },
+            vertical = {
+                type = "anchored",
+                anchor = 0,
+                pivot = 0,
+                height = 150,
+            },
+            rect = {},
+        })
+        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 20, 0xFF00FF00, "left", "top", newNode)
+        idx = idx + 1
+    end
+    
+    -- E key: Top-Right
+    local eKeyState = input.getKeyState(input.keyCode.e)
+    if eKeyState == input.keyState.up then
+        print("E key: Top-Right alignment")
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_TR", {
+            dirty = true,
+            horizontal = {
+                type = "anchored",
+                anchor = 1,
+                pivot = 1,
+                width = 400,
+            },
+            vertical = {
+                type = "anchored",
+                anchor = 0,
+                pivot = 0,
+                height = 150,
+            },
+            rect = {},
+        })
+        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 20, 0xFF0000FF, "right", "top", newNode)
+        idx = idx + 1
+    end
+    
+    -- Z key: Bottom-Left
+    local zKeyState = input.getKeyState(input.keyCode.z)
+    if zKeyState == input.keyState.up then
+        print("Z key: Bottom-Left alignment")
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_BL", {
+            dirty = true,
+            horizontal = {
+                type = "anchored",
+                anchor = 0,
+                pivot = 0,
+                width = 400,
+            },
+            vertical = {
+                type = "anchored",
+                anchor = 1,
+                pivot = 1,
+                height = 150,
+            },
+            rect = {},
+        })
+        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 20, 0xFFFFFF00, "left", "bottom", newNode)
+        idx = idx + 1
+    end
+    
+    -- C key: Bottom-Right
+    local cKeyState = input.getKeyState(input.keyCode.c)
+    if cKeyState == input.keyState.up then
+        print("C key: Bottom-Right alignment")
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_BR", {
+            dirty = true,
+            horizontal = {
+                type = "anchored",
+                anchor = 1,
+                pivot = 1,
+                width = 400,
+            },
+            vertical = {
+                type = "anchored",
+                anchor = 1,
+                pivot = 1,
+                height = 150,
+            },
+            rect = {},
+        })
+        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 20, 0xFFFF00FF, "right", "bottom", newNode)
         idx = idx + 1
     end
 end

@@ -145,7 +145,7 @@ local function applyTransformations(scale, x, y, z, angle)
 end
 
 local grad2D = function(hash, x, y)
-    local h = hash & 7 -- 仅保留哈希的低三位
+    local h = hash & 7 -- Keep only the lower 3 bits of the hash
     local u = h < 4 and x or y
     local v = h < 4 and y or x
     local u_sign = (h & 1) == 0 and 1 or -1
@@ -239,10 +239,10 @@ end
 --     return gameMath.SmoothLerp(y0, y1, sz)
 -- end
 
--- -- 开始时间
+-- -- Start time
 -- local startTime = os.clock()
 
--- -- 要测量的代码块
+-- -- Code block to measure
 
 -- local ns = 0.17
 -- local intervalCount = 20
@@ -280,12 +280,12 @@ end
 -- print("Min value: ", min)
 -- print("Max value: ", max)
 
--- -- 结束时间
+-- -- End time
 -- local endTime = os.clock()
 
--- -- 计算并打印执行耗时
+-- -- Calculate and print execution time
 -- local elapsedTime = endTime - startTime
--- print(string.format("执行耗时: %.4f 秒", elapsedTime))
+-- print(string.format("Execution time: %.4f seconds", elapsedTime))
 local rotationMatrix = {
     { 0, 0, 0, 0 },
     { 0, 0, 0, 0 },
