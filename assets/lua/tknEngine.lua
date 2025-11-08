@@ -151,7 +151,7 @@ function tknEngine.updateUI(pGfxContext)
             rect = {},
         })
         -- Center alignment
-        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, "center", "center", true, newNode)
+        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, 0.5, 0.5, true, newNode)
         idx = idx + 1
     end
     
@@ -175,7 +175,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "B - BOLD TEXT: This is a bold text example!", tknEngine.font, 28, 0xFFFFFFFF, "center", "center", true, newNode)
+        ui.addTextComponent(pGfxContext, "B - BOLD TEXT: This is a bold text example!", tknEngine.font, 28, 0xFFFFFFFF, 0.5, 0.5, true, newNode)
         idx = idx + 1
     end
     
@@ -197,8 +197,8 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        -- Text alignment within the rect
-        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 20, 0xFF00FF00, "left", "top", false, newNode)
+        -- Text alignment within the rect (0=left/top, 0.5=center, 1=right/bottom)
+        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 20, 0xFF00FF00, 0, 0, false, newNode)
         idx = idx + 1
     end
     
@@ -222,7 +222,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 20, 0xFF0000FF, "right", "top", false, newNode)
+        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 20, 0xFF0000FF, 1, 0, false, newNode)
         idx = idx + 1
     end
     
@@ -246,7 +246,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 20, 0xFFFFFF00, "left", "bottom", false, newNode)
+        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 20, 0xFFFFFF00, 0, 1, false, newNode)
         idx = idx + 1
     end
     
@@ -270,7 +270,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 20, 0xFFFF00FF, "right", "bottom", false, newNode)
+        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 20, 0xFFFF00FF, 1, 1, false, newNode)
         idx = idx + 1
     end
 end

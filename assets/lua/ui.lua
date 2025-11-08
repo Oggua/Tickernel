@@ -408,10 +408,10 @@ function ui.destroyFont(pGfxContext, font)
 end
 
 function ui.addTextComponent(pGfxContext, textString, font, size, color, alignH, alignV, bold, node)
-    -- alignH: "left", "center", "right"
-    -- alignV: "top", "center", "bottom"
+    -- alignH: 0-1 (0=left, 0.5=center, 1=right)
+    -- alignV: 0-1 (0=top, 0.5=center, 1=bottom)
     -- bold: true/false
-    local component = text.createComponent(pGfxContext, textString, font, size, color, alignH or "left", alignV or "top", bold, font.pMaterial, ui.vertexFormat, ui.renderPass.pTextPipeline, node)
+    local component = text.createComponent(pGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pMaterial, ui.vertexFormat, ui.renderPass.pTextPipeline, node)
     addComponent(pGfxContext, node, component)
     return component
 end

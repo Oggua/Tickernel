@@ -73,8 +73,8 @@ function text.destroyComponent(pGfxContext, component)
     component.text = ""
     component.size = 0
     component.color = 0xFFFFFFFF
-    component.alignH = "left"
-    component.alignV = "top"
+    component.alignH = 0
+    component.alignV = 0
     component.bold = false
     table.insert(text.pool, component)
 end
@@ -129,16 +129,7 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     
     -- Calculate starting Y position based on vertical alignment
     local totalHeight = #lines * lineHeight
-    local startY
-    if component.alignV == "top" then
-        startY = rect.top + lineHeight
-    elseif component.alignV == "center" then
-        startY = (rect.top + rect.bottom - totalHeight) * 0.5 + lineHeight
-    elseif component.alignV == "bottom" then
-        startY = rect.bottom - totalHeight + lineHeight
-    else
-        startY = rect.top + lineHeight
-    end
+    local startY = rect.top + (rect.bottom - rect.top - totalHeight) * component.alignV + lineHeight
     
     -- Second pass: generate vertices with alignment
     local vertices = { position = {}, uv = {}, color = {} }
@@ -148,16 +139,7 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     
     for lineIdx, line in ipairs(lines) do
         -- Calculate starting X position based on horizontal alignment
-        local startX
-        if component.alignH == "left" then
-            startX = rect.left
-        elseif component.alignH == "center" then
-            startX = (rect.left + rect.right - line.width) * 0.5
-        elseif component.alignH == "right" then
-            startX = rect.right - line.width
-        else
-            startX = rect.left
-        end
+        local startX = rect.left + (rect.right - rect.left - line.width) * component.alignH
         
         for _, char in ipairs(line.chars) do
             local left = startX + char.penX + char.bearingXNDC
