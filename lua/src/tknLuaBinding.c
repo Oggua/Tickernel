@@ -1362,6 +1362,29 @@ static int luaDestroyInstancePtr(lua_State *pLuaState)
     return 0;
 }
 
+static int luaUpdateInstancePtr(lua_State *pLuaState)
+{
+    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -4);
+    Instance *pInstance = (Instance *)lua_touserdata(pLuaState, -3);
+    // instanceLayout at -2, instances at -1
+
+    VkDeviceSize instanceSize;
+    void *instanceData = packDataFromLayout(pLuaState, -2, -1, &instanceSize);
+
+    // Calculate instance count based on layout
+    uint32_t instanceCount = 1;
+    VkDeviceSize layoutSize = calculateLayoutSize(pLuaState, -2);
+    if (layoutSize > 0)
+    {
+        instanceCount = (uint32_t)(instanceSize / layoutSize);
+    }
+
+    updateInstancePtr(pGfxContext, pInstance, instanceData, instanceCount);
+
+    tknFree(instanceData);
+    return 0;
+}
+
 static int luaGetGlobalMaterialPtr(lua_State *pLuaState)
 {
     GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
@@ -1774,6 +1797,7 @@ void bindFunctions(lua_State *pLuaState)
         {"destroyMeshPtr", luaDestroyMeshPtr},
         {"saveMeshPtrToPlyFile", luaSaveMeshPtrToPlyFile},
         {"createInstancePtr", luaCreateInstancePtr},
+        {"updateInstancePtr", luaUpdateInstancePtr},
         {"destroyInstancePtr", luaDestroyInstancePtr},
         {"getGlobalMaterialPtr", luaGetGlobalMaterialPtr},
         {"getSubpassMaterialPtr", luaGetSubpassMaterialPtr},

@@ -118,6 +118,7 @@ void destroyMeshPtr(GfxContext *pGfxContext, Mesh *pMesh);
 void updateMeshPtr(GfxContext *pGfxContext, Mesh *pMesh, const char *format, const void *vertices, uint32_t vertexCount, uint32_t indexType, const void *indices, uint32_t indexCount);
 
 Instance *createInstancePtr(GfxContext *pGfxContext, VertexInputLayout *pVertexInputLayout, uint32_t instanceCount, void *instances);
+void updateInstancePtr(GfxContext *pGfxContext, Instance *pInstance, void *newData, uint32_t instanceCount);
 void destroyInstancePtr(GfxContext *pGfxContext, Instance *pInstance);
 
 Material *getGlobalMaterialPtr(GfxContext *pGfxContext);
