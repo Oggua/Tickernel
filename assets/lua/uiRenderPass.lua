@@ -3,7 +3,7 @@ local imagePipeline = require("imagePipeline")
 local textPipeline = require("textPipeline")
 local uiRenderPass = {}
 
-function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVertexInputLayout, renderPassIndex)
+function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVertexInputLayout, pUIInstanceInputLayout, renderPassIndex)
     local swapchainAttachmentDescription = {
         samples = VK_SAMPLE_COUNT_1_BIT,
         loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
@@ -53,9 +53,8 @@ function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVe
     }}
 
     uiRenderPass.pRenderPass = tkn.createRenderPassPtr(pGfxContext, vkAttachmentDescriptions, {pSwapchainAttachment}, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
-    uiRenderPass.pImagePipeline = imagePipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout)
-    uiRenderPass.pTextPipeline = textPipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout)
-    print(pUIVertexInputLayout)
+    uiRenderPass.pImagePipeline = imagePipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout, pUIInstanceInputLayout)
+    uiRenderPass.pTextPipeline = textPipeline.createPipelinePtr(pGfxContext, uiRenderPass.pRenderPass, 0, assetsPath, pUIVertexInputLayout, pUIInstanceInputLayout)
 end
 
 function uiRenderPass.teardown(pGfxContext)

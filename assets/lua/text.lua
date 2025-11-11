@@ -39,16 +39,25 @@ function text.destroyFont(pGfxContext, font)
     font = nil
 end
 
-function text.createComponent(pGfxContext, textString, font, size, color, alignH, alignV, bold, pMaterial, vertexFormat, pPipeline, node)
+function text.createComponent(pGfxContext, textString, font, size, color, alignH, alignV, bold, pMaterial, vertexFormat, instanceFormat, pPipeline, node)
     local maxChars = #textString
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
     local indicesPerChar = bold and 24 or 6
     local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
-    local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, nil)
+    
+    -- Create instance buffer (mat3 + color)
+    local instances = {
+        model = {1, 0, 0, 0, 1, 0, 0, 0, 1},  -- identity matrix
+        color = {color},
+    }
+    local pInstance = tkn.createInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
+    
+    local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
 
     local component = #text.pool > 0 and table.remove(text.pool) or { type = "text" }
     component.text = textString
+    component.content = textString
     component.font = font
     component.size = size
     component.color = color
@@ -57,6 +66,7 @@ function text.createComponent(pGfxContext, textString, font, size, color, alignH
     component.bold = bold
     component.pMaterial = pMaterial
     component.pMesh = pMesh
+    component.pInstance = pInstance
     component.pDrawCall = pDrawCall
     
     return component
@@ -64,13 +74,16 @@ end
 
 function text.destroyComponent(pGfxContext, component)
     tkn.destroyDrawCallPtr(pGfxContext, component.pDrawCall)
+    tkn.destroyInstancePtr(pGfxContext, component.pInstance)
     tkn.destroyMeshPtr(pGfxContext, component.pMesh)
 
     component.pMaterial = nil
     component.pMesh = nil
+    component.pInstance = nil
     component.pDrawCall = nil
     component.font = nil
     component.text = ""
+    component.content = ""
     component.size = 0
     component.color = 0xFFFFFFFF
     component.alignH = 0
@@ -79,7 +92,13 @@ function text.destroyComponent(pGfxContext, component)
     table.insert(text.pool, component)
 end
 
-function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
+function text.updateMeshPtr(pGfxContext, component, layout, vertexFormat, instanceFormat, screenWidth, screenHeight)
+    local model = layout.model
+    local width = layout.width
+    local height = layout.height
+    local pivotX = layout.horizontal.pivot
+    local pivotY = layout.vertical.pivot
+    
     local font = component.font
     local sizeScale = component.size / font.fontSize
     local scaleX = sizeScale / screenWidth * 2
@@ -90,6 +109,12 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     -- Bold offset in pixels (converted to NDC)
     local boldOffsetX = component.bold and (1 / screenWidth * 2) or 0
     local boldOffsetY = component.bold and (1 / screenHeight * 2) or 0
+    
+    -- Local coordinate bounds (pivot-centered)
+    local left = -width * pivotX
+    local right = width * (1 - pivotX)
+    local top = -height * pivotY
+    local bottom = height * (1 - pivotY)
     
     -- First pass: calculate line widths and total text bounds
     local lines = {{chars = {}, width = 0}}
@@ -106,8 +131,8 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
             local bearingYNDC = bearingY * scaleY
             local advanceNDC = advance * scaleX
             
-            -- Word wrap check
-            if penX + bearingXNDC + widthNDC > rect.right - rect.left and #currentLine.chars > 0 then
+            -- Word wrap check (use local width)
+            if penX + bearingXNDC + widthNDC > right - left and #currentLine.chars > 0 then
                 currentLine.width = penX
                 currentLine = {chars = {}, width = 0}
                 table.insert(lines, currentLine)
@@ -129,17 +154,17 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     
     -- Calculate starting Y position based on vertical alignment
     local totalHeight = #lines * lineHeight
-    local startY = rect.top + (rect.bottom - rect.top - totalHeight) * component.alignV + lineHeight
+    local startY = top + (bottom - top - totalHeight) * component.alignV + lineHeight
     
     -- Second pass: generate vertices with alignment
-    local vertices = { position = {}, uv = {}, color = {} }
+    local vertices = { position = {}, uv = {} }
     local indices = {}
     local charIndex = 0
     local penY = startY
     
     for lineIdx, line in ipairs(lines) do
         -- Calculate starting X position based on horizontal alignment
-        local startX = rect.left + (rect.right - rect.left - line.width) * component.alignH
+        local startX = left + (right - left - line.width) * component.alignH
         
         for _, char in ipairs(line.chars) do
             local left = startX + char.penX + char.bearingXNDC
@@ -169,10 +194,6 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
                 uv[#uv+1], uv[#uv+2] = u1, v0
                 uv[#uv+1], uv[#uv+2] = u1, v1
                 uv[#uv+1], uv[#uv+2] = u0, v1
-                
-                -- Colors
-                local col = vertices.color
-                col[#col+1], col[#col+2], col[#col+3], col[#col+4] = component.color, component.color, component.color, component.color
                 
                 -- Indices
                 local base = charIndex * 4
@@ -204,6 +225,13 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     if charIndex > 0 then
         tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
+    
+    -- Update instance buffer with model matrix and color
+    local instances = {
+        model = model,
+        color = {component.color},
+    }
+    tkn.updateInstancePtr(pGfxContext, component.pInstance, instanceFormat, instances)
 end
 
 return text

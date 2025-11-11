@@ -118,11 +118,13 @@ function tknEngine.updateUI(pGfxContext)
             dirty = true,
             horizontal = {
                 type = "relative",
+                pivot = 0,
                 left = 0,
                 right = 0,
             },
             vertical = {
                 type = "relative",
+                pivot = 0,
                 bottom = 0,
                 top = 0,
             },
@@ -138,14 +140,14 @@ function tknEngine.updateUI(pGfxContext)
             dirty = true,
             horizontal = {
                 type = "anchored",
-                anchor = 0.5,
                 pivot = 0.5,
+                anchor = 0.5,
                 width = 600,
             },
             vertical = {
                 type = "anchored",
-                anchor = 0.5,
                 pivot = 0.5,
+                anchor = 0.5,
                 height = 200,
             },
             rect = {},
@@ -187,12 +189,14 @@ function tknEngine.updateUI(pGfxContext)
             dirty = true,
             horizontal = {
                 type = "relative",
-                left = 20,       -- 20 pixels from left edge
+                pivot = 0,
+                left = 0,       -- 20 pixels from left edge
                 right = 0.7,     -- 70% from right edge (or use pixels)
             },
             vertical = {
                 type = "relative",
-                top = 20,        -- 20 pixels from top edge
+                pivot = 0,
+                top = 0,        -- 20 pixels from top edge
                 bottom = 0.8,    -- 80% from bottom edge (or use pixels)
             },
             rect = {},
@@ -264,7 +268,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             vertical = {
                 type = "anchored",
-                anchor = 0.9,
+                anchor = 1,
                 pivot = 1,
                 height = 150,
             },
