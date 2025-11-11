@@ -156,7 +156,7 @@ function tknEngine.updateUI(pGfxContext)
         ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, 0.5, 0.5, true, newNode)
         idx = idx + 1
     end
-    
+
     -- B key: Bold text test
     local bKeyState = input.getKeyState(input.keyCode.b)
     if bKeyState == input.keyState.up then
@@ -180,7 +180,7 @@ function tknEngine.updateUI(pGfxContext)
         ui.addTextComponent(pGfxContext, "B - BOLD TEXT: This is a bold text example!", tknEngine.font, 28, 0xFFFFFFFF, 0.5, 0.5, true, newNode)
         idx = idx + 1
     end
-    
+
     -- Q key: Top-Left with margin
     local qKeyState = input.getKeyState(input.keyCode.q)
     if qKeyState == input.keyState.up then
@@ -190,22 +190,22 @@ function tknEngine.updateUI(pGfxContext)
             horizontal = {
                 type = "relative",
                 pivot = 0,
-                left = 0,       -- 20 pixels from left edge
-                right = 0.7,     -- 70% from right edge (or use pixels)
+                left = 0, -- 20 pixels from left edge
+                right = 0.7, -- 70% from right edge (or use pixels)
             },
             vertical = {
                 type = "relative",
                 pivot = 0,
-                top = 0,        -- 20 pixels from top edge
-                bottom = 0.8,    -- 80% from bottom edge (or use pixels)
+                top = 0, -- 20 pixels from top edge
+                bottom = 0.8, -- 80% from bottom edge (or use pixels)
             },
             rect = {},
         })
         -- Text alignment within the rect (0=left/top, 0.5=center, 1=right/bottom)
-        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 20, 0xFF00FF00, 0, 0, false, newNode)
+        ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 32, 0xFF00FF00, 0, 0, false, newNode)
         idx = idx + 1
     end
-    
+
     -- E key: Top-Right
     local eKeyState = input.getKeyState(input.keyCode.e)
     if eKeyState == input.keyState.up then
@@ -226,10 +226,10 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 20, 0xFF0000FF, 1, 0, false, newNode)
+        ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 32, 0xFF0000FF, 1, 0, false, newNode)
         idx = idx + 1
     end
-    
+
     -- Z key: Bottom-Left
     local zKeyState = input.getKeyState(input.keyCode.z)
     if zKeyState == input.keyState.up then
@@ -250,10 +250,10 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 20, 0xFFFFFF00, 0, 1, false, newNode)
+        ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 32, 0xFFFFFF00, 0, 1, false, newNode)
         idx = idx + 1
     end
-    
+
     -- C key: Bottom-Right
     local cKeyState = input.getKeyState(input.keyCode.c)
     if cKeyState == input.keyState.up then
@@ -274,7 +274,7 @@ function tknEngine.updateUI(pGfxContext)
             },
             rect = {},
         })
-        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 20, 0xFFFF00FF, 1, 1, false, newNode)
+        ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 32, 0xFFFF00FF, 1, 1, false, newNode)
         idx = idx + 1
     end
 end

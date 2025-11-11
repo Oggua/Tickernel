@@ -114,8 +114,8 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
         local offsetX, offsetY
         if layout.horizontal.type == "anchored" then
             -- anchored: position based on anchor point within parent
-            -- offset = (parent.width * anchor) - (parent.width * parent.pivot) + (child.width * (child.pivot - 0.5))
-            offsetX = pWidth * (layout.horizontal.anchor - 0.5) + width * (0.5 - layout.horizontal.pivot)
+            -- Pivot point (0,0) in child mesh aligns to anchor position in parent
+            offsetX = pWidth * (layout.horizontal.anchor - 0.5)
         else -- relative
             local leftOffset
             if math.type(layout.horizontal.left) == "integer" then
@@ -127,7 +127,7 @@ local function updateRect(pGfxContext, screenWidth, screenHeight, node, parentDi
         end
 
         if layout.vertical.type == "anchored" then
-            offsetY = pHeight * (layout.vertical.anchor - 0.5) + height * (0.5 - layout.vertical.pivot)
+            offsetY = pHeight * (layout.vertical.anchor - 0.5)
         else -- relative
             local topOffset
             if math.type(layout.vertical.top) == "integer" then
