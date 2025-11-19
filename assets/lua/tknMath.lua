@@ -1,9 +1,30 @@
-local gameMath = {}
-function gameMath.Round(v)
+local tknMath = {}
+
+-- 3x3 matrix multiplication (a * b) - COLUMN-MAJOR format for GLSL
+-- Matrices are stored as: [col0_x, col0_y, col0_z, col1_x, col1_y, col1_z, col2_x, col2_y, col2_z]
+-- If result is provided, writes to it and returns it; otherwise creates new table
+function tknMath.multiplyMat3(a, b, result)
+    local r = result or {}
+    -- Column 0 of result
+    r[1] = a[1] * b[1] + a[4] * b[2] + a[7] * b[3]
+    r[2] = a[2] * b[1] + a[5] * b[2] + a[8] * b[3]
+    r[3] = a[3] * b[1] + a[6] * b[2] + a[9] * b[3]
+    -- Column 1 of result
+    r[4] = a[1] * b[4] + a[4] * b[5] + a[7] * b[6]
+    r[5] = a[2] * b[4] + a[5] * b[5] + a[8] * b[6]
+    r[6] = a[3] * b[4] + a[6] * b[5] + a[9] * b[6]
+    -- Column 2 of result
+    r[7] = a[1] * b[7] + a[4] * b[8] + a[7] * b[9]
+    r[8] = a[2] * b[7] + a[5] * b[8] + a[8] * b[9]
+    r[9] = a[3] * b[7] + a[6] * b[8] + a[9] * b[9]
+    return r
+end
+
+function tknMath.Round(v)
     return math.floor(0.5 + v)
 end
 
-function gameMath.Clamp(v, min, max)
+function tknMath.Clamp(v, min, max)
     if v < min then
         return min
     elseif v > max then
@@ -13,20 +34,20 @@ function gameMath.Clamp(v, min, max)
     end
 end
 
-function gameMath.Lerp(a, b, t)
-    t = gameMath.Clamp(t, 0, 1)
+function tknMath.Lerp(a, b, t)
+    t = tknMath.Clamp(t, 0, 1)
     return a + (b - a) * t
 end
 
-function gameMath.CantorPair(a, b)
+function tknMath.CantorPair(a, b)
     return (a + b) * (a + b + 1) // 2 + b
 end
 
-function gameMath.LCGRandom(v)
+function tknMath.LCGRandom(v)
     return 114067148579 * v + 728201631
 end
 
-function gameMath.PingPong(a, b, t)
+function tknMath.PingPong(a, b, t)
     local floor = math.floor(t)
     local remainder = t - floor
     if floor % 2 == 0 then
@@ -36,7 +57,7 @@ function gameMath.PingPong(a, b, t)
     end
 end
 
-function gameMath.smoothLerp(a, b, t)
+function tknMath.smoothLerp(a, b, t)
     t = t * t * t * (6 * t * t - 15 * t + 10)
     return a + (b - a) * t
 end
@@ -156,7 +177,7 @@ end
 local dotGridGradient2D = function(ix, iy, x, y, seed)
     local dx = x - ix
     local dy = y - iy
-    local hash = gameMath.LCGRandom(gameMath.CantorPair(gameMath.CantorPair(ix, iy), seed))
+    local hash = tknMath.LCGRandom(tknMath.CantorPair(tknMath.CantorPair(ix, iy), seed))
     hash = hash & 0xFF
     return grad2D(hash, dx, dy)
 end
@@ -166,7 +187,7 @@ end
 ---@param x number
 ---@param y number
 ---@return number
-function gameMath.perlinNoise2D(seed, x, y)
+function tknMath.perlinNoise2D(seed, x, y)
     -- Determine grid cell coordinates
     local x0 = math.floor(x)
     local x1 = x0 + 1
@@ -180,11 +201,11 @@ function gameMath.perlinNoise2D(seed, x, y)
     local n0, n1, ix0, ix1, value
     n0 = dotGridGradient2D(x0, y0, x, y, seed)
     n1 = dotGridGradient2D(x1, y0, x, y, seed)
-    ix0 = gameMath.smoothLerp(n0, n1, sx)
+    ix0 = tknMath.smoothLerp(n0, n1, sx)
     n0 = dotGridGradient2D(x0, y1, x, y, seed)
     n1 = dotGridGradient2D(x1, y1, x, y, seed)
-    ix1 = gameMath.smoothLerp(n0, n1, sx)
-    value = gameMath.smoothLerp(ix0, ix1, sy)
+    ix1 = tknMath.smoothLerp(n0, n1, sx)
+    value = tknMath.smoothLerp(ix0, ix1, sy)
     return value
 end
 
@@ -396,7 +417,7 @@ local modelMatrix = {
     { 0, 0, 0, 0 },
     { 0, 0, 0, 0 }
 }
-function gameMath.applyTransformations(scale, x, y, z, angle, matrix)
+function tknMath.applyTransformations(scale, x, y, z, angle, matrix)
     local rotationMatrix = rotateAroundZ(angle)
     local scaleMatrix = scaleModel(scale)
     local translateMatrix = translateModel(x, y, z)
@@ -404,7 +425,7 @@ function gameMath.applyTransformations(scale, x, y, z, angle, matrix)
     matrixMultiply(translateMatrix, modelMatrix, matrix)
 end
 
-function gameMath.createMatrix()
+function tknMath.createMatrix()
     return {
         { 0, 0, 0, 0 },
         { 0, 0, 0, 0 },
@@ -413,4 +434,4 @@ function gameMath.createMatrix()
     }
 end
 
-return gameMath
+return tknMath

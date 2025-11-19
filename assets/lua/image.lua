@@ -6,14 +6,14 @@ local image = {
 function image.createComponent(pGfxContext, color, slice, pMaterial, vertexFormat, instanceFormat, pPipeline, node)
     local component = nil
     local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
-    
+
     -- Create instance buffer (mat3 + color)
     local instances = {
-        model = {1, 0, 0, 0, 1, 0, 0, 0, 1},  -- identity matrix
+        model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {color},
     }
     local pInstance = tkn.createInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
-    
+
     local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
 
     if #image.pool > 0 then
@@ -51,21 +51,13 @@ function image.destroyComponent(pGfxContext, component)
     table.insert(image.pool, component)
 end
 
-function image.updateMeshPtr(pGfxContext, component, layout, vertexFormat, instanceFormat)
-    -- Extract layout information
-    local model = layout.model
-    local pivotX = layout.horizontal.pivot
-    local pivotY = layout.vertical.pivot
-    local width = layout.width
-    local height = layout.height
-    
-    -- Generate mesh with pivot at (0, 0) in local coordinates
-    -- Pivot determines where (0, 0) is within the rectangle
-    local left = -width * pivotX
-    local right = width * (1 - pivotX)
-    local top = -height * pivotY
-    local bottom = height * (1 - pivotY)
-    
+function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
+    -- rect.min/max are already relative to pivot (0, 0)
+    local left = rect.min[1]
+    local top = rect.min[2]
+    local right = rect.max[1]
+    local bottom = rect.max[2]
+
     if component.slice then
         -- Nine-slice: generate 4x4 grid with 16 vertices (pivot-centered)
         local vertices = {
@@ -100,11 +92,14 @@ function image.updateMeshPtr(pGfxContext, component, layout, vertexFormat, insta
         local indices = {0, 1, 2, 2, 3, 0}
         tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
-    
+
+end
+
+function image.updateInstancePtr(pGfxContext, component, rect, instanceFormat)
     -- Update instance buffer with model matrix and color
     local instances = {
-        model = model,
-        color = {component.color},
+        model = rect.model,
+        color = {rect.color},
     }
     tkn.updateInstancePtr(pGfxContext, component.pInstance, instanceFormat, instances)
 end

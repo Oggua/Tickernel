@@ -45,17 +45,19 @@ function text.createComponent(pGfxContext, textString, font, size, color, alignH
     local verticesPerChar = bold and 16 or 4
     local indicesPerChar = bold and 24 or 6
     local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
-    
+
     -- Create instance buffer (mat3 + color)
     local instances = {
-        model = {1, 0, 0, 0, 1, 0, 0, 0, 1},  -- identity matrix
+        model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {color},
     }
     local pInstance = tkn.createInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
-    
+
     local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
 
-    local component = #text.pool > 0 and table.remove(text.pool) or { type = "text" }
+    local component = #text.pool > 0 and table.remove(text.pool) or {
+        type = "text",
+    }
     component.text = textString
     component.content = textString
     component.font = font
@@ -68,7 +70,7 @@ function text.createComponent(pGfxContext, textString, font, size, color, alignH
     component.pMesh = pMesh
     component.pInstance = pInstance
     component.pDrawCall = pDrawCall
-    
+
     return component
 end
 
@@ -92,118 +94,133 @@ function text.destroyComponent(pGfxContext, component)
     table.insert(text.pool, component)
 end
 
-function text.updateMeshPtr(pGfxContext, component, layout, vertexFormat, instanceFormat, screenWidth, screenHeight)
-    local model = layout.model
-    local width = layout.width
-    local height = layout.height
-    local pivotX = layout.horizontal.pivot
-    local pivotY = layout.vertical.pivot
-    
+function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
+    -- rect.min/max are already relative to pivot (0, 0)
+    local width = rect.max[1] - rect.min[1]
+    local height = rect.max[2] - rect.min[2]
+
     local font = component.font
     local sizeScale = component.size / font.fontSize
     local scaleX = sizeScale / screenWidth * 2
     local scaleY = sizeScale / screenHeight * 2
     local lineHeight = component.size / screenHeight * 2
     local atlasScale = 1 / font.atlasLength
-    
+
     -- Bold offset in pixels (converted to NDC)
     local boldOffsetX = component.bold and (1 / screenWidth * 2) or 0
     local boldOffsetY = component.bold and (1 / screenHeight * 2) or 0
-    
-    -- Local coordinate bounds (pivot-centered)
-    local left = -width * pivotX
-    local right = width * (1 - pivotX)
-    local top = -height * pivotY
-    local bottom = height * (1 - pivotY)
-    
+
+    -- Local coordinate bounds (already relative to pivot)
+    local left = rect.min[1]
+    local right = rect.max[1]
+    local top = rect.min[2]
+    local bottom = rect.max[2]
+
     -- First pass: calculate line widths and total text bounds
-    local lines = {{chars = {}, width = 0}}
+    local lines = {{
+        chars = {},
+        width = 0,
+    }}
     local currentLine = lines[1]
     local penX = 0
-    
+
     for i = 1, #component.text do
         local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.loadTknChar(font.pTknFont, string.byte(component.text, i))
-        
+
         if pTknChar then
             local widthNDC = width * scaleX
             local heightNDC = height * scaleY
             local bearingXNDC = bearingX * scaleX
             local bearingYNDC = bearingY * scaleY
             local advanceNDC = advance * scaleX
-            
+
             -- Word wrap check (use local width)
             if penX + bearingXNDC + widthNDC > right - left and #currentLine.chars > 0 then
                 currentLine.width = penX
-                currentLine = {chars = {}, width = 0}
+                currentLine = {
+                    chars = {},
+                    width = 0,
+                }
                 table.insert(lines, currentLine)
                 penX = 0
             end
-            
+
             table.insert(currentLine.chars, {
-                x = x, y = y, width = width, height = height,
-                bearingX = bearingX, bearingY = bearingY, advance = advance,
-                widthNDC = widthNDC, heightNDC = heightNDC,
-                bearingXNDC = bearingXNDC, bearingYNDC = bearingYNDC,
-                advanceNDC = advanceNDC, penX = penX
+                x = x,
+                y = y,
+                width = width,
+                height = height,
+                bearingX = bearingX,
+                bearingY = bearingY,
+                advance = advance,
+                widthNDC = widthNDC,
+                heightNDC = heightNDC,
+                bearingXNDC = bearingXNDC,
+                bearingYNDC = bearingYNDC,
+                advanceNDC = advanceNDC,
+                penX = penX,
             })
-            
+
             penX = penX + advanceNDC
         end
     end
     currentLine.width = penX
-    
+
     -- Calculate starting Y position based on vertical alignment
     local totalHeight = #lines * lineHeight
     local startY = top + (bottom - top - totalHeight) * component.alignV + lineHeight
-    
+
     -- Second pass: generate vertices with alignment
-    local vertices = { position = {}, uv = {} }
+    local vertices = {
+        position = {},
+        uv = {},
+    }
     local indices = {}
     local charIndex = 0
     local penY = startY
-    
+
     for lineIdx, line in ipairs(lines) do
         -- Calculate starting X position based on horizontal alignment
         local startX = left + (right - left - line.width) * component.alignH
-        
+
         for _, char in ipairs(line.chars) do
             local left = startX + char.penX + char.bearingXNDC
             local right = left + char.widthNDC
             local top = penY - char.bearingYNDC
             local bottom = top + char.heightNDC
-            
+
             -- UV coordinates
             local u0, v0 = char.x * atlasScale, char.y * atlasScale
             local u1, v1 = (char.x + char.width) * atlasScale, (char.y + char.height) * atlasScale
-            
+
             -- Helper function to add a character quad
             local function addCharQuad(offsetX, offsetY)
                 local l, r = left + offsetX, right + offsetX
                 local t, b = top + offsetY, bottom + offsetY
-                
+
                 -- Vertices (positions)
                 local pos = vertices.position
-                pos[#pos+1], pos[#pos+2] = l, t
-                pos[#pos+1], pos[#pos+2] = r, t
-                pos[#pos+1], pos[#pos+2] = r, b
-                pos[#pos+1], pos[#pos+2] = l, b
-                
+                pos[#pos + 1], pos[#pos + 2] = l, t
+                pos[#pos + 1], pos[#pos + 2] = r, t
+                pos[#pos + 1], pos[#pos + 2] = r, b
+                pos[#pos + 1], pos[#pos + 2] = l, b
+
                 -- UVs
                 local uv = vertices.uv
-                uv[#uv+1], uv[#uv+2] = u0, v0
-                uv[#uv+1], uv[#uv+2] = u1, v0
-                uv[#uv+1], uv[#uv+2] = u1, v1
-                uv[#uv+1], uv[#uv+2] = u0, v1
-                
+                uv[#uv + 1], uv[#uv + 2] = u0, v0
+                uv[#uv + 1], uv[#uv + 2] = u1, v0
+                uv[#uv + 1], uv[#uv + 2] = u1, v1
+                uv[#uv + 1], uv[#uv + 2] = u0, v1
+
                 -- Indices
                 local base = charIndex * 4
                 local idx = indices
-                idx[#idx+1], idx[#idx+2], idx[#idx+3] = base, base + 1, base + 2
-                idx[#idx+1], idx[#idx+2], idx[#idx+3] = base + 2, base + 3, base
-                
+                idx[#idx + 1], idx[#idx + 2], idx[#idx + 3] = base, base + 1, base + 2
+                idx[#idx + 1], idx[#idx + 2], idx[#idx + 3] = base + 2, base + 3, base
+
                 charIndex = charIndex + 1
             end
-            
+
             -- Render character (multiple times if bold)
             if component.bold then
                 -- Render 4 times with slight offsets for bold effect
@@ -216,22 +233,18 @@ function text.updateMeshPtr(pGfxContext, component, layout, vertexFormat, instan
                 addCharQuad(0, 0)
             end
         end
-        
+
         penY = penY + lineHeight
     end
-    
+
     tkn.flushTknFontPtr(font.pTknFont, pGfxContext)
-    
+
     if charIndex > 0 then
         tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
-    
-    -- Update instance buffer with model matrix and color
-    local instances = {
-        model = model,
-        color = {component.color},
-    }
-    tkn.updateInstancePtr(pGfxContext, component.pInstance, instanceFormat, instances)
 end
 
+function text.updateInstancePtr(pGfxContext, component, rect, instanceFormat)
+    
+end
 return text

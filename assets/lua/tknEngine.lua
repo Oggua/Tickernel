@@ -121,14 +121,18 @@ function tknEngine.updateUI(pGfxContext)
                 pivot = 0,
                 left = 0,
                 right = 0,
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "relative",
                 pivot = 0,
                 bottom = 0,
                 top = 0,
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, newNode)
         idx = idx + 1
@@ -143,17 +147,21 @@ function tknEngine.updateUI(pGfxContext)
                 pivot = 0.5,
                 anchor = 0.5,
                 width = 600,
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "anchored",
                 pivot = 0.5,
                 anchor = 0.5,
                 height = 200,
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         -- Center alignment
-        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 24, 0xFFFF0000, 0.5, 0.5, true, newNode)
+        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 32, 0xFFFF0000, 0.5, 0.5, true, newNode)
         idx = idx + 1
     end
 
@@ -168,14 +176,18 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 0.5,
                 pivot = 0.5,
                 width = 800,
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "anchored",
                 anchor = 0.3,
                 pivot = 0.5,
                 height = 150,
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "B - BOLD TEXT: This is a bold text example!", tknEngine.font, 28, 0xFFFFFFFF, 0.5, 0.5, true, newNode)
         idx = idx + 1
@@ -192,14 +204,18 @@ function tknEngine.updateUI(pGfxContext)
                 pivot = 0,
                 left = 0, -- 20 pixels from left edge
                 right = 0.7, -- 70% from right edge (or use pixels)
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "relative",
                 pivot = 0,
                 top = 0, -- 20 pixels from top edge
                 bottom = 0.8, -- 80% from bottom edge (or use pixels)
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         -- Text alignment within the rect (0=left/top, 0.5=center, 1=right/bottom)
         ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 32, 0xFF00FF00, 0, 0, false, newNode)
@@ -217,14 +233,18 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 1,
                 pivot = 1,
                 width = 400,
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "anchored",
                 anchor = 0,
                 pivot = 0,
                 height = 150,
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 32, 0xFF0000FF, 1, 0, false, newNode)
         idx = idx + 1
@@ -241,14 +261,18 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 0,
                 pivot = 0,
                 width = 400,
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "anchored",
                 anchor = 1,
                 pivot = 1,
                 height = 150,
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 32, 0xFFFFFF00, 0, 1, false, newNode)
         idx = idx + 1
@@ -265,14 +289,18 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 1,
                 pivot = 1,
                 width = 400,
+                offset = 0,
+                scale = 1.0,
             },
             vertical = {
                 type = "anchored",
                 anchor = 1,
                 pivot = 1,
                 height = 150,
+                offset = 0,
+                scale = 1.0,
             },
-            rect = {},
+            rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 32, 0xFFFF00FF, 1, 1, false, newNode)
         idx = idx + 1

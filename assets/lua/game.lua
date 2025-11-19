@@ -1,4 +1,4 @@
-local gameMath = require("gameMath")
+local tknMath = require("tknMath")
 
 -- Floor types enumeration
 local floor = {
@@ -63,8 +63,8 @@ function game.getHumidity(seed, x, y)
     local humidity = 0
     for i = 1, level do
         local m = 2 ^ (level - 1)
-        humidity = humidity + gameMath.perlinNoise2D(seed, x * humidityNoiseScale * m, y * humidityNoiseScale * m) / m
-        seed = gameMath.LCGRandom(seed)
+        humidity = humidity + tknMath.perlinNoise2D(seed, x * humidityNoiseScale * m, y * humidityNoiseScale * m) / m
+        seed = tknMath.LCGRandom(seed)
     end
     return humidity
 end
@@ -75,8 +75,8 @@ function game.getTemperature(seed, x, y)
     for i = 1, level do
         local m = 2 ^ (level - 1)
         temperature = temperature +
-            gameMath.perlinNoise2D(seed, x * temperatureNoiseScale * m, y * temperatureNoiseScale * m) / m
-        seed = gameMath.LCGRandom(seed)
+            tknMath.perlinNoise2D(seed, x * temperatureNoiseScale * m, y * temperatureNoiseScale * m) / m
+        seed = tknMath.LCGRandom(seed)
     end
     -- temperature = temperature + (x - (game.length - 1) / 2) / game.length
     return temperature
