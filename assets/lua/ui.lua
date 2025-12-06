@@ -21,211 +21,271 @@ local function traverseNode(node, callback)
     end
     return false
 end
-local function updateRect(pGfxContext, ui, node, screenSizeDirty, parentLayoutDirty)
-    if node.layout.dirty or parentLayoutDirty or screenSizeDirty then
-        -- Get parent dimensions from parent node, or use fullscreen as default (NDC: -1 to 1 = size 2)
-        local pWidth, pHeight
-        if node.parent then
-            pWidth = node.parent.rect.max[1] - node.parent.rect.min[1]
-            pHeight = node.parent.rect.max[2] - node.parent.rect.min[2]
+
+local function updateOrientationRecursive(pGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
+    local layout = node.layout
+    local orientation = layout[key]
+    if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type ~= "fit" then
+        local parentLengthNDC
+        if effectiveParent then
+            parentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
         else
-            pWidth = 2
-            pHeight = 2
+            parentLengthNDC = 2
         end
-
-        local layout = node.layout
-        local width, height
-
-        -- Handle horizontal layout
-        if layout.horizontal.type == "anchored" then
-            width = layout.horizontal.width / ui.screenWidth * 2
-        elseif layout.horizontal.type == "relative" then
-            local leftOffset, rightOffset
-            if math.type(layout.horizontal.left) == "integer" then
-                leftOffset = layout.horizontal.left / ui.screenWidth * 2
+        local lengthNDC, offsetNDC
+        -- Calculate length
+        if orientation.type == "anchored" then
+            lengthNDC = orientation.length / screenLength * 2
+        elseif orientation.type == "relative" then
+            local minOffsetNDC, maxOffsetNDC
+            if math.type(orientation.min) == "integer" then
+                minOffsetNDC = orientation.min / screenLength * 2
             else
-                leftOffset = pWidth * layout.horizontal.left
+                minOffsetNDC = parentLengthNDC * orientation.min
             end
-            if math.type(layout.horizontal.right) == "integer" then
-                rightOffset = layout.horizontal.right / ui.screenWidth * 2
+            if math.type(orientation.max) == "integer" then
+                maxOffsetNDC = orientation.max / screenLength * 2
             else
-                rightOffset = pWidth * layout.horizontal.right
+                maxOffsetNDC = parentLengthNDC * orientation.max
             end
-            width = pWidth - leftOffset - rightOffset
-            if width < 0 then
-                width = 0
+            lengthNDC = parentLengthNDC - minOffsetNDC - maxOffsetNDC
+            if lengthNDC < 0 then
+                lengthNDC = 0
             end
         else
-            error("ui.calculateRect: unknown horizontal layout type " .. tostring(layout.horizontal.type))
+            error("Unknown orientation type " .. tostring(orientation.type))
         end
 
-        -- Handle vertical layout
-        if layout.vertical.type == "anchored" then
-            height = layout.vertical.height / ui.screenHeight * 2
-        elseif layout.vertical.type == "relative" then
-            local topOffset, bottomOffset
-            if math.type(layout.vertical.top) == "integer" then
-                topOffset = layout.vertical.top / ui.screenHeight * 2
-            else
-                topOffset = pHeight * layout.vertical.top
-            end
-            if math.type(layout.vertical.bottom) == "integer" then
-                bottomOffset = layout.vertical.bottom / ui.screenHeight * 2
-            else
-                bottomOffset = pHeight * layout.vertical.bottom
-            end
-            height = pHeight - topOffset - bottomOffset
-            if height < 0 then
-                height = 0
-            end
-        else
-            error("ui.calculateRect: unknown vertical layout type " .. tostring(layout.vertical.type))
-        end
-
-        -- Build local transform matrix (pivot-centered)
-        -- Calculate offset from parent's pivot (0,0) to child's pivot
-        local offsetX, offsetY
-
-        -- Horizontal offset calculation
-        if layout.horizontal.type == "anchored" then
-            -- anchored: position of anchor point within parent space
-            offsetX = pWidth * (layout.horizontal.anchor - 0.5)
+        -- Calculate offset
+        local effectiveParentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
+        if orientation.type == "anchored" then
+            offsetNDC = (orientation.anchor - effectiveParentPivot) * parentLengthNDC
         else -- relative
-            local leftOffset
-            if math.type(layout.horizontal.left) == "integer" then
-                leftOffset = layout.horizontal.left / ui.screenWidth * 2
+            local minPaddingNDC
+            if math.type(orientation.min) == "integer" then
+                minPaddingNDC = orientation.min / screenLength * 2
             else
-                leftOffset = pWidth * layout.horizontal.left
+                minPaddingNDC = orientation.min * parentLengthNDC
             end
-            -- From parent's pivot to child's pivot position
-            -- Parent's left edge (relative to parent pivot) + left margin + distance to child pivot
-            local parentMinX = node.parent and node.parent.rect.min[1] or -1
-            offsetX = parentMinX + leftOffset + width * layout.horizontal.pivot
+            local anchor = (minPaddingNDC + lengthNDC * orientation.pivot) / parentLengthNDC
+            offsetNDC = (anchor - effectiveParentPivot) * parentLengthNDC
         end
-
-        -- Add horizontal offset
-        if math.type(layout.horizontal.offset) == "integer" then
-            offsetX = offsetX + layout.horizontal.offset / ui.screenWidth * 2
+        -- Apply additional offset
+        if math.type(orientation.offset) == "integer" then
+            offsetNDC = offsetNDC + orientation.offset / screenLength * 2
         else
-            offsetX = offsetX + layout.horizontal.offset
+            offsetNDC = offsetNDC + orientation.offset
         end
 
-        -- Vertical offset calculation
-        if layout.vertical.type == "anchored" then
-            -- anchored: position of anchor point within parent space
-            offsetY = pHeight * (layout.vertical.anchor - 0.5)
-        else -- relative
-            local topOffset
-            if math.type(layout.vertical.top) == "integer" then
-                topOffset = layout.vertical.top / ui.screenHeight * 2
-            else
-                topOffset = pHeight * layout.vertical.top
+        node.rect[key].min = -lengthNDC * orientation.pivot
+        node.rect[key].max = lengthNDC * (1 - orientation.pivot)
+        node.rect[key].offset = offsetNDC
+        effectiveParent = node
+    end
+
+    parentOrientationChanged = parentOrientationChanged or orientation.dirty or screenLengthChanged
+    for i, child in ipairs(node.children) do
+        updateOrientationRecursive(pGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
+    end
+
+    if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type == "fit" then
+        -- Calculate fit node's bounds based on children's bounds
+        local minBound = math.huge
+        local maxBound = -math.huge
+
+        -- Traverse all children to find min and max bounds
+        for _, child in ipairs(node.children) do
+            if child.rect and child.rect[key] then
+                local childMin = child.rect[key].min + child.rect[key].offset
+                local childMax = child.rect[key].max + child.rect[key].offset
+                if childMin < minBound then
+                    minBound = childMin
+                end
+                if childMax > maxBound then
+                    maxBound = childMax
+                end
             end
-            -- From parent's pivot to child's pivot position
-            -- Parent's top edge (relative to parent pivot) + top margin + distance to child pivot
-            local parentMinY = node.parent and node.parent.rect.min[2] or -1
-            offsetY = parentMinY + topOffset + height * layout.vertical.pivot
         end
 
-        -- Add vertical offset
-        if math.type(layout.vertical.offset) == "integer" then
-            offsetY = offsetY + layout.vertical.offset / ui.screenHeight * 2
+        -- Handle case with no children
+        if minBound == math.huge or maxBound == -math.huge then
+            minBound = 0
+            maxBound = 0
+        end
+
+        -- Calculate length and offset relative to effective parent
+        local lengthNDC = maxBound - minBound
+        local centerOffset = (minBound + maxBound) / 2
+
+        -- Calculate offset relative to effective parent's pivot
+        local parentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
+        local parentLengthNDC
+        if effectiveParent then
+            parentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
         else
-            offsetY = offsetY + layout.vertical.offset
+            parentLengthNDC = 2
         end
 
-        -- Save old bounds and model for change detection
-        local oldMin1, oldMin2 = node.rect.min[1], node.rect.min[2]
-        local oldMax1, oldMax2 = node.rect.max[1], node.rect.max[2]
-        local oldModel = {}
-        for i = 1, 9 do
-            oldModel[i] = node.rect.model[i]
-        end
+        -- Apply node's pivot
+        local pivot = orientation.pivot
+        node.rect[key].min = -lengthNDC * pivot
+        node.rect[key].max = lengthNDC * (1 - pivot)
 
-        -- Get scale values
-        local scaleX = layout.horizontal.scale
-        local scaleY = layout.vertical.scale
+        -- Offset is the center of children bounds adjusted for pivot difference
+        local offsetNDC = centerOffset + lengthNDC * (0.5 - pivot)
 
-        -- Get rotation angle
-        local rotation = layout.rotation
-        local cosR = math.cos(rotation)
-        local sinR = math.sin(rotation)
-
-        -- Build local transform matrix: T * R * S
-        -- GLSL mat3 is column-major: columns are stored sequentially
-        -- Apply scale, then rotation, then translation
-        local localModel = {scaleX * cosR, scaleX * sinR, 0, -- column 0
-        -scaleY * sinR, scaleY * cosR, 0, -- column 1
-        offsetX, offsetY, 1 -- column 2 (translation)
-        }
-
-        -- Calculate final model by multiplying with parent model
-        local parentModel = node.parent and node.parent.rect.model
-        if parentModel then
-            tknMath.multiplyMat3(parentModel, localModel, node.rect.model)
+        -- Apply additional offset
+        if math.type(orientation.offset) == "integer" then
+            offsetNDC = offsetNDC + orientation.offset / screenLength * 2
         else
-            -- No parent, final model is same as local model
-            for i = 1, 9 do
-                node.rect.model[i] = localModel[i]
-            end
+            offsetNDC = offsetNDC + orientation.offset
         end
 
-        -- Update rect bounds (relative to pivot)
-        local pivotX = layout.horizontal.pivot
-        local pivotY = layout.vertical.pivot
-        node.rect.min[1] = -width * pivotX
-        node.rect.min[2] = -height * pivotY
-        node.rect.max[1] = width * (1 - pivotX)
-        node.rect.max[2] = height * (1 - pivotY)
+        node.rect[key].offset = offsetNDC
+    end
+    orientation.dirty = false
+end
 
-        -- Update color from component
-        if node.component then
-            node.rect.color = node.component.color
-        end
+-- Helper function to find effective parent for a given direction (skip fit nodes)
+local function findEffectiveParent(node, key)
+    local effectiveParent = node.parent
+    while effectiveParent and effectiveParent.layout[key].type == "fit" do
+        effectiveParent = effectiveParent.parent
+    end
+    return effectiveParent
+end
 
-        -- Update mesh only if bounds changed
-        local boundsChanged = (oldMin1 ~= node.rect.min[1] or oldMin2 ~= node.rect.min[2] or oldMax1 ~= node.rect.max[1] or oldMax2 ~= node.rect.max[2])
-        if boundsChanged and node.component and node.component.pMesh then
-            if node.component.type == "image" then
-                image.updateMeshPtr(pGfxContext, node.component, node.rect, ui.vertexFormat)
-            elseif node.component.type == "text" or screenSizeDirty then
-                text.updateMeshPtr(pGfxContext, node.component, node.rect, ui.vertexFormat, ui.screenWidth, ui.screenHeight)
-            else
-                error("ui.updateRect: unsupported component type " .. tostring(node.component.type))
-            end
-        end
+-- Helper function to transform local offset to world offset for a given direction
+-- key: "horizontal" or "vertical"
+-- matrixIndex: 1 for X (uses pm[1]), 5 for Y (uses pm[5])
+-- translationIndex: 7 for X, 8 for Y
+local function transformOffsetToWorld(localOffset, effectiveParent, matrixIndex, translationIndex)
+    if effectiveParent and effectiveParent.rect and effectiveParent.rect.model then
+        local pm = effectiveParent.rect.model
+        return pm[matrixIndex] * localOffset + pm[translationIndex]
+    end
+    return localOffset
+end
 
-        -- Update instance only if model matrix or color changed
-        local modelChanged = false
-        for i = 1, 9 do
-            if oldModel[i] ~= node.rect.model[i] then
-                modelChanged = true
-                break
-            end
-        end
-        local oldColor = node.rect.color
-        local colorChanged = node.component and oldColor ~= node.component.color
+-- Recursively updates the graphics (model matrix, mesh, instance) based on rect and parent transform
+local function updateGraphicsRecursive(pGfxContext, ui, node, screenSizeChanged)
+    local layout = node.layout
+    local rect = node.rect
 
-        if node.component and node.component.pInstance and (modelChanged or colorChanged) then
-            local model = node.rect.model
-            -- Update instance buffer with model matrix and color
-            local instances = {
-                model = model,
-                color = {node.component.color},
-            }
-            tkn.updateInstancePtr(pGfxContext, node.component.pInstance, ui.instanceFormat, instances)
-        end
+    -- Save old model for change detection
+    local oldModel = {}
+    for i = 1, 9 do
+        oldModel[i] = rect.model[i]
+    end
 
-        node.layout.dirty = false
-        for i, child in ipairs(node.children) do
-            updateRect(pGfxContext, ui, child, screenSizeDirty, true)
-        end
+    -- Find effective parent for each direction (skip fit nodes)
+    local effectiveParentH = findEffectiveParent(node, "horizontal")
+    local effectiveParentV = findEffectiveParent(node, "vertical")
+
+    -- Transform local offsets to world offsets
+    local worldOffsetX = transformOffsetToWorld(rect.horizontal.offset, effectiveParentH, 1, 7)
+    local worldOffsetY = transformOffsetToWorld(rect.vertical.offset, effectiveParentV, 5, 8)
+
+    -- Get scale values from layout
+    local scaleX = layout.horizontal.scale or 1.0
+    local scaleY = layout.vertical.scale or 1.0
+
+    -- Get rotation angle from layout
+    local rotation = layout.rotation or 0
+    local cosR = math.cos(rotation)
+    local sinR = math.sin(rotation)
+
+    -- Build local rotation/scale matrix (without translation)
+    -- GLSL mat3 is column-major: columns are stored sequentially
+    local localRotScale = {scaleX * cosR, scaleX * sinR, 0, -- column 0
+    -scaleY * sinR, scaleY * cosR, 0, -- column 1
+    0, 0, 1 -- column 2
+    }
+
+    -- Find common effective parent for scale/rotation inheritance
+    -- Skip nodes that are fit in BOTH directions
+    local scaleRotParent = node.parent
+    while scaleRotParent and (scaleRotParent.layout.horizontal.type == "fit" and scaleRotParent.layout.vertical.type == "fit") do
+        scaleRotParent = scaleRotParent.parent
+    end
+
+    if scaleRotParent and scaleRotParent.rect and scaleRotParent.rect.model then
+        local pm = scaleRotParent.rect.model
+        -- Multiply rotation/scale part only (2x2 upper-left)
+        local newMatrix00 = pm[1] * localRotScale[1] + pm[4] * localRotScale[2]
+        local newMatrix01 = pm[2] * localRotScale[1] + pm[5] * localRotScale[2]
+        local newMatrix10 = pm[1] * localRotScale[4] + pm[4] * localRotScale[5]
+        local newMatrix11 = pm[2] * localRotScale[4] + pm[5] * localRotScale[5]
+
+        rect.model[1] = newMatrix00
+        rect.model[2] = newMatrix01
+        rect.model[3] = 0
+        rect.model[4] = newMatrix10
+        rect.model[5] = newMatrix11
+        rect.model[6] = 0
+        rect.model[7] = worldOffsetX
+        rect.model[8] = worldOffsetY
+        rect.model[9] = 1
     else
-        for i, child in ipairs(node.children) do
-            updateRect(pGfxContext, ui, child, screenSizeDirty, false)
+        -- No parent, use local model with world offsets
+        rect.model[1] = localRotScale[1]
+        rect.model[2] = localRotScale[2]
+        rect.model[3] = 0
+        rect.model[4] = localRotScale[4]
+        rect.model[5] = localRotScale[5]
+        rect.model[6] = 0
+        rect.model[7] = worldOffsetX
+        rect.model[8] = worldOffsetY
+        rect.model[9] = 1
+    end
+
+    -- Check if model changed
+    local modelChanged = false
+    for i = 1, 9 do
+        if oldModel[i] ~= rect.model[i] then
+            modelChanged = true
+            break
         end
     end
+
+    -- Check if bounds changed (for mesh update)
+    local boundsChanged = (rect.horizontal.oldMin ~= rect.horizontal.min or rect.horizontal.oldMax ~= rect.horizontal.max or rect.vertical.oldMin ~= rect.vertical.min or rect.vertical.oldMax ~= rect.vertical.max)
+    rect.horizontal.oldMin = rect.horizontal.min
+    rect.horizontal.oldMax = rect.horizontal.max
+    rect.vertical.oldMin = rect.vertical.min
+    rect.vertical.oldMax = rect.vertical.max
+
+    -- Update color from component
+    local oldColor = rect.color
+    if node.component then
+        rect.color = node.component.color
+    end
+    local colorChanged = oldColor ~= rect.color
+
+    -- Update mesh if bounds changed
+    if node.component and node.component.pMesh then
+        if node.component.type == "image" and boundsChanged then
+            image.updateMeshPtr(pGfxContext, node.component, rect, ui.vertexFormat)
+        elseif node.component.type == "text" and (boundsChanged or screenSizeChanged) then
+            text.updateMeshPtr(pGfxContext, node.component, rect, ui.vertexFormat, ui.screenWidth, ui.screenHeight)
+        end
+    end
+
+    -- Update instance if model or color changed
+    if node.component and node.component.pInstance and (modelChanged or colorChanged) then
+        local instances = {
+            model = rect.model,
+            color = {node.component.color},
+        }
+        tkn.updateInstancePtr(pGfxContext, node.component.pInstance, ui.instanceFormat, instances)
+    end
+
+    -- Recursively update children
+    for _, child in ipairs(node.children) do
+        updateGraphicsRecursive(pGfxContext, ui, child, screenSizeChanged)
+    end
 end
+
 local function addComponent(pGfxContext, node, component)
     if node.component then
         print("WARNING: ui.addComponent: node already has a component")
@@ -311,24 +371,32 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
             horizontal = {
                 type = "relative",
                 pivot = 0.5,
-                left = 0,
-                right = 0,
+                min = 0,
+                max = 0,
                 offset = 0,
                 scale = 1.0,
             },
             vertical = {
                 type = "relative",
                 pivot = 0.5,
-                bottom = 0,
-                top = 0,
+                max = 0,
+                min = 0,
                 offset = 0,
                 scale = 1.0,
             },
             rotation = 0,
         },
         rect = {
-            min = {-1, -1},
-            max = {1, 1},
+            horizontal = {
+                min = -1,
+                max = 1,
+                offset = 0,
+            },
+            vertical = {
+                min = -1,
+                max = 1,
+                offset = 0,
+            },
             model = {1, 0, 0, -- column 0
             0, 1, 0, -- column 1
             0, 0, 1}, -- column 2
@@ -357,15 +425,13 @@ function ui.teardown(pGfxContext)
     text.teardown(pGfxContext)
 end
 function ui.update(pGfxContext, screenWidth, screenHeight)
-    if ui.screenWidth ~= screenWidth or ui.screenHeight ~= screenHeight then
-        ui.screenWidth = screenWidth
-        ui.screenHeight = screenHeight
-        ui.rootNode.layout.dirty = true
-    end
-    updateRect(pGfxContext, ui, ui.rootNode, false)
+    updateOrientationRecursive(pGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
+    updateOrientationRecursive(pGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
+    updateGraphicsRecursive(pGfxContext, ui, ui.rootNode, ui.screenWidth ~= screenWidth or ui.screenHeight ~= screenHeight)
+    ui.screenWidth = screenWidth
+    ui.screenHeight = screenHeight
     text.update(pGfxContext)
 end
-
 function ui.getNodeIndex(node)
     for i, child in ipairs(node.parent.children) do
         if child == node then
@@ -388,8 +454,16 @@ function ui.addNode(pGfxContext, parent, index, name, layout)
         -- Ensure rect is initialized if not provided
         if not node.rect then
             node.rect = {
-                min = {0, 0},
-                max = {0, 0},
+                horizontal = {
+                    min = 0,
+                    max = 0,
+                    offset = 0,
+                },
+                vertical = {
+                    min = 0,
+                    max = 0,
+                    offset = 0,
+                },
                 model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
                 color = nil,
             }
@@ -408,18 +482,52 @@ function ui.addNode(pGfxContext, parent, index, name, layout)
         -- Ensure rect is initialized if not provided
         if not node.rect then
             node.rect = {
-                min = {0, 0},
-                max = {0, 0},
+                horizontal = {
+                    min = 0,
+                    max = 0,
+                    offset = 0,
+                },
+                vertical = {
+                    min = 0,
+                    max = 0,
+                    offset = 0,
+                },
                 model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
                 color = nil,
             }
         end
     end
     table.insert(parent.children, index, node)
+
+    -- Mark fit ancestors as dirty since their bounds depend on children
+    local ancestor = parent
+    while ancestor do
+        if ancestor.layout.horizontal.type == "fit" then
+            ancestor.layout.horizontal.dirty = true
+        end
+        if ancestor.layout.vertical.type == "fit" then
+            ancestor.layout.vertical.dirty = true
+        end
+        ancestor = ancestor.parent
+    end
+
     return node
 end
 function ui.removeNode(pGfxContext, node)
     print("Removing node: " .. node.name)
+
+    -- Mark fit ancestors as dirty before removing (their bounds will change)
+    local ancestor = node.parent
+    while ancestor do
+        if ancestor.layout.horizontal.type == "fit" then
+            ancestor.layout.horizontal.dirty = true
+        end
+        if ancestor.layout.vertical.type == "fit" then
+            ancestor.layout.vertical.dirty = true
+        end
+        ancestor = ancestor.parent
+    end
+
     for i = #node.children, 1, -1 do
         ui.removeNode(pGfxContext, node.children[i])
     end

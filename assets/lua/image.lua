@@ -52,11 +52,11 @@ function image.destroyComponent(pGfxContext, component)
 end
 
 function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
-    -- rect.min/max are already relative to pivot (0, 0)
-    local left = rect.min[1]
-    local top = rect.min[2]
-    local right = rect.max[1]
-    local bottom = rect.max[2]
+    -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
+    local left = rect.horizontal.min
+    local top = rect.vertical.min
+    local right = rect.horizontal.max
+    local bottom = rect.vertical.max
 
     if component.slice then
         -- Nine-slice: generate 4x4 grid with 16 vertices (pivot-centered)

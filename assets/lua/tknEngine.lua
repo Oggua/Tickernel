@@ -76,6 +76,31 @@ function tknEngine.start(pGfxContext, assetsPath)
     tknEngine.currentNode = ui.rootNode
 
     tknEngine.font = ui.createFont(pGfxContext, assetsPath .. "/fonts/Monaco.ttf", 32, 2048)
+    
+    -- Create FIT container immediately on startup
+    print("Creating FIT type container node")
+    tknEngine.fitContainer = ui.addNode(pGfxContext, ui.rootNode, 1, "fitContainer", {
+        dirty = true,
+        horizontal = {
+            type = "fit",
+            pivot = 0.5,
+            min = 50,      -- 50 pixels left padding
+            max = 50,     -- 50 pixels right padding
+            offset = 0,
+            scale = 1.0,
+        },
+        vertical = {
+            type = "fit",
+            pivot = 0.5,
+            min = 50,       -- 50 pixels top padding
+            max = 50,    -- 50 pixels bottom padding
+            offset = 0,
+            scale = 1.0,
+        },
+        rotation = 0,
+    })
+    -- Add background image to visualize the fit container
+    ui.addImageComponent(pGfxContext, 0x80808080, nil, tknEngine.pDefaultImageMaterial, tknEngine.fitContainer)
 end
 
 function tknEngine.stop()
@@ -113,22 +138,22 @@ local idx = 1
 function tknEngine.updateUI(pGfxContext)
     local spaceKeyState = input.getKeyState(input.keyCode.space)
     if spaceKeyState == input.keyState.up then
-        print("Space key was just released this frame")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "imageNode", {
+        print("Space key: Creating FIT type image node")
+        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "fitImageNode", {
             dirty = true,
             horizontal = {
-                type = "relative",
-                pivot = 0,
-                left = 0,
-                right = 0,
+                type = "fit",
+                pivot = 0.5,
+                min = 50,      -- 50 pixels left padding
+                max = 50,     -- 50 pixels right padding
                 offset = 0,
                 scale = 1.0,
             },
             vertical = {
-                type = "relative",
-                pivot = 0,
-                bottom = 0,
-                top = 0,
+                type = "fit",
+                pivot = 0.5,
+                min = 50,       -- 50 pixels top padding
+                max = 50,    -- 50 pixels bottom padding
                 offset = 0,
                 scale = 1.0,
             },
@@ -137,102 +162,47 @@ function tknEngine.updateUI(pGfxContext)
         ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, newNode)
         idx = idx + 1
     end
-    local sKeyState = input.getKeyState(input.keyCode.s)
-    if sKeyState == input.keyState.up then
-        print("S key was just released this frame")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode", {
-            dirty = true,
-            horizontal = {
-                type = "anchored",
-                pivot = 0.5,
-                anchor = 0.5,
-                width = 600,
-                offset = 0,
-                scale = 1.0,
-            },
-            vertical = {
-                type = "anchored",
-                pivot = 0.5,
-                anchor = 0.5,
-                height = 200,
-                offset = 0,
-                scale = 1.0,
-            },
-            rotation = 0,
-        })
-        -- Center alignment
-        ui.addTextComponent(pGfxContext, "Center: The last man on Earth sat alone in a room. There was a knock on the door.", tknEngine.font, 32, 0xFFFF0000, 0.5, 0.5, true, newNode)
-        idx = idx + 1
-    end
 
-    -- B key: Bold text test
-    local bKeyState = input.getKeyState(input.keyCode.b)
-    if bKeyState == input.keyState.up then
-        print("B key: Bold text")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_Bold", {
-            dirty = true,
-            horizontal = {
-                type = "anchored",
-                anchor = 0.5,
-                pivot = 0.5,
-                width = 800,
-                offset = 0,
-                scale = 1.0,
-            },
-            vertical = {
-                type = "anchored",
-                anchor = 0.3,
-                pivot = 0.5,
-                height = 150,
-                offset = 0,
-                scale = 1.0,
-            },
-            rotation = 0,
-        })
-        ui.addTextComponent(pGfxContext, "B - BOLD TEXT: This is a bold text example!", tknEngine.font, 28, 0xFFFFFFFF, 0.5, 0.5, true, newNode)
-        idx = idx + 1
-    end
-
-    -- Q key: Top-Left with margin
+    -- Q key: Top-Left (child of fit container)
     local qKeyState = input.getKeyState(input.keyCode.q)
     if qKeyState == input.keyState.up then
-        print("Q key: Top-Left alignment")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_TL", {
+        print("Q key: Top-Left alignment (child of FIT container)")
+        local childIdx = #tknEngine.fitContainer.children + 1
+        local newNode = ui.addNode(pGfxContext, tknEngine.fitContainer, childIdx, "textNode_TL", {
             dirty = true,
             horizontal = {
                 type = "relative",
                 pivot = 0,
-                left = 0, -- 20 pixels from left edge
-                right = 0.7, -- 70% from right edge (or use pixels)
+                min = 0,
+                max = 0.7,
                 offset = 0,
                 scale = 1.0,
             },
             vertical = {
                 type = "relative",
                 pivot = 0,
-                top = 0, -- 20 pixels from top edge
-                bottom = 0.8, -- 80% from bottom edge (or use pixels)
+                min = 0,
+                max = 0.8,
                 offset = 0,
                 scale = 1.0,
             },
             rotation = 0,
         })
-        -- Text alignment within the rect (0=left/top, 0.5=center, 1=right/bottom)
         ui.addTextComponent(pGfxContext, "Q - Top Left Corner", tknEngine.font, 32, 0xFF00FF00, 0, 0, false, newNode)
-        idx = idx + 1
     end
 
-    -- E key: Top-Right
+    -- E key: Top-Right (child of fit container)
     local eKeyState = input.getKeyState(input.keyCode.e)
     if eKeyState == input.keyState.up then
-        print("E key: Top-Right alignment")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_TR", {
+        print("E key: Top-Right alignment (child of FIT container)")
+        local childIdx = #tknEngine.fitContainer.children + 1
+        local newNode = ui.addNode(pGfxContext, tknEngine.fitContainer, childIdx, "textNode_TR", {
             dirty = true,
             horizontal = {
                 type = "anchored",
                 anchor = 1,
                 pivot = 1,
-                width = 400,
+                length = 400,
                 offset = 0,
                 scale = 1.0,
             },
@@ -240,27 +210,27 @@ function tknEngine.updateUI(pGfxContext)
                 type = "anchored",
                 anchor = 0,
                 pivot = 0,
-                height = 150,
+                length = 150,
                 offset = 0,
                 scale = 1.0,
             },
             rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "E - Top Right Corner", tknEngine.font, 32, 0xFF0000FF, 1, 0, false, newNode)
-        idx = idx + 1
     end
 
-    -- Z key: Bottom-Left
+    -- Z key: Bottom-Left (child of fit container)
     local zKeyState = input.getKeyState(input.keyCode.z)
     if zKeyState == input.keyState.up then
-        print("Z key: Bottom-Left alignment")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_BL", {
+        print("Z key: Bottom-Left alignment (child of FIT container)")
+        local childIdx = #tknEngine.fitContainer.children + 1
+        local newNode = ui.addNode(pGfxContext, tknEngine.fitContainer, childIdx, "textNode_BL", {
             dirty = true,
             horizontal = {
                 type = "anchored",
                 anchor = 0,
                 pivot = 0,
-                width = 400,
+                length = 400,
                 offset = 0,
                 scale = 1.0,
             },
@@ -268,27 +238,27 @@ function tknEngine.updateUI(pGfxContext)
                 type = "anchored",
                 anchor = 1,
                 pivot = 1,
-                height = 150,
+                length = 150,
                 offset = 0,
                 scale = 1.0,
             },
             rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "Z - Bottom Left Corner", tknEngine.font, 32, 0xFFFFFF00, 0, 1, false, newNode)
-        idx = idx + 1
     end
 
-    -- C key: Bottom-Right
+    -- C key: Bottom-Right (child of fit container)
     local cKeyState = input.getKeyState(input.keyCode.c)
     if cKeyState == input.keyState.up then
-        print("C key: Bottom-Right alignment")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "textNode_BR", {
+        print("C key: Bottom-Right alignment (child of FIT container)")
+        local childIdx = #tknEngine.fitContainer.children + 1
+        local newNode = ui.addNode(pGfxContext, tknEngine.fitContainer, childIdx, "textNode_BR", {
             dirty = true,
             horizontal = {
                 type = "anchored",
                 anchor = 1,
                 pivot = 1,
-                width = 400,
+                length = 400,
                 offset = 0,
                 scale = 1.0,
             },
@@ -296,14 +266,13 @@ function tknEngine.updateUI(pGfxContext)
                 type = "anchored",
                 anchor = 1,
                 pivot = 1,
-                height = 150,
+                length = 150,
                 offset = 0,
                 scale = 1.0,
             },
             rotation = 0,
         })
         ui.addTextComponent(pGfxContext, "C - Bottom Right Corner", tknEngine.font, 32, 0xFFFF00FF, 1, 1, false, newNode)
-        idx = idx + 1
     end
 end
 

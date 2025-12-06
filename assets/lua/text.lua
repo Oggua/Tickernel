@@ -95,9 +95,9 @@ function text.destroyComponent(pGfxContext, component)
 end
 
 function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
-    -- rect.min/max are already relative to pivot (0, 0)
-    local width = rect.max[1] - rect.min[1]
-    local height = rect.max[2] - rect.min[2]
+    -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
+    local rectWidth = rect.horizontal.max - rect.horizontal.min
+    local rectHeight = rect.vertical.max - rect.vertical.min
 
     local font = component.font
     local sizeScale = component.size / font.fontSize
@@ -111,10 +111,10 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     local boldOffsetY = component.bold and (1 / screenHeight * 2) or 0
 
     -- Local coordinate bounds (already relative to pivot)
-    local left = rect.min[1]
-    local right = rect.max[1]
-    local top = rect.min[2]
-    local bottom = rect.max[2]
+    local left = rect.horizontal.min
+    local right = rect.horizontal.max
+    local top = rect.vertical.min
+    local bottom = rect.vertical.max
 
     -- First pass: calculate line widths and total text bounds
     local lines = {{
@@ -135,7 +135,7 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
             local advanceNDC = advance * scaleX
 
             -- Word wrap check (use local width)
-            if penX + bearingXNDC + widthNDC > right - left and #currentLine.chars > 0 then
+            if penX + bearingXNDC + widthNDC > rectWidth and #currentLine.chars > 0 then
                 currentLine.width = penX
                 currentLine = {
                     chars = {},
@@ -168,7 +168,7 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
 
     -- Calculate starting Y position based on vertical alignment
     local totalHeight = #lines * lineHeight
-    local startY = top + (bottom - top - totalHeight) * component.alignV + lineHeight
+    local startY = top + (rectHeight - totalHeight) * component.alignV + lineHeight
 
     -- Second pass: generate vertices with alignment
     local vertices = {
@@ -181,13 +181,13 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
 
     for lineIdx, line in ipairs(lines) do
         -- Calculate starting X position based on horizontal alignment
-        local startX = left + (right - left - line.width) * component.alignH
+        local startX = left + (rectWidth - line.width) * component.alignH
 
         for _, char in ipairs(line.chars) do
-            local left = startX + char.penX + char.bearingXNDC
-            local right = left + char.widthNDC
-            local top = penY - char.bearingYNDC
-            local bottom = top + char.heightNDC
+            local charLeft = startX + char.penX + char.bearingXNDC
+            local charRight = charLeft + char.widthNDC
+            local charTop = penY - char.bearingYNDC
+            local charBottom = charTop + char.heightNDC
 
             -- UV coordinates
             local u0, v0 = char.x * atlasScale, char.y * atlasScale
@@ -195,8 +195,8 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
 
             -- Helper function to add a character quad
             local function addCharQuad(offsetX, offsetY)
-                local l, r = left + offsetX, right + offsetX
-                local t, b = top + offsetY, bottom + offsetY
+                local l, r = charLeft + offsetX, charRight + offsetX
+                local t, b = charTop + offsetY, charBottom + offsetY
 
                 -- Vertices (positions)
                 local pos = vertices.position
@@ -223,13 +223,11 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
 
             -- Render character (multiple times if bold)
             if component.bold then
-                -- Render 4 times with slight offsets for bold effect
                 addCharQuad(0, 0)
                 addCharQuad(boldOffsetX, 0)
                 addCharQuad(0, boldOffsetY)
                 addCharQuad(boldOffsetX, boldOffsetY)
             else
-                -- Regular rendering
                 addCharQuad(0, 0)
             end
         end
