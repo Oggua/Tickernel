@@ -106,6 +106,13 @@ local function updateOrientationRecursive(pGfxContext, ui, node, key, effectiveP
                 end
             end
         end
+        if math.type(orientation.min) == "integer" then
+            minBound = minBound - node.layout[key].min / screenLength * 2
+            maxBound = maxBound + node.layout[key].max / screenLength * 2
+        else
+            minBound = minBound - node.layout[key].min
+            maxBound = maxBound + node.layout[key].max
+        end
 
         -- Handle case with no children
         if minBound == math.huge or maxBound == -math.huge then

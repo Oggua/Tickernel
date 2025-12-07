@@ -136,33 +136,6 @@ end
 
 local idx = 1
 function tknEngine.updateUI(pGfxContext)
-    local spaceKeyState = input.getKeyState(input.keyCode.space)
-    if spaceKeyState == input.keyState.up then
-        print("Space key: Creating FIT type image node")
-        local newNode = ui.addNode(pGfxContext, ui.rootNode, idx, "fitImageNode", {
-            dirty = true,
-            horizontal = {
-                type = "fit",
-                pivot = 0.5,
-                min = 50,      -- 50 pixels left padding
-                max = 50,     -- 50 pixels right padding
-                offset = 0,
-                scale = 1.0,
-            },
-            vertical = {
-                type = "fit",
-                pivot = 0.5,
-                min = 50,       -- 50 pixels top padding
-                max = 50,    -- 50 pixels bottom padding
-                offset = 0,
-                scale = 1.0,
-            },
-            rotation = 0,
-        })
-        ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, tknEngine.pDefaultImageMaterial, newNode)
-        idx = idx + 1
-    end
-
     -- Q key: Top-Left (child of fit container)
     local qKeyState = input.getKeyState(input.keyCode.q)
     if qKeyState == input.keyState.up then
@@ -174,8 +147,8 @@ function tknEngine.updateUI(pGfxContext)
                 type = "relative",
                 pivot = 0,
                 min = 0,
-                max = 0.7,
-                offset = 0,
+                max = 0.5,
+                offset = 100,
                 scale = 1.0,
             },
             vertical = {
@@ -183,7 +156,7 @@ function tknEngine.updateUI(pGfxContext)
                 pivot = 0,
                 min = 0,
                 max = 0.8,
-                offset = 0,
+                offset = 100,
                 scale = 1.0,
             },
             rotation = 0,
@@ -203,7 +176,7 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 1,
                 pivot = 1,
                 length = 400,
-                offset = 0,
+                offset = -100,
                 scale = 1.0,
             },
             vertical = {
@@ -211,7 +184,7 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 0,
                 pivot = 0,
                 length = 150,
-                offset = 0,
+                offset = 100,
                 scale = 1.0,
             },
             rotation = 0,
@@ -231,7 +204,7 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 0,
                 pivot = 0,
                 length = 400,
-                offset = 0,
+                offset = 100,
                 scale = 1.0,
             },
             vertical = {
@@ -239,7 +212,7 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 1,
                 pivot = 1,
                 length = 150,
-                offset = 0,
+                offset = -100,
                 scale = 1.0,
             },
             rotation = 0,
@@ -259,7 +232,7 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 1,
                 pivot = 1,
                 length = 400,
-                offset = 0,
+                offset = -100,
                 scale = 1.0,
             },
             vertical = {
@@ -267,7 +240,7 @@ function tknEngine.updateUI(pGfxContext)
                 anchor = 1,
                 pivot = 1,
                 length = 150,
-                offset = 0,
+                offset = -100,
                 scale = 1.0,
             },
             rotation = 0,
