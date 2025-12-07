@@ -1,6 +1,6 @@
 local tkn = require("tkn")
-local imagePipeline = require("imagePipeline")
-local textPipeline = require("textPipeline")
+local imagePipeline = require("ui.imagePipeline")
+local textPipeline = require("ui.textPipeline")
 local uiRenderPass = {}
 
 function uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, pUIVertexInputLayout, pUIInstanceInputLayout, renderPassIndex)

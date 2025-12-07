@@ -5,9 +5,9 @@
 local ui = {}
 local tknMath = require("tknMath")
 local tkn = require("tkn")
-local image = require("image")
-local text = require("text")
-local uiRenderPass = require("uiRenderPass")
+local image = require("ui.image")
+local text = require("ui.text")
+local uiRenderPass = require("ui.uiRenderPass")
 
 local function traverseNode(node, callback)
     local result = callback(node)
