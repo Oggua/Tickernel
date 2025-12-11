@@ -35,7 +35,7 @@ end
 
 function text.destroyFont(pGfxContext, font)
     print("destroyFont")
-    tkn.destroyTknFontPtr(font.pTknFont, pGfxContext)
+    tkn.destroyTknFontPtr(text.pTknFontLibrary, font.pTknFont, pGfxContext)
     font = nil
 end
 

@@ -240,13 +240,13 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     [self destroyVkInstance];
 }
 
-- (void)updateEngine:(uint32_t)width height:(uint32_t)height keyStates:(KeyState*)keyStates;
+- (BOOL)updateEngine:(uint32_t)width height:(uint32_t)height keyStates:(KeyState*)keyStates;
 {
     VkExtent2D swapchainExtent = {
         .width = width,
         .height = height,
     };
-    updateTknContext(self.pTknContext, swapchainExtent, KEY_CODE_COUNT, keyStates);
+    return updateTknContext(self.pTknContext, swapchainExtent, KEY_CODE_COUNT, keyStates);
 }
 
 @end

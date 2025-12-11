@@ -350,7 +350,7 @@ if not tkn.createTknFontPtr then
 end
 
 if not tkn.destroyTknFontPtr then
-    function tkn.destroyTknFontPtr(pTknFont)
+    function tkn.destroyTknFontPtr(pTknFontLibrary, pTknFont, pGfxContext)
         error("tkn.destroyTknFontPtr: C binding not loaded")
     end
 end
@@ -364,6 +364,14 @@ end
 if not tkn.loadTknChar then
     function tkn.loadTknChar(pTknFont, unicode)
         error("tkn.loadTknChar: C binding not loaded")
+    end
+end
+
+if not tkn.waitRenderFence then
+    ---Wait for GPU render fence before modifying GPU resources
+    ---@param pGfxContext lightuserdata Graphics context pointer
+    function tkn.waitRenderFence(pGfxContext)
+        error("tkn.waitRenderFence: C binding not loaded")
     end
 end
 

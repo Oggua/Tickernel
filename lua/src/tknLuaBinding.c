@@ -1723,9 +1723,10 @@ static int luaCreateTknFontPtr(lua_State *pLuaState)
 
 static int luaDestroyTknFontPtr(lua_State *pLuaState)
 {
+    TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -3);
     TknFont *pTknFont = (TknFont *)lua_touserdata(pLuaState, -2);
     GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
-    destroyTknFontPtr(pTknFont, pGfxContext);
+    destroyTknFontPtr(pTknFontLibrary, pTknFont, pGfxContext);
     return 0;
 }
 
@@ -1760,6 +1761,13 @@ static int luaLoadTknChar(lua_State *pLuaState)
         lua_pushnil(pLuaState);
         return 1;
     }
+}
+
+static int luaWaitRenderFence(lua_State *pLuaState)
+{
+    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
+    waitGfxRenderFence(pGfxContext);
+    return 0;
 }
 
 void bindFunctions(lua_State *pLuaState)
@@ -1811,6 +1819,7 @@ void bindFunctions(lua_State *pLuaState)
         {"destroyTknFontPtr", luaDestroyTknFontPtr},
         {"flushTknFontPtr", luaFlushTknFontPtr},
         {"loadTknChar", luaLoadTknChar},
+        {"waitRenderFence", luaWaitRenderFence},
         {NULL, NULL},
     };
     luaL_newlib(pLuaState, regs);

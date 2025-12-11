@@ -1,0 +1,50 @@
+local game = {}
+local mainScene = require("game.mainScene")
+local ui = require("ui.ui")
+
+function game.start(pGfxContext, assetsPath)
+    game.assetsPath = assetsPath
+    print(ui)
+    game.font = ui.createFont(pGfxContext, assetsPath .. "/fonts/Monaco.ttf", 32, 2048)
+    game.currentScene = mainScene
+    game.currentScene.start(game, pGfxContext, assetsPath)
+end
+
+function game.stop()
+    game.currentScene.stop(game)
+end
+
+function game.stopGfx(pGfxContext)
+    game.currentScene.stopGfx(game, pGfxContext)
+    game.currentScene = nil
+
+    ui.destroyFont(pGfxContext, game.font)
+    game.font = nil
+end
+
+-- Returns: nil = quit, self = continue, other scene = switch
+function game.update()
+    game.currentScene.update(game)
+end
+
+-- Called after waitRenderFence, handles GPU resources and scene switching
+function game.updateGfx(pGfxContext, width, height)
+    local nextScene = game.currentScene.updateGfx(game, pGfxContext, width, height)
+    local shouldQuit = false
+    -- Check if scene wants to switch (set by update)
+    if nextScene == nil then
+        shouldQuit = true
+    else
+        if nextScene ~= game.currentScene then
+            -- Switch scene: cleanup old, setup new
+            game.currentScene.stop(game)
+            game.currentScene.stopGfx(game, pGfxContext)
+            game.currentScene = nextScene
+            game.currentScene.start(game, pGfxContext, game.assetsPath)
+            game.currentScene.updateGfx(game, pGfxContext, width, height)
+        end
+    end
+    return shouldQuit
+end
+
+return game

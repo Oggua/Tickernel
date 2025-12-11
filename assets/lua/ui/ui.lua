@@ -33,43 +33,34 @@ local function updateOrientationRecursive(pGfxContext, ui, node, key, effectiveP
             parentLengthNDC = 2
         end
         local lengthNDC, offsetNDC
+        -- Calculate offset
+        local effectiveParentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
         -- Calculate length
         if orientation.type == "anchored" then
             lengthNDC = orientation.length / screenLength * 2
+            offsetNDC = (orientation.anchor - effectiveParentPivot) * parentLengthNDC
         elseif orientation.type == "relative" then
             local minOffsetNDC, maxOffsetNDC
-            if math.type(orientation.min) == "integer" then
-                minOffsetNDC = orientation.min / screenLength * 2
+            if math.type(orientation.minOffset) == "integer" then
+                minOffsetNDC = orientation.minOffset / screenLength * 2
             else
-                minOffsetNDC = parentLengthNDC * orientation.min
+                minOffsetNDC = parentLengthNDC * orientation.minOffset
             end
-            if math.type(orientation.max) == "integer" then
-                maxOffsetNDC = orientation.max / screenLength * 2
+            if math.type(orientation.maxOffset) == "integer" then
+                maxOffsetNDC = orientation.maxOffset / screenLength * 2
             else
-                maxOffsetNDC = parentLengthNDC * orientation.max
+                maxOffsetNDC = parentLengthNDC * orientation.maxOffset
             end
-            lengthNDC = parentLengthNDC - minOffsetNDC - maxOffsetNDC
+            lengthNDC = parentLengthNDC - minOffsetNDC + maxOffsetNDC
             if lengthNDC < 0 then
                 lengthNDC = 0
             end
+            local anchor = (minOffsetNDC + lengthNDC * orientation.pivot) / parentLengthNDC
+            offsetNDC = (anchor - effectiveParentPivot) * parentLengthNDC
         else
             error("Unknown orientation type " .. tostring(orientation.type))
         end
 
-        -- Calculate offset
-        local effectiveParentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
-        if orientation.type == "anchored" then
-            offsetNDC = (orientation.anchor - effectiveParentPivot) * parentLengthNDC
-        else -- relative
-            local minPaddingNDC
-            if math.type(orientation.min) == "integer" then
-                minPaddingNDC = orientation.min / screenLength * 2
-            else
-                minPaddingNDC = orientation.min * parentLengthNDC
-            end
-            local anchor = (minPaddingNDC + lengthNDC * orientation.pivot) / parentLengthNDC
-            offsetNDC = (anchor - effectiveParentPivot) * parentLengthNDC
-        end
         -- Apply additional offset
         if math.type(orientation.offset) == "integer" then
             offsetNDC = offsetNDC + orientation.offset / screenLength * 2
@@ -106,12 +97,12 @@ local function updateOrientationRecursive(pGfxContext, ui, node, key, effectiveP
                 end
             end
         end
-        if math.type(orientation.min) == "integer" then
-            minBound = minBound - node.layout[key].min / screenLength * 2
-            maxBound = maxBound + node.layout[key].max / screenLength * 2
+        if math.type(orientation.minOffset) == "integer" then
+            minBound = minBound + node.layout[key].minOffset / screenLength * 2
+            maxBound = maxBound + node.layout[key].maxOffset / screenLength * 2
         else
-            minBound = minBound - node.layout[key].min
-            maxBound = maxBound + node.layout[key].max
+            minBound = minBound + node.layout[key].minOffset
+            maxBound = maxBound + node.layout[key].maxOffset
         end
 
         -- Handle case with no children
@@ -378,16 +369,16 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
             horizontal = {
                 type = "relative",
                 pivot = 0.5,
-                min = 0,
-                max = 0,
+                minOffset = 0,
+                maxOffset = 0,
                 offset = 0,
                 scale = 1.0,
             },
             vertical = {
                 type = "relative",
                 pivot = 0.5,
-                max = 0,
-                min = 0,
+                maxOffset = 0,
+                minOffset = 0,
                 offset = 0,
                 scale = 1.0,
             },
@@ -666,7 +657,12 @@ function ui.createMaterialPtr(pGfxContext, pImage, pPipeline)
 end
 function ui.destroyMaterialPtr(pGfxContext, pMaterial)
     tkn.destroyPipelineMaterialPtr(pGfxContext, pMaterial)
-    table.remove(ui.materials, table.indexOf(ui.materials, pMaterial))
+    for i, material in ipairs(ui.materials) do
+        if material == pMaterial then
+            table.remove(ui.materials, i)
+            break
+        end
+    end
 end
 
 function ui.createFont(pGfxContext, path, fontSize, atlasLength)

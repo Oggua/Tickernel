@@ -54,7 +54,6 @@ function game.getFloor(temperature, humidity)
         end
     end
 
-
     return floor
 end
 
@@ -74,8 +73,7 @@ function game.getTemperature(seed, x, y)
     local temperature = 0
     for i = 1, level do
         local m = 2 ^ (level - 1)
-        temperature = temperature +
-            tknMath.perlinNoise2D(seed, x * temperatureNoiseScale * m, y * temperatureNoiseScale * m) / m
+        temperature = temperature + tknMath.perlinNoise2D(seed, x * temperatureNoiseScale * m, y * temperatureNoiseScale * m) / m
         seed = tknMath.LCGRandom(seed)
     end
     -- temperature = temperature + (x - (game.length - 1) / 2) / game.length
@@ -99,9 +97,3 @@ function game.generateWorld(seed, length, width)
         end
     end
 end
-
-function game.update()
-
-end
-
-return game

@@ -95,10 +95,6 @@ void destroyTknContextPtr(TknContext *pTknContext)
     lua_pushcfunction(pLuaState, errorHandler);
     lua_getglobal(pLuaState, "tknEngine");
     lua_getfield(pLuaState, -1, "stop");
-    assertLuaResult(pLuaState, lua_pcall(pLuaState, 0, 0, -3));
-
-    waitGfxRenderFence(pGfxContext);
-    lua_getfield(pLuaState, -1, "stopGfx");
     lua_pushlightuserdata(pLuaState, pGfxContext);
     assertLuaResult(pLuaState, lua_pcall(pLuaState, 1, 0, -4));
     lua_pop(pLuaState, 2);
@@ -108,46 +104,51 @@ void destroyTknContextPtr(TknContext *pTknContext)
     tknFree(pTknContext);
 }
 
-void updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent,uint32_t keyStateCount, KeyState* keyStates)
+bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyStateCount, KeyState *keyStates)
 {
     lua_State *pLuaState = pTknContext->pLuaState;
-    
+    bool shouldQuit = false;
+
     // Update input states first
-    if (keyStates && keyStateCount > 0) {
+    if (keyStates && keyStateCount > 0)
+    {
         lua_getglobal(pLuaState, "require");
         lua_pushstring(pLuaState, "input");
         lua_call(pLuaState, 1, 1);
-        
+
         lua_getfield(pLuaState, -1, "keyCodeStates");
-        
+
         // Use the actual keyStateCount parameter for safety
-        for (uint32_t i = 0; i < keyStateCount; i++) {
+        for (uint32_t i = 0; i < keyStateCount; i++)
+        {
             lua_pushinteger(pLuaState, i);
             lua_pushinteger(pLuaState, keyStates[i]); // Push KeyState enum value as integer
             lua_settable(pLuaState, -3);
         }
-        
+
         lua_pop(pLuaState, 2); // Clean up input module and keyCodeStates table
     }
-    
+
+    GfxContext *pGfxContext = pTknContext->pGfxContext;
+
     // Push error handler once at the beginning
     lua_pushcfunction(pLuaState, errorHandler);
     lua_getglobal(pLuaState, "tknEngine");
-    
-    // Call updateGameplay
-    lua_getfield(pLuaState, -1, "updateGameplay");
-    assertLuaResult(pLuaState, lua_pcall(pLuaState, 0, 0, -3));
 
-    GfxContext *pGfxContext = pTknContext->pGfxContext;
-    waitGfxRenderFence(pGfxContext);
-
-    // Call updateGfx (errorHandler still at bottom of our stack section)
-    lua_getfield(pLuaState, -1, "updateGfx"); // get updateGfx from tknEngine
+    // Call update with pGfxContext, width, height - Lua controls when to waitRenderFence
+    lua_getfield(pLuaState, -1, "update");
     lua_pushlightuserdata(pLuaState, pGfxContext);
     lua_pushinteger(pLuaState, swapchainExtent.width);
     lua_pushinteger(pLuaState, swapchainExtent.height);
-    assertLuaResult(pLuaState, lua_pcall(pLuaState, 3, 0, -6)); // errorHandler is at -6 relative to current top
+    assertLuaResult(pLuaState, lua_pcall(pLuaState, 3, 1, -6));
 
+    // Get return value if present
+    if (lua_isboolean(pLuaState, -1))
+    {
+        shouldQuit = lua_toboolean(pLuaState, -1);
+    }
+    lua_pop(pLuaState, 3); // Pop return value, errorHandler and tknEngine table
     updateGfxContextPtr(pGfxContext, swapchainExtent);
-    lua_pop(pLuaState, 2); // Pop errorHandler and tknEngine table
+
+    return shouldQuit;
 }

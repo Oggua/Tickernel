@@ -48,4 +48,4 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode);
 void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
 
 TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength);
-void destroyTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
+void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, GfxContext *pGfxContext);

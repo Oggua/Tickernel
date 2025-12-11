@@ -3,15 +3,23 @@
 @implementation AppView
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
-    [self.pEngineBinding updateEngine:size.width height:size.height keyStates:self.keyCodeStates];
+    BOOL shouldQuit = [self.pEngineBinding updateEngine:size.width height:size.height keyStates:self.keyCodeStates];
+    if (shouldQuit) {
+        [self.window close];
+    }
 }
 
 - (void)drawInMTKView:(MTKView *)view {
     NSCAssert([NSThread isMainThread], @"Rendering must be on main thread!");
     
-    [self.pEngineBinding updateEngine:view.drawableSize.width
+    BOOL shouldQuit = [self.pEngineBinding updateEngine:view.drawableSize.width
                                height:view.drawableSize.height
                              keyStates:self.keyCodeStates];
+    
+    if (shouldQuit) {
+        [self.window close];
+        return;
+    }
     
     // Transition key states: DOWN/UP -> IDLE after frame update
     for (int i = 0; i < KEY_CODE_COUNT; i++) {
