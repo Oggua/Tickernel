@@ -1,4 +1,4 @@
-#include "gfxCore.h"
+#include "tknGfxCore.h"
 
 // ASTC file header structure
 typedef struct {
@@ -54,7 +54,7 @@ static VkFormat getASTCVulkanFormat(uint32_t blockWidth, uint32_t blockHeight) {
 
 
 
-TknASTCImage* createASTCFromMemory(const char* buffer, size_t bufferSize) {
+TknASTCImage* tknCreateASTCFromMemory(const char* buffer, size_t bufferSize) {
     if (!buffer || bufferSize < sizeof(TknASTCHeader)) {
         printf("Error: Invalid buffer or buffer too small\n");
         return NULL;
@@ -118,7 +118,7 @@ TknASTCImage* createASTCFromMemory(const char* buffer, size_t bufferSize) {
     return tknAstcImage;
 }
 
-void destroyASTCImage(TknASTCImage* tknAstcImage) {
+void tknDestroyASTCImage(TknASTCImage* tknAstcImage) {
     if (tknAstcImage) {
         if (tknAstcImage->data) {
             tknFree(tknAstcImage->data);

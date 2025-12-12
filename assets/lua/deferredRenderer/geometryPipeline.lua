@@ -42,11 +42,11 @@ function geometryPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassInd
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return tkn.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, geometryPipelineSpvPaths, pMeshVertexInputLayout, pInstanceVertexInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.tknCreatePipelinePtr(pGfxContext, pRenderPass, subpassIndex, geometryPipelineSpvPaths, pMeshVertexInputLayout, pInstanceVertexInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
 function geometryPipeline.destroyPipelinePtr(pGfxContext, pPipeline)
-    tkn.destroyPipelinePtr(pGfxContext, pPipeline)
+    tkn.tknDestroyPipelinePtr(pGfxContext, pPipeline)
 end
 
 return geometryPipeline

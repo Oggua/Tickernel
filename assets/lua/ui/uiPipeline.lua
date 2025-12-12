@@ -34,11 +34,11 @@ function uiPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, as
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return tkn.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, uiPipelineSpvPaths, pUIVertexInputLayout, nil, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.tknCreatePipelinePtr(pGfxContext, pRenderPass, subpassIndex, uiPipelineSpvPaths, pUIVertexInputLayout, nil, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
 function uiPipeline.destroyPipelinePtr(pGfxContext, pPipeline)
-    tkn.destroyPipelinePtr(pGfxContext, pPipeline)
+    tkn.tknDestroyPipelinePtr(pGfxContext, pPipeline)
 end
 
 return uiPipeline

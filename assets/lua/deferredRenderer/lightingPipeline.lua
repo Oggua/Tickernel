@@ -35,11 +35,11 @@ function lightingPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassInd
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return tkn.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, lightingPipelineSpvPaths, nil, nil, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.tknCreatePipelinePtr(pGfxContext, pRenderPass, subpassIndex, lightingPipelineSpvPaths, nil, nil, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
 function lightingPipeline.destroyPipelinePtr(pGfxContext, pRenderPass)
-    tkn.destroyPipelinePtr(pGfxContext, pRenderPass)
+    tkn.tknDestroyPipelinePtr(pGfxContext, pRenderPass)
 end
 
 return lightingPipeline

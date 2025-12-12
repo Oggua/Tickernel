@@ -85,11 +85,11 @@ function deferredRenderPass.setup(pGfxContext, assetsPath, renderPassIndex)
         count = 1,
     }}
 
-    local depthVkFormat = tkn.getSupportedFormat(pGfxContext, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-    deferredRenderPass.pDepthAttachment = tkn.createDynamicAttachmentPtr(pGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
-    deferredRenderPass.pAlbedoAttachment = tkn.createDynamicAttachmentPtr(pGfxContext, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
-    deferredRenderPass.pNormalAttachment = tkn.createDynamicAttachmentPtr(pGfxContext, VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
-    deferredRenderPass.pSwapchainAttachment = tkn.getSwapchainAttachmentPtr(pGfxContext)
+    local depthVkFormat = tkn.tknGetSupportedFormat(pGfxContext, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    deferredRenderPass.pDepthAttachment = tkn.tknCreateDynamicAttachmentPtr(pGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
+    deferredRenderPass.pAlbedoAttachment = tkn.tknCreateDynamicAttachmentPtr(pGfxContext, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
+    deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pGfxContext, VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
+    deferredRenderPass.pSwapchainAttachment = tkn.tknGetSwapchainAttachmentPtr(pGfxContext)
     local pAttachments = {deferredRenderPass.pDepthAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, deferredRenderPass.pSwapchainAttachment}
 
     local depthAttachmentDescription = {
@@ -203,11 +203,11 @@ function deferredRenderPass.setup(pGfxContext, assetsPath, renderPassIndex)
         dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
         dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
     }}
-    deferredRenderPass.pRenderPass = tkn.createRenderPassPtr(pGfxContext, vkAttachmentDescriptions, pAttachments, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
+    deferredRenderPass.pRenderPass = tkn.tknCreateRenderPassPtr(pGfxContext, vkAttachmentDescriptions, pAttachments, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
 
     -- Create vertex input layouts
-    deferredRenderPass.pVoxelVertexInputLayout = tkn.createVertexInputLayoutPtr(pGfxContext, deferredRenderPass.vertexFormat)
-    deferredRenderPass.pInstanceVertexInputLayout = tkn.createVertexInputLayoutPtr(pGfxContext, deferredRenderPass.instanceFormat)
+    deferredRenderPass.pVoxelVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pGfxContext, deferredRenderPass.vertexFormat)
+    deferredRenderPass.pInstanceVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pGfxContext, deferredRenderPass.instanceFormat)
 
     -- Create global uniform buffer
     local pGlobalUniformBuffer = {
@@ -221,14 +221,14 @@ function deferredRenderPass.setup(pGfxContext, assetsPath, renderPassIndex)
         far = 100.0,
         fov = 90.0,
     }
-    deferredRenderPass.pGlobalUniformBuffer = tkn.createUniformBufferPtr(pGfxContext, deferredRenderPass.globalUniformBufferFormat, pGlobalUniformBuffer)
+    deferredRenderPass.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pGfxContext, deferredRenderPass.globalUniformBufferFormat, pGlobalUniformBuffer)
     local inputBindings = {{
         vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         pUniformBuffer = deferredRenderPass.pGlobalUniformBuffer,
         binding = 0,
     }}
-    deferredRenderPass.pGlobalMaterial = tkn.getGlobalMaterialPtr(pGfxContext)
-    tkn.updateMaterialPtr(pGfxContext, deferredRenderPass.pGlobalMaterial, inputBindings)
+    deferredRenderPass.pGlobalMaterial = tkn.tknGetGlobalMaterialPtr(pGfxContext)
+    tkn.tknUpdateMaterialPtr(pGfxContext, deferredRenderPass.pGlobalMaterial, inputBindings)
 
     -- Create lights uniform buffer
     local pLightsUniformBuffer = {
@@ -240,26 +240,26 @@ function deferredRenderPass.setup(pGfxContext, assetsPath, renderPassIndex)
     for i = 1, 128 * 8 do
         table.insert(pLightsUniformBuffer.pointLights, 0.0)
     end
-    deferredRenderPass.pLightsUniformBuffer = tkn.createUniformBufferPtr(pGfxContext, deferredRenderPass.lightsUniformBufferFormat, pLightsUniformBuffer)
+    deferredRenderPass.pLightsUniformBuffer = tkn.tknCreateUniformBufferPtr(pGfxContext, deferredRenderPass.lightsUniformBufferFormat, pLightsUniformBuffer)
 
     -- Bind lights uniform buffer to lighting subpass material
-    deferredRenderPass.pLightingSubpassMaterial = tkn.getSubpassMaterialPtr(pGfxContext, deferredRenderPass.pRenderPass, 1)
+    deferredRenderPass.pLightingSubpassMaterial = tkn.tknGetSubpassMaterialPtr(pGfxContext, deferredRenderPass.pRenderPass, 1)
     local lightingInputBindings = {{
         vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         pUniformBuffer = deferredRenderPass.pLightsUniformBuffer,
         binding = 3,
     }}
-    tkn.updateMaterialPtr(pGfxContext, deferredRenderPass.pLightingSubpassMaterial, lightingInputBindings)
+    tkn.tknUpdateMaterialPtr(pGfxContext, deferredRenderPass.pLightingSubpassMaterial, lightingInputBindings)
 
     local pipelineIndex = 0
     deferredRenderPass.pGeometryPipeline = geometryPipeline.createPipelinePtr(pGfxContext, deferredRenderPass.pRenderPass, pipelineIndex, assetsPath, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.pInstanceVertexInputLayout)
     pipelineIndex = pipelineIndex + 1
     deferredRenderPass.pLightingPipeline = lightingPipeline.createPipelinePtr(pGfxContext, deferredRenderPass.pRenderPass, pipelineIndex, assetsPath)
-    deferredRenderPass.pGeometryMaterial = tkn.createPipelineMaterialPtr(pGfxContext, deferredRenderPass.pGeometryPipeline)
-    deferredRenderPass.pLightingMaterial = tkn.createPipelineMaterialPtr(pGfxContext, deferredRenderPass.pLightingPipeline)
+    deferredRenderPass.pGeometryMaterial = tkn.tknCreatePipelineMaterialPtr(pGfxContext, deferredRenderPass.pGeometryPipeline)
+    deferredRenderPass.pLightingMaterial = tkn.tknCreatePipelineMaterialPtr(pGfxContext, deferredRenderPass.pLightingPipeline)
 
-    local pLightingDrawCall = tkn.createDrawCallPtr(pGfxContext, deferredRenderPass.pLightingPipeline, deferredRenderPass.pLightingMaterial, nil, nil)
-    tkn.insertDrawCallPtr(pLightingDrawCall, 0)
+    local pLightingDrawCall = tkn.tknCreateDrawCallPtr(pGfxContext, deferredRenderPass.pLightingPipeline, deferredRenderPass.pLightingMaterial, nil, nil)
+    tkn.tknInsertDrawCallPtr(pLightingDrawCall, 0)
     return renderPassIndex
 end
 
@@ -270,26 +270,26 @@ function deferredRenderPass.teardown(pGfxContext)
     deferredRenderPass.pLightingMaterial = nil
 
     -- Destroy uniform buffers
-    tkn.destroyUniformBufferPtr(pGfxContext, deferredRenderPass.pGlobalUniformBuffer)
+    tkn.tknDestroyUniformBufferPtr(pGfxContext, deferredRenderPass.pGlobalUniformBuffer)
     deferredRenderPass.pGlobalUniformBuffer = nil
     deferredRenderPass.pGlobalMaterial = nil
-    tkn.destroyUniformBufferPtr(pGfxContext, deferredRenderPass.pLightsUniformBuffer)
+    tkn.tknDestroyUniformBufferPtr(pGfxContext, deferredRenderPass.pLightsUniformBuffer)
     deferredRenderPass.pLightsUniformBuffer = nil
     deferredRenderPass.pLightingSubpassMaterial = nil
 
-    tkn.destroyRenderPassPtr(pGfxContext, deferredRenderPass.pRenderPass)
+    tkn.tknDestroyRenderPassPtr(pGfxContext, deferredRenderPass.pRenderPass)
 
     deferredRenderPass.pRenderPass = nil
     deferredRenderPass.pGeometryPipeline = nil
     deferredRenderPass.pLightingPipeline = nil
 
-    tkn.destroyDynamicAttachmentPtr(pGfxContext, deferredRenderPass.pNormalAttachment)
-    tkn.destroyDynamicAttachmentPtr(pGfxContext, deferredRenderPass.pAlbedoAttachment)
-    tkn.destroyDynamicAttachmentPtr(pGfxContext, deferredRenderPass.pDepthAttachment)
+    tkn.tknDestroyDynamicAttachmentPtr(pGfxContext, deferredRenderPass.pNormalAttachment)
+    tkn.tknDestroyDynamicAttachmentPtr(pGfxContext, deferredRenderPass.pAlbedoAttachment)
+    tkn.tknDestroyDynamicAttachmentPtr(pGfxContext, deferredRenderPass.pDepthAttachment)
 
     -- Destroy vertex input layouts
-    tkn.destroyVertexInputLayoutPtr(pGfxContext, deferredRenderPass.pInstanceVertexInputLayout)
-    tkn.destroyVertexInputLayoutPtr(pGfxContext, deferredRenderPass.pVoxelVertexInputLayout)
+    tkn.tknDestroyVertexInputLayoutPtr(pGfxContext, deferredRenderPass.pInstanceVertexInputLayout)
+    tkn.tknDestroyVertexInputLayoutPtr(pGfxContext, deferredRenderPass.pVoxelVertexInputLayout)
     deferredRenderPass.pInstanceVertexInputLayout = nil
     deferredRenderPass.pVoxelVertexInputLayout = nil
 end

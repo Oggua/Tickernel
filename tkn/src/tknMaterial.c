@@ -1,62 +1,62 @@
-#include "gfxCore.h"
-TknMaterial *createMaterialPtr(TknGfxContext *pTknGfxContext, DescriptorSet *pDescriptorSet)
+#include "tknGfxCore.h"
+TknMaterial *tknCreateMaterialPtr(TknGfxContext *pTknGfxContext, TknDescriptorSet *pTknDescriptorSet)
 {
     TknMaterial *pTknMaterial = tknMalloc(sizeof(TknMaterial));
     VkDescriptorSet vkDescriptorSet = VK_NULL_HANDLE;
-    uint32_t descriptorCount = pDescriptorSet->descriptorCount;
-    Binding *bindings = tknMalloc(sizeof(Binding) * descriptorCount);
+    uint32_t tknDescriptorCount = pTknDescriptorSet->tknDescriptorCount;
+    TknBinding *bindings = tknMalloc(sizeof(TknBinding) * tknDescriptorCount);
     VkDescriptorPool vkDescriptorPool = VK_NULL_HANDLE;
 
-    for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorCount; descriptorIndex++)
+    for (uint32_t descriptorIndex = 0; descriptorIndex < tknDescriptorCount; descriptorIndex++)
     {
-        VkDescriptorType vkDescriptorType = pDescriptorSet->vkDescriptorTypes[descriptorIndex];
+        VkDescriptorType vkDescriptorType = pTknDescriptorSet->vkDescriptorTypes[descriptorIndex];
         
         // Initialize binding with explicit zero values
         bindings[descriptorIndex].vkDescriptorType = vkDescriptorType;
         bindings[descriptorIndex].pTknMaterial = pTknMaterial;
         bindings[descriptorIndex].binding = descriptorIndex;
         // Explicitly zero out the entire binding union
-        memset(&bindings[descriptorIndex].bindingUnion, 0, sizeof(bindings[descriptorIndex].bindingUnion));
+        memset(&bindings[descriptorIndex].tknBindingUnion, 0, sizeof(bindings[descriptorIndex].tknBindingUnion));
     }
     VkDescriptorPoolCreateInfo vkDescriptorPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .poolSizeCount = pDescriptorSet->vkDescriptorPoolSizeDynamicArray.count,
-        .pPoolSizes = pDescriptorSet->vkDescriptorPoolSizeDynamicArray.array,
+        .poolSizeCount = pTknDescriptorSet->vkDescriptorPoolSizeDynamicArray.count,
+        .pPoolSizes = pTknDescriptorSet->vkDescriptorPoolSizeDynamicArray.array,
         .maxSets = 1,
     };
     VkDevice vkDevice = pTknGfxContext->vkDevice;
-    assertVkResult(vkCreateDescriptorPool(vkDevice, &vkDescriptorPoolCreateInfo, NULL, &vkDescriptorPool));
+    tknAssertVkResult(vkCreateDescriptorPool(vkDevice, &vkDescriptorPoolCreateInfo, NULL, &vkDescriptorPool));
 
     VkDescriptorSetAllocateInfo vkDescriptorSetAllocateInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = vkDescriptorPool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &pDescriptorSet->vkDescriptorSetLayout,
+        .pSetLayouts = &pTknDescriptorSet->vkDescriptorSetLayout,
     };
 
-    assertVkResult(vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet));
-    TknHashSet drawCallPtrHashSet = tknCreateHashSet(sizeof(TknDrawCall *));
+    tknAssertVkResult(vkAllocateDescriptorSets(vkDevice, &vkDescriptorSetAllocateInfo, &vkDescriptorSet));
+    TknHashSet tknDrawCallPtrHashSet = tknCreateHashSet(sizeof(TknDrawCall *));
     *pTknMaterial = (TknMaterial){
         .vkDescriptorSet = vkDescriptorSet,
-        .bindingCount = descriptorCount,
-        .bindings = bindings,
+        .tknBindingCount = tknDescriptorCount,
+        .pTknBindings = bindings,
         .vkDescriptorPool = vkDescriptorPool,
-        .pDescriptorSet = pDescriptorSet,
-        .drawCallPtrHashSet = drawCallPtrHashSet,
+        .pTknDescriptorSet = pTknDescriptorSet,
+        .tknDrawCallPtrHashSet = tknDrawCallPtrHashSet,
     };
-    tknAddToHashSet(&pDescriptorSet->materialPtrHashSet, &pTknMaterial);
+    tknAddToHashSet(&pTknDescriptorSet->tknMaterialPtrHashSet, &pTknMaterial);
     
-    // Initialize all bindings with empty resources using updateMaterialPtr
+    // Initialize all bindings with empty resources using tknUpdateMaterialPtr
     uint32_t inputBindingCount = 0;
-    TknInputBinding *tknInputBindings = tknMalloc(sizeof(TknInputBinding) * descriptorCount);
+    TknInputBinding *tknInputBindings = tknMalloc(sizeof(TknInputBinding) * tknDescriptorCount);
     
-    for (uint32_t i = 0; i < descriptorCount; i++)
+    for (uint32_t i = 0; i < tknDescriptorCount; i++)
     {
         VkDescriptorType vkDescriptorType = bindings[i].vkDescriptorType;
         if (vkDescriptorType != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
         {
             // Get empty binding for this descriptor type
-            TknInputBindingUnion tknInputBindingUnion = getEmptyInputBindingUnion(pTknGfxContext, vkDescriptorType);
+            TknInputBindingUnion tknInputBindingUnion = tknGetEmptyInputBindingUnion(pTknGfxContext, vkDescriptorType);
             
             tknInputBindings[inputBindingCount] = (TknInputBinding){
                 .binding = i,
@@ -69,28 +69,28 @@ TknMaterial *createMaterialPtr(TknGfxContext *pTknGfxContext, DescriptorSet *pDe
     
     if (inputBindingCount > 0)
     {
-        updateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindingCount, tknInputBindings);
+        tknUpdateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindingCount, tknInputBindings);
     }
     tknFree(tknInputBindings);
     
     return pTknMaterial;
 }
 
-void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
+void tknDestroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
 {
-    tknAssert(0 == pTknMaterial->drawCallPtrHashSet.count, "TknMaterial still has draw calls attached!");
+    tknAssert(0 == pTknMaterial->tknDrawCallPtrHashSet.count, "TknMaterial still has draw calls attached!");
     VkDevice vkDevice = pTknGfxContext->vkDevice;
     uint32_t inputBindingCount = 0;
-    TknInputBinding *tknInputBindings = tknMalloc(sizeof(TknInputBinding) * pTknMaterial->bindingCount);
-    for (uint32_t binding = 0; binding < pTknMaterial->bindingCount; binding++)
+    TknInputBinding *tknInputBindings = tknMalloc(sizeof(TknInputBinding) * pTknMaterial->tknBindingCount);
+    for (uint32_t binding = 0; binding < pTknMaterial->tknBindingCount; binding++)
     {
-        Binding *pBinding = &pTknMaterial->bindings[binding];
-        VkDescriptorType vkDescriptorType = pBinding->vkDescriptorType;
+        TknBinding *pTknBinding = &pTknMaterial->pTknBindings[binding];
+        VkDescriptorType vkDescriptorType = pTknBinding->vkDescriptorType;
         if (vkDescriptorType != VK_DESCRIPTOR_TYPE_MAX_ENUM && vkDescriptorType != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
         {
             if (VK_DESCRIPTOR_TYPE_SAMPLER == vkDescriptorType)
             {
-                TknSampler *pTknSampler = pBinding->bindingUnion.tknSamplerBinding.pTknSampler;
+                TknSampler *pTknSampler = pTknBinding->tknBindingUnion.tknSamplerBinding.pTknSampler;
                 if (NULL == pTknSampler)
                 {
                     // Nothing
@@ -98,13 +98,13 @@ void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial
                 else
                 {
                     // Current sampler deref descriptor
-                    tknRemoveFromHashSet(&pTknSampler->bindingPtrHashSet, &pBinding);
+                    tknRemoveFromHashSet(&pTknSampler->tknBindingPtrHashSet, &pTknBinding);
                 }
             }
             else if (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER == vkDescriptorType)
             {
-                TknSampler *pTknSampler = pBinding->bindingUnion.tknCombinedImageSamplerBinding.pTknSampler;
-                TknImage *pTknImage = pBinding->bindingUnion.tknCombinedImageSamplerBinding.pTknImage;
+                TknSampler *pTknSampler = pTknBinding->tknBindingUnion.tknCombinedImageSamplerBinding.pTknSampler;
+                TknImage *pTknImage = pTknBinding->tknBindingUnion.tknCombinedImageSamplerBinding.pTknImage;
                 if (NULL == pTknSampler && NULL == pTknImage)
                 {
                     // Nothing
@@ -112,8 +112,8 @@ void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial
                 else
                 {
                     // Current sampler deref descriptor
-                    tknRemoveFromHashSet(&pTknSampler->bindingPtrHashSet, &pBinding);
-                    tknRemoveFromHashSet(&pTknImage->bindingPtrHashSet, &pBinding);
+                    tknRemoveFromHashSet(&pTknSampler->tknBindingPtrHashSet, &pTknBinding);
+                    tknRemoveFromHashSet(&pTknImage->tknBindingPtrHashSet, &pTknBinding);
                 }
             }
             else if (VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE == vkDescriptorType)
@@ -134,7 +134,7 @@ void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial
             }
             else if (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER == vkDescriptorType)
             {
-                TknUniformBuffer *pTknUniformBuffer = pBinding->bindingUnion.tknUniformBufferBinding.pTknUniformBuffer;
+                TknUniformBuffer *pTknUniformBuffer = pTknBinding->tknBindingUnion.tknUniformBufferBinding.pTknUniformBuffer;
                 if (NULL == pTknUniformBuffer)
                 {
                     // Nothing
@@ -142,7 +142,7 @@ void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial
                 else
                 {
                     // Current uniform buffer deref descriptor
-                    tknRemoveFromHashSet(&pTknUniformBuffer->bindingPtrHashSet, &pBinding);
+                    tknRemoveFromHashSet(&pTknUniformBuffer->tknBindingPtrHashSet, &pTknBinding);
                 }
             }
             else if (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER == vkDescriptorType)
@@ -164,7 +164,7 @@ void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial
         }
         else if (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT == vkDescriptorType)
         {
-            tknAssert(pBinding->bindingUnion.inputAttachmentBinding.pTknAttachment == NULL, "Input attachment bindings must be unbound before destroying a material");
+            tknAssert(pTknBinding->tknBindingUnion.tknInputAttachmentBinding.pTknAttachment == NULL, "Input attachment bindings must be unbound before destroying a material");
         }
         else
         {
@@ -173,25 +173,25 @@ void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial
     }
     if (inputBindingCount > 0)
     {
-        updateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindingCount, tknInputBindings);
+        tknUpdateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindingCount, tknInputBindings);
     }
     tknFree(tknInputBindings);
 
-    tknRemoveFromHashSet(&pTknMaterial->pDescriptorSet->materialPtrHashSet, &pTknMaterial);
-    tknDestroyHashSet(pTknMaterial->drawCallPtrHashSet);
+    tknRemoveFromHashSet(&pTknMaterial->pTknDescriptorSet->tknMaterialPtrHashSet, &pTknMaterial);
+    tknDestroyHashSet(pTknMaterial->tknDrawCallPtrHashSet);
     // Destroying the descriptor pool automatically frees all descriptor sets allocated from it
     vkDestroyDescriptorPool(vkDevice, pTknMaterial->vkDescriptorPool, NULL);
-    tknFree(pTknMaterial->bindings);
+    tknFree(pTknMaterial->pTknBindings);
     tknFree(pTknMaterial);
 }
 
-void bindAttachmentsToMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
+void tknBindAttachmentsToMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
 {
     uint32_t vkWriteDescriptorSetCount = 0;
-    for (uint32_t binding = 0; binding < pTknMaterial->bindingCount; binding++)
+    for (uint32_t binding = 0; binding < pTknMaterial->tknBindingCount; binding++)
     {
-        Binding *pBinding = &pTknMaterial->bindings[binding];
-        if (pBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+        TknBinding *pTknBinding = &pTknMaterial->pTknBindings[binding];
+        if (pTknBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
         {
             vkWriteDescriptorSetCount++;
         }
@@ -206,33 +206,33 @@ void bindAttachmentsToMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pT
         VkWriteDescriptorSet *vkWriteDescriptorSets = tknMalloc(sizeof(VkWriteDescriptorSet) * vkWriteDescriptorSetCount);
         VkDescriptorImageInfo *vkDescriptorImageInfos = tknMalloc(sizeof(VkDescriptorImageInfo) * vkWriteDescriptorSetCount);
         VkDescriptorType vkDescriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-        for (uint32_t binding = 0; binding < pTknMaterial->bindingCount; binding++)
+        for (uint32_t binding = 0; binding < pTknMaterial->tknBindingCount; binding++)
         {
-            Binding *pBinding = &pTknMaterial->bindings[binding];
-            if (pBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+            TknBinding *pTknBinding = &pTknMaterial->pTknBindings[binding];
+            if (pTknBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
             {
-                TknAttachment *pInputAttachment = pBinding->bindingUnion.inputAttachmentBinding.pTknAttachment;
-                tknAssert(pInputAttachment != NULL, "Binding %d is not bound to an attachment", binding);
+                TknAttachment *pInputAttachment = pTknBinding->tknBindingUnion.tknInputAttachmentBinding.pTknAttachment;
+                tknAssert(pInputAttachment != NULL, "TknBinding %d is not bound to an attachment", binding);
                 VkImageView vkImageView = VK_NULL_HANDLE;
-                if (ATTACHMENT_TYPE_DYNAMIC == pInputAttachment->attachmentType)
+                if (TKN_ATTACHMENT_TYPE_DYNAMIC == pInputAttachment->tknAttachmentType)
                 {
-                    vkImageView = pInputAttachment->attachmentUnion.dynamicAttachment.vkImageView;
-                    tknAddToHashSet(&pInputAttachment->attachmentUnion.dynamicAttachment.bindingPtrHashSet, &pBinding);
+                    vkImageView = pInputAttachment->tknAttachmentUnion.tknDynamicAttachment.vkImageView;
+                    tknAddToHashSet(&pInputAttachment->tknAttachmentUnion.tknDynamicAttachment.tknBindingPtrHashSet, &pTknBinding);
                 }
-                else if (ATTACHMENT_TYPE_FIXED == pInputAttachment->attachmentType)
+                else if (TKN_ATTACHMENT_TYPE_FIXED == pInputAttachment->tknAttachmentType)
                 {
-                    vkImageView = pInputAttachment->attachmentUnion.fixedAttachment.vkImageView;
-                    tknAddToHashSet(&pInputAttachment->attachmentUnion.fixedAttachment.bindingPtrHashSet, &pBinding);
+                    vkImageView = pInputAttachment->tknAttachmentUnion.tknFixedAttachment.vkImageView;
+                    tknAddToHashSet(&pInputAttachment->tknAttachmentUnion.tknFixedAttachment.tknBindingPtrHashSet, &pTknBinding);
                 }
                 else
                 {
-                    tknError("Swapchain attachment cannot be used as input attachment (attachment type: %d)", pInputAttachment->attachmentType);
+                    tknError("Swapchain attachment cannot be used as input attachment (attachment type: %d)", pInputAttachment->tknAttachmentType);
                 }
 
                 vkDescriptorImageInfos[vkWriteDescriptorSetIndex] = (VkDescriptorImageInfo){
                     .sampler = VK_NULL_HANDLE,
                     .imageView = vkImageView,
-                    .imageLayout = pBinding->bindingUnion.inputAttachmentBinding.vkImageLayout,
+                    .imageLayout = pTknBinding->tknBindingUnion.tknInputAttachmentBinding.vkImageLayout,
                 };
 
                 vkWriteDescriptorSets[vkWriteDescriptorSetIndex] = (VkWriteDescriptorSet){
@@ -263,13 +263,13 @@ void bindAttachmentsToMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pT
         return;
     }
 }
-void unbindAttachmentsFromMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
+void tknUnbindAttachmentsFromMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
 {
     uint32_t vkWriteDescriptorSetCount = 0;
-    for (uint32_t binding = 0; binding < pTknMaterial->bindingCount; binding++)
+    for (uint32_t binding = 0; binding < pTknMaterial->tknBindingCount; binding++)
     {
-        Binding *pBinding = &pTknMaterial->bindings[binding];
-        if (pBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+        TknBinding *pTknBinding = &pTknMaterial->pTknBindings[binding];
+        if (pTknBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
         {
             vkWriteDescriptorSetCount++;
         }
@@ -283,28 +283,28 @@ void unbindAttachmentsFromMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial
         uint32_t vkWriteDescriptorSetIndex = 0;
         VkWriteDescriptorSet *vkWriteDescriptorSets = tknMalloc(sizeof(VkWriteDescriptorSet) * vkWriteDescriptorSetCount);
         VkDescriptorImageInfo *vkDescriptorImageInfos = tknMalloc(sizeof(VkDescriptorImageInfo) * vkWriteDescriptorSetCount);
-        for (uint32_t binding = 0; binding < pTknMaterial->bindingCount; binding++)
+        for (uint32_t binding = 0; binding < pTknMaterial->tknBindingCount; binding++)
         {
-            Binding *pBinding = &pTknMaterial->bindings[binding];
-            if (pBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
+            TknBinding *pTknBinding = &pTknMaterial->pTknBindings[binding];
+            if (pTknBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)
             {
-                TknAttachment *pTknAttachment = pBinding->bindingUnion.inputAttachmentBinding.pTknAttachment;
-                tknAssert(pTknAttachment != NULL, "Binding %d is not bound to an attachment", binding);
-                pBinding->bindingUnion.inputAttachmentBinding.pTknAttachment = NULL;
+                TknAttachment *pTknAttachment = pTknBinding->tknBindingUnion.tknInputAttachmentBinding.pTknAttachment;
+                tknAssert(pTknAttachment != NULL, "TknBinding %d is not bound to an attachment", binding);
+                pTknBinding->tknBindingUnion.tknInputAttachmentBinding.pTknAttachment = NULL;
 
-                if (ATTACHMENT_TYPE_DYNAMIC == pTknAttachment->attachmentType)
+                if (TKN_ATTACHMENT_TYPE_DYNAMIC == pTknAttachment->tknAttachmentType)
                 {
-                    tknRemoveFromHashSet(&pTknAttachment->attachmentUnion.dynamicAttachment.bindingPtrHashSet, &pBinding);
+                    tknRemoveFromHashSet(&pTknAttachment->tknAttachmentUnion.tknDynamicAttachment.tknBindingPtrHashSet, &pTknBinding);
                 }
-                else if (ATTACHMENT_TYPE_FIXED == pTknAttachment->attachmentType)
+                else if (TKN_ATTACHMENT_TYPE_FIXED == pTknAttachment->tknAttachmentType)
                 {
-                    tknRemoveFromHashSet(&pTknAttachment->attachmentUnion.fixedAttachment.bindingPtrHashSet, &pBinding);
+                    tknRemoveFromHashSet(&pTknAttachment->tknAttachmentUnion.tknFixedAttachment.tknBindingPtrHashSet, &pTknBinding);
                 }
                 else
                 {
-                    tknError("Swapchain attachment cannot be used as input attachment (attachment type: %d)", pTknAttachment->attachmentType);
+                    tknError("Swapchain attachment cannot be used as input attachment (attachment type: %d)", pTknAttachment->tknAttachmentType);
                 }
-                VkImageView vkImageView = pTknGfxContext->pEmptyImage->vkImageView;
+                VkImageView vkImageView = pTknGfxContext->pTknEmptyImage->vkImageView;
                 vkDescriptorImageInfos[vkWriteDescriptorSetIndex] = (VkDescriptorImageInfo){
                     .sampler = VK_NULL_HANDLE,
                     .imageView = vkImageView,
@@ -338,36 +338,36 @@ void unbindAttachmentsFromMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial
         return;
     }
 }
-void updateAttachmentOfMaterialPtr(TknGfxContext *pTknGfxContext, Binding *pBinding)
+void tknUpdateAttachmentOfMaterialPtr(TknGfxContext *pTknGfxContext, TknBinding *pTknBinding)
 {
-    tknAssert(pBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, "Binding is not an input attachment");
-    tknAssert(pBinding->bindingUnion.inputAttachmentBinding.pTknAttachment != NULL, "Binding is not bound to an attachment");
+    tknAssert(pTknBinding->vkDescriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, "TknBinding is not an input attachment");
+    tknAssert(pTknBinding->tknBindingUnion.tknInputAttachmentBinding.pTknAttachment != NULL, "TknBinding is not bound to an attachment");
 
-    TknAttachment *pTknAttachment = pBinding->bindingUnion.inputAttachmentBinding.pTknAttachment;
+    TknAttachment *pTknAttachment = pTknBinding->tknBindingUnion.tknInputAttachmentBinding.pTknAttachment;
     VkImageView vkImageView = VK_NULL_HANDLE;
 
-    if (ATTACHMENT_TYPE_DYNAMIC == pTknAttachment->attachmentType)
+    if (TKN_ATTACHMENT_TYPE_DYNAMIC == pTknAttachment->tknAttachmentType)
     {
-        vkImageView = pTknAttachment->attachmentUnion.dynamicAttachment.vkImageView;
+        vkImageView = pTknAttachment->tknAttachmentUnion.tknDynamicAttachment.vkImageView;
     }
-    else if (ATTACHMENT_TYPE_FIXED == pTknAttachment->attachmentType)
+    else if (TKN_ATTACHMENT_TYPE_FIXED == pTknAttachment->tknAttachmentType)
     {
-        vkImageView = pTknAttachment->attachmentUnion.fixedAttachment.vkImageView;
+        vkImageView = pTknAttachment->tknAttachmentUnion.tknFixedAttachment.vkImageView;
     }
     else
     {
-        tknError("Swapchain attachment cannot be used as input attachment (attachment type: %d)", pTknAttachment->attachmentType);
+        tknError("Swapchain attachment cannot be used as input attachment (attachment type: %d)", pTknAttachment->tknAttachmentType);
     }
 
     VkDescriptorImageInfo vkDescriptorImageInfo = {
         .sampler = VK_NULL_HANDLE,
         .imageView = vkImageView,
-        .imageLayout = pBinding->bindingUnion.inputAttachmentBinding.vkImageLayout,
+        .imageLayout = pTknBinding->tknBindingUnion.tknInputAttachmentBinding.vkImageLayout,
     };
     VkWriteDescriptorSet vkWriteDescriptorSet = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = pBinding->pTknMaterial->vkDescriptorSet,
-        .dstBinding = pBinding->binding,
+        .dstSet = pTknBinding->pTknMaterial->vkDescriptorSet,
+        .dstBinding = pTknBinding->binding,
         .dstArrayElement = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
@@ -379,14 +379,14 @@ void updateAttachmentOfMaterialPtr(TknGfxContext *pTknGfxContext, Binding *pBind
     vkUpdateDescriptorSets(vkDevice, 1, &vkWriteDescriptorSet, 0, NULL);
 }
 
-TknMaterial *getGlobalMaterialPtr(TknGfxContext *pTknGfxContext)
+TknMaterial *tknGetGlobalMaterialPtr(TknGfxContext *pTknGfxContext)
 {
-    tknAssert(pTknGfxContext->pGlobalDescriptorSet != NULL, "Global descriptor set is NULL");
-    TknHashSet materialPtrHashSet = pTknGfxContext->pGlobalDescriptorSet->materialPtrHashSet;
-    tknAssert(materialPtrHashSet.count == 1, "TknMaterial pointer hashset count is not 1");
-    for (uint32_t nodeIndex = 0; nodeIndex < materialPtrHashSet.capacity; nodeIndex++)
+    tknAssert(pTknGfxContext->pTknGlobalDescriptorSet != NULL, "Global descriptor set is NULL");
+    TknHashSet tknMaterialPtrHashSet = pTknGfxContext->pTknGlobalDescriptorSet->tknMaterialPtrHashSet;
+    tknAssert(tknMaterialPtrHashSet.count == 1, "TknMaterial pointer hashset count is not 1");
+    for (uint32_t nodeIndex = 0; nodeIndex < tknMaterialPtrHashSet.capacity; nodeIndex++)
     {
-        TknListNode *node = materialPtrHashSet.nodePtrs[nodeIndex];
+        TknListNode *node = tknMaterialPtrHashSet.nodePtrs[nodeIndex];
         if (node)
         {
             TknMaterial *pTknMaterial = *(TknMaterial **)node->data;
@@ -400,16 +400,16 @@ TknMaterial *getGlobalMaterialPtr(TknGfxContext *pTknGfxContext)
     tknError("Failed to find global material");
     return NULL;
 }
-TknMaterial *getSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t subpassIndex)
+TknMaterial *tknGetSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex)
 {
     tknAssert(pTknRenderPass != NULL, "Render pass is NULL");
-    tknAssert(subpassIndex < pTknRenderPass->subpassCount, "Subpass index is out of bounds");
-    tknAssert(pTknRenderPass->subpasses[subpassIndex].pSubpassDescriptorSet != NULL, "Subpass descriptor set is NULL");
-    tknAssert(pTknRenderPass->subpasses[subpassIndex].pSubpassDescriptorSet->materialPtrHashSet.count == 1, "TknMaterial pointer hashset count is not 1");
-    TknHashSet materialPtrHashSet = pTknRenderPass->subpasses[subpassIndex].pSubpassDescriptorSet->materialPtrHashSet;
-    for (uint32_t nodeIndex = 0; nodeIndex < materialPtrHashSet.capacity; nodeIndex++)
+    tknAssert(tknSubpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index is out of bounds");
+    tknAssert(pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet != NULL, "Subpass descriptor set is NULL");
+    tknAssert(pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet->tknMaterialPtrHashSet.count == 1, "TknMaterial pointer hashset count is not 1");
+    TknHashSet tknMaterialPtrHashSet = pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet->tknMaterialPtrHashSet;
+    for (uint32_t nodeIndex = 0; nodeIndex < tknMaterialPtrHashSet.capacity; nodeIndex++)
     {
-        TknListNode *node = materialPtrHashSet.nodePtrs[nodeIndex];
+        TknListNode *node = tknMaterialPtrHashSet.nodePtrs[nodeIndex];
         if (node)
         {
             TknMaterial *pTknMaterial = *(TknMaterial **)node->data;
@@ -423,17 +423,17 @@ TknMaterial *getSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass 
     tknError("Failed to find subpass material");
     return NULL;
 }
-TknMaterial *createPipelineMaterialPtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline)
+TknMaterial *tknCreatePipelineMaterialPtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline)
 {
-    TknMaterial *pTknMaterial = createMaterialPtr(pTknGfxContext, pTknPipeline->pPipelineDescriptorSet);
+    TknMaterial *pTknMaterial = tknCreateMaterialPtr(pTknGfxContext, pTknPipeline->pTknPipelineDescriptorSet);
     return pTknMaterial;
 }
-void destroyPipelineMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
+void tknDestroyPipelineMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial)
 {
-    destroyMaterialPtr(pTknGfxContext, pTknMaterial);
+    tknDestroyMaterialPtr(pTknGfxContext, pTknMaterial);
 }
 
-void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial, uint32_t inputBindingCount, TknInputBinding *tknInputBindings)
+void tknUpdateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial, uint32_t inputBindingCount, TknInputBinding *tknInputBindings)
 {
     if (inputBindingCount > 0)
     {
@@ -446,10 +446,10 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
         {
             TknInputBinding tknInputBinding = tknInputBindings[bindingIndex];
             uint32_t binding = tknInputBinding.binding;
-            tknAssert(binding < pTknMaterial->bindingCount, "Invalid binding index");
-            VkDescriptorType vkDescriptorType = pTknMaterial->bindings[binding].vkDescriptorType;
+            tknAssert(binding < pTknMaterial->tknBindingCount, "Invalid binding index");
+            VkDescriptorType vkDescriptorType = pTknMaterial->pTknBindings[binding].vkDescriptorType;
             tknAssert(vkDescriptorType == tknInputBinding.vkDescriptorType, "Incompatible descriptor type");
-            Binding *pBinding = &pTknMaterial->bindings[binding];
+            TknBinding *pTknBinding = &pTknMaterial->pTknBindings[binding];
             // VK_DESCRIPTOR_TYPE_SAMPLER = 0,
             // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = 1,
             // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE = 2,
@@ -464,7 +464,7 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
             if (VK_DESCRIPTOR_TYPE_SAMPLER == vkDescriptorType)
             {
                 TknSampler *pInputSampler = tknInputBinding.tknInputBindingUnion.tknSamplerBinding.pTknSampler;
-                TknSampler *pTknSampler = pBinding->bindingUnion.tknSamplerBinding.pTknSampler;
+                TknSampler *pTknSampler = pTknBinding->tknBindingUnion.tknSamplerBinding.pTknSampler;
                 if (pInputSampler == pTknSampler)
                 {
                     // No change, skip
@@ -478,10 +478,10 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
                     else
                     {
                         // Current sampler deref descriptor
-                        tknRemoveFromHashSet(&pTknSampler->bindingPtrHashSet, &pBinding);
+                        tknRemoveFromHashSet(&pTknSampler->tknBindingPtrHashSet, &pTknBinding);
                     }
 
-                    pBinding->bindingUnion.tknSamplerBinding.pTknSampler = pInputSampler;
+                    pTknBinding->tknBindingUnion.tknSamplerBinding.pTknSampler = pInputSampler;
                     if (NULL == pInputSampler)
                     {
                         tknError("Cannot bind NULL sampler");
@@ -489,7 +489,7 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
                     else
                     {
                         // New sampler ref descriptor
-                        tknAddToHashSet(&pInputSampler->bindingPtrHashSet, &pBinding);
+                        tknAddToHashSet(&pInputSampler->tknBindingPtrHashSet, &pTknBinding);
                         vkDescriptorImageInfos[vkWriteDescriptorSetCount] = (VkDescriptorImageInfo){
                             .sampler = pInputSampler->vkSampler,
                             .imageView = VK_NULL_HANDLE,
@@ -515,8 +515,8 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
             {
                 TknSampler *pInputSampler = tknInputBinding.tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknSampler;
                 TknImage *pInputImage = tknInputBinding.tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknImage;
-                TknSampler *pTknSampler = pBinding->bindingUnion.tknCombinedImageSamplerBinding.pTknSampler;
-                TknImage *pTknImage = pBinding->bindingUnion.tknCombinedImageSamplerBinding.pTknImage;
+                TknSampler *pTknSampler = pTknBinding->tknBindingUnion.tknCombinedImageSamplerBinding.pTknSampler;
+                TknImage *pTknImage = pTknBinding->tknBindingUnion.tknCombinedImageSamplerBinding.pTknImage;
                 
                 if (pInputSampler == pTknSampler && pInputImage == pTknImage)
                 {
@@ -527,16 +527,16 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
                     // Remove old references
                     if (NULL != pTknSampler)
                     {
-                        tknRemoveFromHashSet(&pTknSampler->bindingPtrHashSet, &pBinding);
+                        tknRemoveFromHashSet(&pTknSampler->tknBindingPtrHashSet, &pTknBinding);
                     }
                     if (NULL != pTknImage)
                     {
-                        tknRemoveFromHashSet(&pTknImage->bindingPtrHashSet, &pBinding);
+                        tknRemoveFromHashSet(&pTknImage->tknBindingPtrHashSet, &pTknBinding);
                     }
 
                     // Update bindings
-                    pBinding->bindingUnion.tknCombinedImageSamplerBinding.pTknSampler = pInputSampler;
-                    pBinding->bindingUnion.tknCombinedImageSamplerBinding.pTknImage = pInputImage;
+                    pTknBinding->tknBindingUnion.tknCombinedImageSamplerBinding.pTknSampler = pInputSampler;
+                    pTknBinding->tknBindingUnion.tknCombinedImageSamplerBinding.pTknImage = pInputImage;
                     
                     if (NULL == pInputSampler || NULL == pInputImage)
                     {
@@ -545,8 +545,8 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
                     else
                     {
                         // Add new references
-                        tknAddToHashSet(&pInputSampler->bindingPtrHashSet, &pBinding);
-                        tknAddToHashSet(&pInputImage->bindingPtrHashSet, &pBinding);
+                        tknAddToHashSet(&pInputSampler->tknBindingPtrHashSet, &pTknBinding);
+                        tknAddToHashSet(&pInputImage->tknBindingPtrHashSet, &pTknBinding);
                         
                         vkDescriptorImageInfos[vkWriteDescriptorSetCount] = (VkDescriptorImageInfo){
                             .sampler = pInputSampler->vkSampler,
@@ -588,7 +588,7 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
             else if (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER == vkDescriptorType)
             {
                 TknUniformBuffer *pInputUniformBuffer = tknInputBinding.tknInputBindingUnion.tknUniformBufferBinding.pTknUniformBuffer;
-                TknUniformBuffer *pTknUniformBuffer = pBinding->bindingUnion.tknUniformBufferBinding.pTknUniformBuffer;
+                TknUniformBuffer *pTknUniformBuffer = pTknBinding->tknBindingUnion.tknUniformBufferBinding.pTknUniformBuffer;
                 if (pInputUniformBuffer == pTknUniformBuffer)
                 {
                     // No change, skip
@@ -602,9 +602,9 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
                     else
                     {
                         // Current uniform buffer deref descriptor
-                        tknRemoveFromHashSet(&pTknUniformBuffer->bindingPtrHashSet, &pBinding);
+                        tknRemoveFromHashSet(&pTknUniformBuffer->tknBindingPtrHashSet, &pTknBinding);
                     }
-                    pBinding->bindingUnion.tknUniformBufferBinding.pTknUniformBuffer = pInputUniformBuffer;
+                    pTknBinding->tknBindingUnion.tknUniformBufferBinding.pTknUniformBuffer = pInputUniformBuffer;
                     if (NULL == pInputUniformBuffer)
                     {
                         tknError("Cannot bind NULL uniform buffer");
@@ -612,7 +612,7 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
                     else
                     {
                         // New uniform buffer ref descriptor
-                        tknAddToHashSet(&pInputUniformBuffer->bindingPtrHashSet, &pBinding);
+                        tknAddToHashSet(&pInputUniformBuffer->tknBindingPtrHashSet, &pTknBinding);
                         vkDescriptorBufferInfos[vkWriteDescriptorSetCount] = (VkDescriptorBufferInfo){
                             .buffer = pInputUniformBuffer->vkBuffer,
                             .offset = 0,
@@ -667,7 +667,7 @@ void updateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial,
     }
 }
 
-TknInputBindingUnion getEmptyInputBindingUnion(TknGfxContext *pTknGfxContext, VkDescriptorType vkDescriptorType)
+TknInputBindingUnion tknGetEmptyInputBindingUnion(TknGfxContext *pTknGfxContext, VkDescriptorType vkDescriptorType)
 {
     TknInputBindingUnion emptyUnion;
     // Explicitly zero out the entire union
@@ -677,20 +677,20 @@ TknInputBindingUnion getEmptyInputBindingUnion(TknGfxContext *pTknGfxContext, Vk
     switch (vkDescriptorType)
     {
     case VK_DESCRIPTOR_TYPE_SAMPLER:
-        emptyUnion.tknSamplerBinding.pTknSampler = pTknGfxContext->pEmptySampler;
+        emptyUnion.tknSamplerBinding.pTknSampler = pTknGfxContext->pTknEmptySampler;
         break;
     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-        emptyUnion.tknCombinedImageSamplerBinding.pTknSampler = pTknGfxContext->pEmptySampler;
-        emptyUnion.tknCombinedImageSamplerBinding.pTknImage = pTknGfxContext->pEmptyImage;
+        emptyUnion.tknCombinedImageSamplerBinding.pTknSampler = pTknGfxContext->pTknEmptySampler;
+        emptyUnion.tknCombinedImageSamplerBinding.pTknImage = pTknGfxContext->pTknEmptyImage;
         break;
     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        emptyUnion.tknUniformBufferBinding.pTknUniformBuffer = pTknGfxContext->pEmptyUniformBuffer;
+        emptyUnion.tknUniformBufferBinding.pTknUniformBuffer = pTknGfxContext->pTknEmptyUniformBuffer;
         break;
 
     default:
         // For unsupported types, default to uniform buffer as a safe fallback
-        emptyUnion.tknUniformBufferBinding.pTknUniformBuffer = pTknGfxContext->pEmptyUniformBuffer;
-        tknWarning("Unsupported descriptor type %d in getEmptyInputBindingUnion, using uniform buffer fallback", vkDescriptorType);
+        emptyUnion.tknUniformBufferBinding.pTknUniformBuffer = pTknGfxContext->pTknEmptyUniformBuffer;
+        tknWarning("Unsupported descriptor type %d in tknGetEmptyInputBindingUnion, using uniform buffer fallback", vkDescriptorType);
         break;
     }
 

@@ -1,6 +1,6 @@
-#include "gfxCore.h"
+#include "tknGfxCore.h"
 
-TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize)
+TknImage *tknCreateImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize)
 {
     TknImage *pTknImage = tknMalloc(sizeof(TknImage));
     VkImage vkImage;
@@ -8,13 +8,13 @@ TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, V
     VkDeviceMemory vkDeviceMemory;
 
     // Create the Vulkan image
-    createVkImage(pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, &vkImage, &vkDeviceMemory, &vkImageView);
+    tknCreateVkImage(pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, &vkImage, &vkDeviceMemory, &vkImageView);
 
     TknImage image = {
         .vkImage = vkImage,
         .vkDeviceMemory = vkDeviceMemory,
         .vkImageView = vkImageView,
-        .bindingPtrHashSet = tknCreateHashSet(sizeof(Binding *)),
+        .tknBindingPtrHashSet = tknCreateHashSet(sizeof(TknBinding *)),
     };
     *pTknImage = image;
 
@@ -28,7 +28,7 @@ TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, V
         // Create staging buffer
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
-        createVkBuffer(pTknGfxContext, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        tknCreateVkBuffer(pTknGfxContext, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        &stagingBuffer, &stagingBufferMemory);
 
@@ -39,7 +39,7 @@ TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, V
         vkUnmapMemory(pTknGfxContext->vkDevice, stagingBufferMemory);
 
         // Begin command buffer - all operations in one submission
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pTknGfxContext);
+        VkCommandBuffer commandBuffer = tknBeginSingleTimeCommands(pTknGfxContext);
 
         // Transition image layout for transfer (UNDEFINED -> TRANSFER_DST)
         VkImageMemoryBarrier barrier1 = {};
@@ -98,15 +98,15 @@ TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, V
                              0, 0, NULL, 0, NULL, 1, &barrier2);
 
         // Submit all commands once
-        endSingleTimeCommands(pTknGfxContext, commandBuffer);
+        tknEndSingleTimeCommands(pTknGfxContext, commandBuffer);
 
         // Clean up staging buffer
-        destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
+        tknDestroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
     }
     else
     {
         // Empty image - transition from UNDEFINED to SHADER_READ_ONLY for initial state
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pTknGfxContext);
+        VkCommandBuffer commandBuffer = tknBeginSingleTimeCommands(pTknGfxContext);
 
         VkImageMemoryBarrier barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -128,18 +128,18 @@ TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, V
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                              0, 0, NULL, 0, NULL, 1, &barrier);
 
-        endSingleTimeCommands(pTknGfxContext, commandBuffer);
+        tknEndSingleTimeCommands(pTknGfxContext, commandBuffer);
     }
     return pTknImage;
 }
-void destroyImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage)
+void tknDestroyImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage)
 {
-    clearBindingPtrHashSet(pTknGfxContext, pTknImage->bindingPtrHashSet);
-    tknDestroyHashSet(pTknImage->bindingPtrHashSet);
-    destroyVkImage(pTknGfxContext, pTknImage->vkImage, pTknImage->vkDeviceMemory, pTknImage->vkImageView);
+    tknClearBindingPtrHashSet(pTknGfxContext, pTknImage->tknBindingPtrHashSet);
+    tknDestroyHashSet(pTknImage->tknBindingPtrHashSet);
+    tknDestroyVkImage(pTknGfxContext, pTknImage->vkImage, pTknImage->vkDeviceMemory, pTknImage->vkImageView);
     tknFree(pTknImage);
 }
-void updateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t count, void **datas, VkOffset3D *imageOffsets, VkExtent3D *imageExtents, VkDeviceSize *dataSizes)
+void tknUpdateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t count, void **datas, VkOffset3D *imageOffsets, VkExtent3D *imageExtents, VkDeviceSize *dataSizes)
 {
     // Calculate total staging buffer size
     VkDeviceSize totalSize = 0;
@@ -151,7 +151,7 @@ void updateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t
     // Create staging buffer
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    createVkBuffer(pTknGfxContext, totalSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    tknCreateVkBuffer(pTknGfxContext, totalSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                    &stagingBuffer, &stagingBufferMemory);
 
@@ -169,7 +169,7 @@ void updateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t
     vkUnmapMemory(pTknGfxContext->vkDevice, stagingBufferMemory);
 
     // Begin command buffer - all operations in one submission
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands(pTknGfxContext);
+    VkCommandBuffer commandBuffer = tknBeginSingleTimeCommands(pTknGfxContext);
 
     // Transition image layout for transfer (SHADER_READ_ONLY -> TRANSFER_DST)
     VkImageMemoryBarrier barrier1 = {};
@@ -239,8 +239,8 @@ void updateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t
                          0, 0, NULL, 0, NULL, 1, &barrier2);
 
     // Submit all commands once
-    endSingleTimeCommands(pTknGfxContext, commandBuffer);
+    tknEndSingleTimeCommands(pTknGfxContext, commandBuffer);
 
     // Clean up staging buffer
-    destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
+    tknDestroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
 }

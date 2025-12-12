@@ -5,16 +5,16 @@ local image = {
 
 function image.createComponent(pGfxContext, color, slice, pMaterial, vertexFormat, instanceFormat, pPipeline, node)
     local component = nil
-    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
+    local pMesh = tkn.tknCreateDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
 
     -- Create instance buffer (mat3 + color)
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {color},
     }
-    local pInstance = tkn.createInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
+    local pInstance = tkn.tknCreateInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
 
-    local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
+    local pDrawCall = tkn.tknCreateDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
 
     if #image.pool > 0 then
         component = table.remove(image.pool)
@@ -38,9 +38,9 @@ function image.createComponent(pGfxContext, color, slice, pMaterial, vertexForma
     return component
 end
 function image.destroyComponent(pGfxContext, component)
-    tkn.destroyDrawCallPtr(pGfxContext, component.pDrawCall)
-    tkn.destroyInstancePtr(pGfxContext, component.pInstance)
-    tkn.destroyMeshPtr(pGfxContext, component.pMesh)
+    tkn.tknDestroyDrawCallPtr(pGfxContext, component.pDrawCall)
+    tkn.tknDestroyInstancePtr(pGfxContext, component.pInstance)
+    tkn.tknDestroyMeshPtr(pGfxContext, component.pMesh)
 
     component.pMaterial = nil
     component.pMesh = nil
@@ -82,7 +82,7 @@ function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
             table.insert(indices, base + 3)
             table.insert(indices, base)
         end
-        tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        tkn.tknUpdateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     else
         -- Regular quad: 4 vertices with pivot at (0, 0)
         local vertices = {
@@ -90,7 +90,7 @@ function image.updateMeshPtr(pGfxContext, component, rect, vertexFormat)
             uv = {0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0},
         }
         local indices = {0, 1, 2, 2, 3, 0}
-        tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        tkn.tknUpdateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
 
 end
@@ -101,7 +101,7 @@ function image.updateInstancePtr(pGfxContext, component, rect, instanceFormat)
         model = rect.model,
         color = {rect.color},
     }
-    tkn.updateInstancePtr(pGfxContext, component.pInstance, instanceFormat, instances)
+    tkn.tknUpdateInstancePtr(pGfxContext, component.pInstance, instanceFormat, instances)
 end
 
 return image

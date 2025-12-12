@@ -2,7 +2,7 @@ local mainScene = {}
 local ui = require("ui.ui")
 local tkn = require("tkn")
 function mainScene.start(game, pGfxContext, assetsPath)
-    mainScene.pDefaultImage = tkn.createImagePtrWithPath(pGfxContext, assetsPath .. "/textures/default.astc")
+    mainScene.pDefaultImage = tkn.tknCreateImagePtrWithPath(pGfxContext, assetsPath .. "/textures/default.astc")
     mainScene.pDefaultImageMaterial = ui.createMaterialPtr(pGfxContext, mainScene.pDefaultImage, ui.renderPass.pImagePipeline)
     mainScene.currentNode = ui.rootNode
     print("Creating FIT type container node")
@@ -35,7 +35,7 @@ end
 
 function mainScene.stopGfx(game, pGfxContext)
     mainScene.pDefaultImageMaterial = nil
-    tkn.destroyImagePtr(pGfxContext, mainScene.pDefaultImage)
+    tkn.tknDestroyImagePtr(pGfxContext, mainScene.pDefaultImage)
 
     print("Tearing down render pipeline")
 end

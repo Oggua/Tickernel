@@ -63,102 +63,102 @@ TknDynamicArray tknCreateDynamicArray(size_t dataSize, uint32_t maxCount)
     memset(tknDynamicArray.array, 0, dataSize * maxCount);
     return tknDynamicArray;
 }
-void tknDestroyDynamicArray(TknDynamicArray dynamicArray)
+void tknDestroyDynamicArray(TknDynamicArray tknDynamicArray)
 {
-    tknFree(dynamicArray.array);
-    dynamicArray.array = NULL;
-    dynamicArray.count = 0;
-    dynamicArray.maxCount = 0;
+    tknFree(tknDynamicArray.array);
+    tknDynamicArray.array = NULL;
+    tknDynamicArray.count = 0;
+    tknDynamicArray.maxCount = 0;
 }
-void tknInsertIntoDynamicArray(TknDynamicArray *pDynamicArray, void *pData, uint32_t index)
+void tknInsertIntoDynamicArray(TknDynamicArray *pTknDynamicArray, void *pData, uint32_t index)
 {
-    tknAssert(index >= 0 && index <= pDynamicArray->count, "Index %u is out of bounds for count %u\n", index, pDynamicArray->count);
-    if (pDynamicArray->count >= pDynamicArray->maxCount)
+    tknAssert(index >= 0 && index <= pTknDynamicArray->count, "Index %u is out of bounds for count %u\n", index, pTknDynamicArray->count);
+    if (pTknDynamicArray->count >= pTknDynamicArray->maxCount)
     {
-        pDynamicArray->maxCount *= 2;
+        pTknDynamicArray->maxCount *= 2;
         void *newArray;
-        newArray = tknMalloc(pDynamicArray->dataSize * pDynamicArray->maxCount);
-        memcpy(newArray, pDynamicArray->array, pDynamicArray->dataSize * pDynamicArray->count);
-        tknFree(pDynamicArray->array);
-        pDynamicArray->array = newArray;
+        newArray = tknMalloc(pTknDynamicArray->dataSize * pTknDynamicArray->maxCount);
+        memcpy(newArray, pTknDynamicArray->array, pTknDynamicArray->dataSize * pTknDynamicArray->count);
+        tknFree(pTknDynamicArray->array);
+        pTknDynamicArray->array = newArray;
     }
-    void *targetAddress = (char *)pDynamicArray->array + index * pDynamicArray->dataSize;
-    if (index < pDynamicArray->count)
+    void *targetAddress = (char *)pTknDynamicArray->array + index * pTknDynamicArray->dataSize;
+    if (index < pTknDynamicArray->count)
     {
         memmove(
-            (char *)pDynamicArray->array + (index + 1) * pDynamicArray->dataSize,
+            (char *)pTknDynamicArray->array + (index + 1) * pTknDynamicArray->dataSize,
             targetAddress,
-            (pDynamicArray->count - index) * pDynamicArray->dataSize);
+            (pTknDynamicArray->count - index) * pTknDynamicArray->dataSize);
     }
-    memcpy(targetAddress, pData, pDynamicArray->dataSize);
-    pDynamicArray->count++;
+    memcpy(targetAddress, pData, pTknDynamicArray->dataSize);
+    pTknDynamicArray->count++;
 }
-void tknAddToDynamicArray(TknDynamicArray *pDynamicArray, void *pData)
+void tknAddToDynamicArray(TknDynamicArray *pTknDynamicArray, void *pData)
 {
-    tknInsertIntoDynamicArray(pDynamicArray, pData, pDynamicArray->count);
+    tknInsertIntoDynamicArray(pTknDynamicArray, pData, pTknDynamicArray->count);
 }
-void tknRemoveFromDynamicArray(TknDynamicArray *pDynamicArray, void *pData)
+void tknRemoveFromDynamicArray(TknDynamicArray *pTknDynamicArray, void *pData)
 {
-    for (uint32_t i = 0; i < pDynamicArray->count; i++)
+    for (uint32_t i = 0; i < pTknDynamicArray->count; i++)
     {
-        void *currentElement = (char *)pDynamicArray->array + i * pDynamicArray->dataSize;
-        if (memcmp(currentElement, pData, pDynamicArray->dataSize) == 0)
+        void *currentElement = (char *)pTknDynamicArray->array + i * pTknDynamicArray->dataSize;
+        if (memcmp(currentElement, pData, pTknDynamicArray->dataSize) == 0)
         {
-            if (i < pDynamicArray->count - 1)
+            if (i < pTknDynamicArray->count - 1)
             {
                 memmove(
                     currentElement,
-                    (char *)pDynamicArray->array + (i + 1) * pDynamicArray->dataSize,
-                    (pDynamicArray->count - i - 1) * pDynamicArray->dataSize);
+                    (char *)pTknDynamicArray->array + (i + 1) * pTknDynamicArray->dataSize,
+                    (pTknDynamicArray->count - i - 1) * pTknDynamicArray->dataSize);
             }
-            pDynamicArray->count--;
+            pTknDynamicArray->count--;
             return;
         }
     }
     tknError("Data not found!\n");
 }
-void tknRemoveAtIndexFromDynamicArray(TknDynamicArray *pDynamicArray, uint32_t index)
+void tknRemoveAtIndexFromDynamicArray(TknDynamicArray *pTknDynamicArray, uint32_t index)
 {
-    tknAssert(index < pDynamicArray->count, "Index %u is out of bounds for count %u\n", index, pDynamicArray->count);
-    void *target = (char *)pDynamicArray->array + index * pDynamicArray->dataSize;
-    if (index < pDynamicArray->count - 1)
+    tknAssert(index < pTknDynamicArray->count, "Index %u is out of bounds for count %u\n", index, pTknDynamicArray->count);
+    void *target = (char *)pTknDynamicArray->array + index * pTknDynamicArray->dataSize;
+    if (index < pTknDynamicArray->count - 1)
     {
         memmove(
             target,
-            (char *)pDynamicArray->array + (index + 1) * pDynamicArray->dataSize,
-            (pDynamicArray->count - index - 1) * pDynamicArray->dataSize);
+            (char *)pTknDynamicArray->array + (index + 1) * pTknDynamicArray->dataSize,
+            (pTknDynamicArray->count - index - 1) * pTknDynamicArray->dataSize);
     }
-    pDynamicArray->count--;
+    pTknDynamicArray->count--;
 }
-void tknClearDynamicArray(TknDynamicArray *pDynamicArray)
+void tknClearDynamicArray(TknDynamicArray *pTknDynamicArray)
 {
-    pDynamicArray->count = 0;
-    memset(pDynamicArray->array, 0, pDynamicArray->dataSize * pDynamicArray->maxCount);
+    pTknDynamicArray->count = 0;
+    memset(pTknDynamicArray->array, 0, pTknDynamicArray->dataSize * pTknDynamicArray->maxCount);
 }
-void *tknGetFromDynamicArray(TknDynamicArray *pDynamicArray, uint32_t index)
+void *tknGetFromDynamicArray(TknDynamicArray *pTknDynamicArray, uint32_t index)
 {
-    if (index < pDynamicArray->count)
+    if (index < pTknDynamicArray->count)
     {
-        void *output = (char *)pDynamicArray->array + index * pDynamicArray->dataSize;
+        void *output = (char *)pTknDynamicArray->array + index * pTknDynamicArray->dataSize;
         return output;
     }
     else
     {
-        printf("Index %u is out of bounds for count %u\n", index, pDynamicArray->count);
+        printf("Index %u is out of bounds for count %u\n", index, pTknDynamicArray->count);
         return NULL;
     }
 }
-bool tknContainsInDynamicArray(TknDynamicArray *pDynamicArray, void *pData)
+bool tknContainsInDynamicArray(TknDynamicArray *pTknDynamicArray, void *pData)
 {
-    if (NULL == pDynamicArray || NULL == pData || 0 == pDynamicArray->count)
+    if (NULL == pTknDynamicArray || NULL == pData || 0 == pTknDynamicArray->count)
     {
         return false;
     }
-    uint8_t *arrayData = (uint8_t *)pDynamicArray->array;
-    for (uint32_t i = 0; i < pDynamicArray->count; i++)
+    uint8_t *arrayData = (uint8_t *)pTknDynamicArray->array;
+    for (uint32_t i = 0; i < pTknDynamicArray->count; i++)
     {
-        void *currentElement = arrayData + (i * pDynamicArray->dataSize);
-        if (memcmp(currentElement, pData, pDynamicArray->dataSize) == 0)
+        void *currentElement = arrayData + (i * pTknDynamicArray->dataSize);
+        if (memcmp(currentElement, pData, pTknDynamicArray->dataSize) == 0)
         {
             return true;
         }

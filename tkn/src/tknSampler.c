@@ -1,10 +1,10 @@
-#include "gfxCore.h"
+#include "tknGfxCore.h"
 
-TknSampler *createSamplerPtr(TknGfxContext *pTknGfxContext, VkFilter magFilter, VkFilter minFilter, VkSamplerMipmapMode mipmapMode, VkSamplerAddressMode addressModeU, VkSamplerAddressMode addressModeV, VkSamplerAddressMode addressModeW, float mipLodBias, VkBool32 anisotropyEnable, float maxAnisotropy, float minLod, float maxLod, VkBorderColor borderColor)
+TknSampler *tknCreateSamplerPtr(TknGfxContext *pTknGfxContext, VkFilter magFilter, VkFilter minFilter, VkSamplerMipmapMode mipmapMode, VkSamplerAddressMode addressModeU, VkSamplerAddressMode addressModeV, VkSamplerAddressMode addressModeW, float mipLodBias, VkBool32 anisotropyEnable, float maxAnisotropy, float minLod, float maxLod, VkBorderColor borderColor)
 {
     TknSampler *pTknSampler = tknMalloc(sizeof(TknSampler));
     // Initialize the hash set for binding references
-    pTknSampler->bindingPtrHashSet = tknCreateHashSet(sizeof(Binding *));
+    pTknSampler->tknBindingPtrHashSet = tknCreateHashSet(sizeof(TknBinding *));
     // Create sampler create info with provided parameters
     VkSamplerCreateInfo samplerCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -32,7 +32,7 @@ TknSampler *createSamplerPtr(TknGfxContext *pTknGfxContext, VkFilter magFilter, 
     if (result != VK_SUCCESS)
     {
         tknError("Failed to create Vulkan sampler: %d", result);
-        tknDestroyHashSet(pTknSampler->bindingPtrHashSet);
+        tknDestroyHashSet(pTknSampler->tknBindingPtrHashSet);
         tknFree(pTknSampler);
         return NULL;
     }
@@ -40,7 +40,7 @@ TknSampler *createSamplerPtr(TknGfxContext *pTknGfxContext, VkFilter magFilter, 
     return pTknSampler;
 }
 
-void destroySamplerPtr(TknGfxContext *pTknGfxContext, TknSampler *pTknSampler)
+void tknDestroySamplerPtr(TknGfxContext *pTknGfxContext, TknSampler *pTknSampler)
 {
     if (pTknSampler == NULL)
     {
@@ -48,10 +48,10 @@ void destroySamplerPtr(TknGfxContext *pTknGfxContext, TknSampler *pTknSampler)
     }
     
     // Clear all binding references
-    clearBindingPtrHashSet(pTknGfxContext, pTknSampler->bindingPtrHashSet);
+    tknClearBindingPtrHashSet(pTknGfxContext, pTknSampler->tknBindingPtrHashSet);
     
     // Destroy the hash set
-    tknDestroyHashSet(pTknSampler->bindingPtrHashSet);
+    tknDestroyHashSet(pTknSampler->tknBindingPtrHashSet);
     
     // Destroy the Vulkan sampler
     if (pTknSampler->vkSampler != VK_NULL_HANDLE)

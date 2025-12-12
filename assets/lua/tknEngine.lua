@@ -17,7 +17,7 @@ end
 
 function tknEngine.stop(pGfxContext)
     game.stop()
-    tkn.waitRenderFence(pGfxContext)
+    tkn.tknWaitRenderFence(pGfxContext)
     game.stopGfx(pGfxContext)
     ui.teardown(pGfxContext)
     deferredRenderPass.teardown(pGfxContext)
@@ -26,7 +26,7 @@ end
 function tknEngine.update(pGfxContext, width, height)
     print("Lua update")
     game.update()
-    tkn.waitRenderFence(pGfxContext)
+    tkn.tknWaitRenderFence(pGfxContext)
     print("Lua updateGfx")
     local shouldQuit = game.updateGfx(pGfxContext, width, height)
     ui.update(pGfxContext, width, height)

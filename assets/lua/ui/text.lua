@@ -5,23 +5,23 @@ local text = {
 }
 
 function text.setup()
-    text.pTknFontLibrary = tkn.createTknFontLibraryPtr()
+    text.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
 end
 
 function text.teardown(pGfxContext)
-    tkn.destroyTknFontLibraryPtr(pGfxContext, text.pTknFontLibrary)
+    tkn.tknDestroyTknFontLibraryPtr(pGfxContext, text.pTknFontLibrary)
     text.pTknFontLibrary = nil
 end
 
 function text.update(pGfxContext)
     for _, font in ipairs(text.fonts) do
-        tkn.flushTknFontPtr(font.pTknFont, pGfxContext)
+        tkn.tknFlushTknFontPtr(font.pTknFont, pGfxContext)
     end
 end
 
 function text.createFont(pGfxContext, path, fontSize, atlasLength)
     print("createFont")
-    local pTknFont, pImage = tkn.createTknFontPtr(text.pTknFontLibrary, pGfxContext, path, fontSize, atlasLength)
+    local pTknFont, pImage = tkn.tknCreateTknFontPtr(text.pTknFontLibrary, pGfxContext, path, fontSize, atlasLength)
     local font = {
         path = path,
         fontSize = fontSize,
@@ -35,7 +35,7 @@ end
 
 function text.destroyFont(pGfxContext, font)
     print("destroyFont")
-    tkn.destroyTknFontPtr(text.pTknFontLibrary, font.pTknFont, pGfxContext)
+    tkn.tknDestroyTknFontPtr(text.pTknFontLibrary, font.pTknFont, pGfxContext)
     font = nil
 end
 
@@ -44,16 +44,16 @@ function text.createComponent(pGfxContext, textString, font, size, color, alignH
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
     local indicesPerChar = bold and 24 or 6
-    local pMesh = tkn.createDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
+    local pMesh = tkn.tknCreateDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
 
     -- Create instance buffer (mat3 + color)
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {color},
     }
-    local pInstance = tkn.createInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
+    local pInstance = tkn.tknCreateInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
 
-    local pDrawCall = tkn.createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
+    local pDrawCall = tkn.tknCreateDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
 
     local component = #text.pool > 0 and table.remove(text.pool) or {
         type = "text",
@@ -75,9 +75,9 @@ function text.createComponent(pGfxContext, textString, font, size, color, alignH
 end
 
 function text.destroyComponent(pGfxContext, component)
-    tkn.destroyDrawCallPtr(pGfxContext, component.pDrawCall)
-    tkn.destroyInstancePtr(pGfxContext, component.pInstance)
-    tkn.destroyMeshPtr(pGfxContext, component.pMesh)
+    tkn.tknDestroyDrawCallPtr(pGfxContext, component.pDrawCall)
+    tkn.tknDestroyInstancePtr(pGfxContext, component.pInstance)
+    tkn.tknDestroyMeshPtr(pGfxContext, component.pMesh)
 
     component.pMaterial = nil
     component.pMesh = nil
@@ -125,7 +125,7 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
     local penX = 0
 
     for i = 1, #component.text do
-        local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.loadTknChar(font.pTknFont, string.byte(component.text, i))
+        local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadTknChar(font.pTknFont, string.byte(component.text, i))
 
         if pTknChar then
             local widthNDC = width * scaleX
@@ -235,10 +235,10 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
         penY = penY + lineHeight
     end
 
-    tkn.flushTknFontPtr(font.pTknFont, pGfxContext)
+    tkn.tknFlushTknFontPtr(font.pTknFont, pGfxContext)
 
     if charIndex > 0 then
-        tkn.updateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        tkn.tknUpdateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
 end
 

@@ -21,7 +21,7 @@ struct TknVertexInputLayout {
 };
 
 void test_saveMeshPtrToPlyFile_with_lua_format() {
-    printf("Testing real saveMeshPtrToPlyFile function with Lua vertex format...\n");
+    printf("Testing real tknSaveMeshPtrToPlyFile function with Lua vertex format...\n");
     
     // Create TknVertexInputLayout matching Lua format:
     // position: TYPE_FLOAT, count = 3 (3 * 4 = 12 bytes)
@@ -92,13 +92,13 @@ void test_saveMeshPtrToPlyFile_with_lua_format() {
     };
     uint32_t propertyCount = 5; // 3 for position + 1 for color + 1 for normal
     
-    // Test the real saveMeshPtrToPlyFile function
+    // Test the real tknSaveMeshPtrToPlyFile function
     const char *testPlyFile = "/tmp/test_mesh_real.ply";
     
-    printf("✓ Calling real saveMeshPtrToPlyFile function...\n");
+    printf("✓ Calling real tknSaveMeshPtrToPlyFile function...\n");
     
     // Call the actual function
-    saveMeshPtrToPlyFile(
+    tknSaveMeshPtrToPlyFile(
         propertyCount,
         propertyNames,
         propertyTypes,
@@ -111,7 +111,7 @@ void test_saveMeshPtrToPlyFile_with_lua_format() {
         testPlyFile
     );
     
-    printf("✓ saveMeshPtrToPlyFile completed!\n");
+    printf("✓ tknSaveMeshPtrToPlyFile completed!\n");
     
     // Verify the PLY file was created and has correct content
     FILE *file = fopen(testPlyFile, "rb");
@@ -191,12 +191,12 @@ void test_saveMeshPtrToPlyFile_with_lua_format() {
 }
 
 int main() {
-    printf("=== Testing Real saveMeshPtrToPlyFile Function ===\n\n");
+    printf("=== Testing Real tknSaveMeshPtrToPlyFile Function ===\n\n");
     
     test_saveMeshPtrToPlyFile_with_lua_format();
     
     printf("=== Test Summary ===\n");
-    printf("This test calls the actual saveMeshPtrToPlyFile function to verify:\n");
+    printf("This test calls the actual tknSaveMeshPtrToPlyFile function to verify:\n");
     printf("1. Proper validation of property layout vs vertex format\n");
     printf("2. Correct PLY file generation with binary data\n");
     printf("3. Lua vertex format compatibility:\n\n");

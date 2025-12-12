@@ -1,4 +1,4 @@
-#include "gfxCore.h"
+#include "tknGfxCore.h"
 static uint32_t getSizeOfVkFormat(VkFormat format)
 {
     switch (format)
@@ -124,7 +124,7 @@ static void updateVkVertexInputAttributeDescriptions(TknVertexInputLayout vertex
     }
 }
 
-TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t spvPathCount, const char **spvPaths, TknVertexInputLayout *pTknMeshVertexInputLayout, TknVertexInputLayout *pTknInstanceVertexInputLayout, VkPipelineInputAssemblyStateCreateInfo vkPipelineInputAssemblyStateCreateInfo, VkPipelineViewportStateCreateInfo vkPipelineViewportStateCreateInfo, VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo, VkPipelineMultisampleStateCreateInfo vkPipelineMultisampleStateCreateInfo, VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo, VkPipelineColorBlendStateCreateInfo vkPipelineColorBlendStateCreateInfo, VkPipelineDynamicStateCreateInfo vkPipelineDynamicStateCreateInfo)
+TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex, uint32_t spvPathCount, const char **spvPaths, TknVertexInputLayout *pTknMeshVertexInputLayout, TknVertexInputLayout *pTknInstanceVertexInputLayout, VkPipelineInputAssemblyStateCreateInfo vkPipelineInputAssemblyStateCreateInfo, VkPipelineViewportStateCreateInfo vkPipelineViewportStateCreateInfo, VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo, VkPipelineMultisampleStateCreateInfo vkPipelineMultisampleStateCreateInfo, VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo, VkPipelineColorBlendStateCreateInfo vkPipelineColorBlendStateCreateInfo, VkPipelineDynamicStateCreateInfo vkPipelineDynamicStateCreateInfo)
 {
     TknPipeline *pTknPipeline = tknMalloc(sizeof(TknPipeline));
     SpvReflectShaderModule *spvReflectShaderModules = tknMalloc(sizeof(SpvReflectShaderModule) * spvPathCount);
@@ -137,7 +137,7 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
     VkDevice vkDevice = pTknGfxContext->vkDevice;
     for (uint32_t spvPathIndex = 0; spvPathIndex < spvPathCount; spvPathIndex++)
     {
-        spvReflectShaderModules[spvPathIndex] = createSpvReflectShaderModule(spvPaths[spvPathIndex]);
+        spvReflectShaderModules[spvPathIndex] = tknCreateSpvReflectShaderModule(spvPaths[spvPathIndex]);
         SpvReflectShaderModule spvReflectShaderModule = spvReflectShaderModules[spvPathIndex];
 
         if (VK_SHADER_STAGE_VERTEX_BIT == spvReflectShaderModule.shader_stage)
@@ -178,7 +178,7 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
                     // Search in mesh vertex input layout first
                     if (pTknMeshVertexInputLayout != NULL)
                     {
-                        for (attributeIndex = 0; attributeIndex < pTknMeshVertexInputLayout->attributeCount; attributeIndex++)
+                        for (attributeIndex = 0; attributeIndex < pTknMeshVertexInputLayout->tknAttributeCount; attributeIndex++)
                         {
                             if (0 == strcmp(pSpvReflectInterfaceVariable->name, pTknMeshVertexInputLayout->names[attributeIndex]))
                             {
@@ -192,7 +192,7 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
                     // If not found in mesh layout, search in instance layout
                     if (!found && pTknInstanceVertexInputLayout != NULL)
                     {
-                        for (attributeIndex = 0; attributeIndex < pTknInstanceVertexInputLayout->attributeCount; attributeIndex++)
+                        for (attributeIndex = 0; attributeIndex < pTknInstanceVertexInputLayout->tknAttributeCount; attributeIndex++)
                         {
                             if (0 == strcmp(pSpvReflectInterfaceVariable->name, pTknInstanceVertexInputLayout->names[attributeIndex]))
                             {
@@ -227,7 +227,7 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
                 .pCode = spvReflectGetCode(&spvReflectShaderModule),
             };
             VkShaderModule shaderModule;
-            assertVkResult(vkCreateShaderModule(vkDevice, &vkShaderModuleCreateInfo, NULL, &shaderModule));
+            tknAssertVkResult(vkCreateShaderModule(vkDevice, &vkShaderModuleCreateInfo, NULL, &shaderModule));
             pipelineShaderStageCreateInfos[spvPathIndex] = (VkPipelineShaderStageCreateInfo){
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .pNext = NULL,
@@ -239,7 +239,7 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
             };
         }
     }
-    DescriptorSet *pPipelineDescriptorSet = createDescriptorSetPtr(pTknGfxContext, spvPathCount, spvReflectShaderModules, TKN_PIPELINE_DESCRIPTOR_SET);
+    TknDescriptorSet *pTknPipelineDescriptorSet = tknCreateDescriptorSetPtr(pTknGfxContext, spvPathCount, spvReflectShaderModules, TKN_PIPELINE_DESCRIPTOR_SET);
 
     VkPipelineVertexInputStateCreateInfo vkPipelineVertexInputStateCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -252,9 +252,9 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
     };
     VkPipelineLayout vkPipelineLayout;
     VkDescriptorSetLayout *vkDescriptorSetLayouts = tknMalloc(sizeof(VkDescriptorSetLayout) * TKN_MAX_DESCRIPTOR_SET);
-    vkDescriptorSetLayouts[TKN_GLOBAL_DESCRIPTOR_SET] = pTknGfxContext->pGlobalDescriptorSet->vkDescriptorSetLayout;
-    vkDescriptorSetLayouts[TKN_SUBPASS_DESCRIPTOR_SET] = pTknRenderPass->subpasses[subpassIndex].pSubpassDescriptorSet->vkDescriptorSetLayout;
-    vkDescriptorSetLayouts[TKN_PIPELINE_DESCRIPTOR_SET] = pPipelineDescriptorSet->vkDescriptorSetLayout;
+    vkDescriptorSetLayouts[TKN_GLOBAL_DESCRIPTOR_SET] = pTknGfxContext->pTknGlobalDescriptorSet->vkDescriptorSetLayout;
+    vkDescriptorSetLayouts[TKN_SUBPASS_DESCRIPTOR_SET] = pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet->vkDescriptorSetLayout;
+    vkDescriptorSetLayouts[TKN_PIPELINE_DESCRIPTOR_SET] = pTknPipelineDescriptorSet->vkDescriptorSetLayout;
     VkPipelineLayoutCreateInfo vkPipelineLayoutCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = NULL,
@@ -264,7 +264,7 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = NULL,
     };
-    assertVkResult(vkCreatePipelineLayout(vkDevice, &vkPipelineLayoutCreateInfo, NULL, &vkPipelineLayout));
+    tknAssertVkResult(vkCreatePipelineLayout(vkDevice, &vkPipelineLayoutCreateInfo, NULL, &vkPipelineLayout));
     VkPipeline vkPipeline = VK_NULL_HANDLE;
     VkGraphicsPipelineCreateInfo vkGraphicsPipelineCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -283,14 +283,14 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
         .pDynamicState = &vkPipelineDynamicStateCreateInfo,
         .layout = vkPipelineLayout,
         .renderPass = pTknRenderPass->vkRenderPass,
-        .subpass = subpassIndex,
+        .subpass = tknSubpassIndex,
         .basePipelineHandle = VK_NULL_HANDLE,
         .basePipelineIndex = 0,
     };
-    assertVkResult(vkCreateGraphicsPipelines(vkDevice, NULL, 1, &vkGraphicsPipelineCreateInfo, NULL, &vkPipeline));
+    tknAssertVkResult(vkCreateGraphicsPipelines(vkDevice, NULL, 1, &vkGraphicsPipelineCreateInfo, NULL, &vkPipeline));
     for (uint32_t spvPathIndex = 0; spvPathIndex < spvPathCount; spvPathIndex++)
     {
-        destroySpvReflectShaderModule(&spvReflectShaderModules[spvPathIndex]);
+        tknDestroySpvReflectShaderModule(&spvReflectShaderModules[spvPathIndex]);
     }
     tknFree(spvReflectShaderModules);
     tknFree(vkVertexInputBindingDescriptions);
@@ -301,51 +301,51 @@ TknPipeline *createPipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTk
     }
     tknFree(vkDescriptorSetLayouts);
     tknFree(pipelineShaderStageCreateInfos);
-    TknHashSet drawCallPtrHashSet = tknCreateHashSet(sizeof(TknDrawCall *));
+    TknHashSet tknDrawCallPtrHashSet = tknCreateHashSet(sizeof(TknDrawCall *));
     *pTknPipeline = (TknPipeline){
-        .pPipelineDescriptorSet = pPipelineDescriptorSet,
+        .pTknPipelineDescriptorSet = pTknPipelineDescriptorSet,
         .vkPipeline = vkPipeline,
         .vkPipelineLayout = vkPipelineLayout,
         .pTknRenderPass = pTknRenderPass,
-        .subpassIndex = subpassIndex,
+        .tknSubpassIndex = tknSubpassIndex,
         .pTknMeshVertexInputLayout = pTknMeshVertexInputLayout,
         .pTknInstanceVertexInputLayout = pTknInstanceVertexInputLayout,
-        .drawCallPtrHashSet = drawCallPtrHashSet,
+        .tknDrawCallPtrHashSet = tknDrawCallPtrHashSet,
     };
-    tknAddToHashSet(&pTknRenderPass->subpasses[subpassIndex].pipelinePtrHashSet, &pTknPipeline);
+    tknAddToHashSet(&pTknRenderPass->pTknSubpasses[tknSubpassIndex].tknPipelinePtrHashSet, &pTknPipeline);
     if (NULL != pTknMeshVertexInputLayout)
-        tknAddToHashSet(&pTknMeshVertexInputLayout->referencePtrHashSet, &pTknPipeline);
+        tknAddToHashSet(&pTknMeshVertexInputLayout->tknReferencePtrHashSet, &pTknPipeline);
     if (NULL != pTknInstanceVertexInputLayout)
-        tknAddToHashSet(&pTknInstanceVertexInputLayout->referencePtrHashSet, &pTknPipeline);
+        tknAddToHashSet(&pTknInstanceVertexInputLayout->tknReferencePtrHashSet, &pTknPipeline);
 
     return pTknPipeline;
 }
-void destroyPipelinePtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline)
+void tknDestroyPipelinePtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline)
 {
-    for (size_t i = 0; i < pTknPipeline->drawCallPtrHashSet.capacity; i++)
+    for (size_t i = 0; i < pTknPipeline->tknDrawCallPtrHashSet.capacity; i++)
     {
-        TknListNode *node = pTknPipeline->drawCallPtrHashSet.nodePtrs[i];
+        TknListNode *node = pTknPipeline->tknDrawCallPtrHashSet.nodePtrs[i];
         while (node)
         {
             TknListNode *nextNode = node->pNextNode;
             TknDrawCall *pTknDrawCall = *(TknDrawCall **)node->data;
-            destroyDrawCallPtr(pTknGfxContext, pTknDrawCall);
+            tknDestroyDrawCallPtr(pTknGfxContext, pTknDrawCall);
             node = nextNode;
         }
-        pTknPipeline->drawCallPtrHashSet.nodePtrs[i] = NULL;
+        pTknPipeline->tknDrawCallPtrHashSet.nodePtrs[i] = NULL;
     }
-    pTknPipeline->drawCallPtrHashSet.count = 0;
+    pTknPipeline->tknDrawCallPtrHashSet.count = 0;
     
     VkDevice vkDevice = pTknGfxContext->vkDevice;
-    tknRemoveFromHashSet(&pTknPipeline->pTknRenderPass->subpasses[pTknPipeline->subpassIndex].pipelinePtrHashSet, &pTknPipeline);
+    tknRemoveFromHashSet(&pTknPipeline->pTknRenderPass->pTknSubpasses[pTknPipeline->tknSubpassIndex].tknPipelinePtrHashSet, &pTknPipeline);
     if (pTknPipeline->pTknMeshVertexInputLayout != NULL)
-        tknRemoveFromHashSet(&pTknPipeline->pTknMeshVertexInputLayout->referencePtrHashSet, &pTknPipeline);
+        tknRemoveFromHashSet(&pTknPipeline->pTknMeshVertexInputLayout->tknReferencePtrHashSet, &pTknPipeline);
 
     if (pTknPipeline->pTknInstanceVertexInputLayout != NULL)
-        tknRemoveFromHashSet(&pTknPipeline->pTknInstanceVertexInputLayout->referencePtrHashSet, &pTknPipeline);
+        tknRemoveFromHashSet(&pTknPipeline->pTknInstanceVertexInputLayout->tknReferencePtrHashSet, &pTknPipeline);
 
-    tknDestroyHashSet(pTknPipeline->drawCallPtrHashSet);
-    destroyDescriptorSetPtr(pTknGfxContext, pTknPipeline->pPipelineDescriptorSet);
+    tknDestroyHashSet(pTknPipeline->tknDrawCallPtrHashSet);
+    tknDestroyDescriptorSetPtr(pTknGfxContext, pTknPipeline->pTknPipelineDescriptorSet);
     vkDestroyPipeline(vkDevice, pTknPipeline->vkPipeline, NULL);
     vkDestroyPipelineLayout(vkDevice, pTknPipeline->vkPipelineLayout, NULL);
     tknFree(pTknPipeline);

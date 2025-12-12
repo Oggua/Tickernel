@@ -41,7 +41,7 @@ TknContext *createTknContextPtr(const char *assetsPath, uint32_t luaLibraryCount
         globalFragSpvPath,
     };
 
-    TknGfxContext *pTknGfxContext = createGfxContextPtr(targetSwapchainImageCount, targetVkSurfaceFormat, targetVkPresentMode, vkInstance, vkSurface, swapchainExtent, TKN_ARRAY_COUNT(spvPaths), spvPaths);
+    TknGfxContext *pTknGfxContext = tknCreateGfxContextPtr(targetSwapchainImageCount, targetVkSurfaceFormat, targetVkPresentMode, vkInstance, vkSurface, swapchainExtent, TKN_ARRAY_COUNT(spvPaths), spvPaths);
 
     lua_State *pLuaState = luaL_newstate();
     tknAssert(pLuaState, "Failed to create Lua state");
@@ -99,7 +99,7 @@ void destroyTknContextPtr(TknContext *pTknContext)
     assertLuaResult(pLuaState, lua_pcall(pLuaState, 1, 0, -4));
     lua_pop(pLuaState, 2);
 
-    destroyGfxContextPtr(pTknGfxContext);
+    tknDestroyGfxContextPtr(pTknGfxContext);
     lua_close(pLuaState);
     tknFree(pTknContext);
 }
@@ -148,7 +148,7 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
         shouldQuit = lua_toboolean(pLuaState, -1);
     }
     lua_pop(pLuaState, 3); // Pop return value, errorHandler and tknEngine table
-    updateGfxContextPtr(pTknGfxContext, swapchainExtent);
+    tknUpdateGfxContextPtr(pTknGfxContext, swapchainExtent);
 
     return shouldQuit;
 }
