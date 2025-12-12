@@ -198,7 +198,7 @@ static void *packDataFromLayout(lua_State *pLuaState, int layoutIndex, int dataI
 
 static int luaGetSupportedFormat(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -4);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
 
     // candidates table is at position -3
     lua_len(pLuaState, -3);
@@ -214,64 +214,64 @@ static int luaGetSupportedFormat(lua_State *pLuaState)
     }
     VkImageTiling tiling = (VkImageTiling)lua_tointeger(pLuaState, -2);
     VkFormatFeatureFlags features = (VkFormatFeatureFlags)lua_tointeger(pLuaState, -1);
-    VkFormat supportedFormat = getSupportedFormat(pGfxContext, candidateCount, candidates, tiling, features);
+    VkFormat supportedFormat = getSupportedFormat(pTknGfxContext, candidateCount, candidates, tiling, features);
     tknFree(candidates);
     lua_pushinteger(pLuaState, (lua_Integer)supportedFormat);
     return 1;
 }
 static int luaCreateDynamicAttachmentPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -5);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -5);
     VkFormat vkFormat = (VkFormat)lua_tointeger(pLuaState, -4);
     VkImageUsageFlags vkImageUsageFlags = (VkImageUsageFlags)lua_tointeger(pLuaState, -3);
     VkImageAspectFlags vkImageAspectFlags = (VkImageAspectFlags)lua_tointeger(pLuaState, -2);
     float scaler = (float)lua_tonumber(pLuaState, -1);
-    Attachment *pAttachment = createDynamicAttachmentPtr(pGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, scaler);
-    lua_pushlightuserdata(pLuaState, pAttachment);
+    TknAttachment *pTknAttachment = createDynamicAttachmentPtr(pTknGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, scaler);
+    lua_pushlightuserdata(pLuaState, pTknAttachment);
     return 1;
 }
 
 static int luaCreateFixedAttachmentPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -6);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -6);
     VkFormat vkFormat = (VkFormat)lua_tointeger(pLuaState, -5);
     VkImageUsageFlags vkImageUsageFlags = (VkImageUsageFlags)lua_tointeger(pLuaState, -4);
     VkImageAspectFlags vkImageAspectFlags = (VkImageAspectFlags)lua_tointeger(pLuaState, -3);
     uint32_t width = (uint32_t)lua_tointeger(pLuaState, -2);
     uint32_t height = (uint32_t)lua_tointeger(pLuaState, -1);
-    Attachment *pAttachment = createFixedAttachmentPtr(pGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, width, height);
-    lua_pushlightuserdata(pLuaState, pAttachment);
+    TknAttachment *pTknAttachment = createFixedAttachmentPtr(pTknGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, width, height);
+    lua_pushlightuserdata(pLuaState, pTknAttachment);
     return 1;
 }
 
 static int luaGetSwapchainAttachmentPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
-    Attachment *pAttachment = getSwapchainAttachmentPtr(pGfxContext);
-    lua_pushlightuserdata(pLuaState, pAttachment);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -1);
+    TknAttachment *pTknAttachment = getSwapchainAttachmentPtr(pTknGfxContext);
+    lua_pushlightuserdata(pLuaState, pTknAttachment);
     return 1;
 }
 
 static int luaDestroyDynamicAttachmentPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Attachment *pAttachment = (Attachment *)lua_touserdata(pLuaState, -1);
-    destroyDynamicAttachmentPtr(pGfxContext, pAttachment);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknAttachment *pTknAttachment = (TknAttachment *)lua_touserdata(pLuaState, -1);
+    destroyDynamicAttachmentPtr(pTknGfxContext, pTknAttachment);
     return 0;
 }
 
 static int luaDestroyFixedAttachmentPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Attachment *pAttachment = (Attachment *)lua_touserdata(pLuaState, -1);
-    destroyFixedAttachmentPtr(pGfxContext, pAttachment);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknAttachment *pTknAttachment = (TknAttachment *)lua_touserdata(pLuaState, -1);
+    destroyFixedAttachmentPtr(pTknGfxContext, pTknAttachment);
     return 0;
 }
 
 static int luaCreateRenderPassPtr(lua_State *pLuaState)
 {
     // Get parameters from Lua stack
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -8);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -8);
 
     // Get VkAttachmentDescription array
     lua_len(pLuaState, -7);
@@ -327,11 +327,11 @@ static int luaCreateRenderPassPtr(lua_State *pLuaState)
     lua_len(pLuaState, -6);
     uint32_t inputAttachmentCount = (uint32_t)lua_tointeger(pLuaState, -1);
     lua_pop(pLuaState, 1);
-    Attachment **inputAttachmentPtrs = tknMalloc(sizeof(Attachment *) * inputAttachmentCount);
+    TknAttachment **inputAttachmentPtrs = tknMalloc(sizeof(TknAttachment *) * inputAttachmentCount);
     for (uint32_t i = 0; i < inputAttachmentCount; i++)
     {
         lua_rawgeti(pLuaState, -6, i + 1);
-        inputAttachmentPtrs[i] = (Attachment *)lua_touserdata(pLuaState, -1);
+        inputAttachmentPtrs[i] = (TknAttachment *)lua_touserdata(pLuaState, -1);
         lua_pop(pLuaState, 1);
     }
 
@@ -521,7 +521,7 @@ static int luaCreateRenderPassPtr(lua_State *pLuaState)
     }
     uint32_t renderPassIndex = (uint32_t)lua_tointeger(pLuaState, -1);
     // Call the C function
-    RenderPass *pRenderPass = createRenderPassPtr(pGfxContext, attachmentCount, vkAttachmentDescriptions,
+    TknRenderPass *pTknRenderPass = createRenderPassPtr(pTknGfxContext, attachmentCount, vkAttachmentDescriptions,
                                                   inputAttachmentPtrs, vkClearValues, subpassCount, vkSubpassDescriptions,
                                                   spvPathCounts, spvPathsArray, vkSubpassDependencyCount,
                                                   vkSubpassDependencies, renderPassIndex);
@@ -552,24 +552,24 @@ static int luaCreateRenderPassPtr(lua_State *pLuaState)
     if (vkSubpassDependencies)
         tknFree(vkSubpassDependencies);
 
-    // Return RenderPass as userdata
-    lua_pushlightuserdata(pLuaState, pRenderPass);
+    // Return TknRenderPass as userdata
+    lua_pushlightuserdata(pLuaState, pTknRenderPass);
     return 1;
 }
 
 static int luaDestroyRenderPassPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -1);
-    destroyRenderPassPtr(pGfxContext, pRenderPass);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -1);
+    destroyRenderPassPtr(pTknGfxContext, pTknRenderPass);
     return 0;
 }
 
 static int luaCreatePipelinePtr(lua_State *pLuaState)
 {
     // Get parameters from Lua stack (13 parameters total)
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -13);
-    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -12);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -13);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -12);
     uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -11);
 
     // Get spvPaths array (parameter 4 at index -10)
@@ -584,10 +584,10 @@ static int luaCreatePipelinePtr(lua_State *pLuaState)
         lua_pop(pLuaState, 1);
     }
     // Get vertexAttributeDescriptions (parameter 5 at index -9)
-    VertexInputLayout *pMeshVertexInputLayout = lua_touserdata(pLuaState, -9);
+    TknVertexInputLayout *pTknMeshVertexInputLayout = lua_touserdata(pLuaState, -9);
 
     // Get instanceAttributeDescriptions (parameter 6 at index -8)
-    VertexInputLayout *pInstanceVertexInputLayout = lua_touserdata(pLuaState, -8);
+    TknVertexInputLayout *pTknInstanceVertexInputLayout = lua_touserdata(pLuaState, -8);
 
     // Parse VkPipelineInputAssemblyStateCreateInfo (parameter 6 at index -7)
     VkPipelineInputAssemblyStateCreateInfo vkPipelineInputAssemblyStateCreateInfo = {0};
@@ -977,9 +977,9 @@ static int luaCreatePipelinePtr(lua_State *pLuaState)
     lua_pop(pLuaState, 1); // Pop pDynamicStates
 
     // Call the C function
-    Pipeline *pPipeline = createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, spvPathCount, spvPaths,
-                                            pMeshVertexInputLayout,
-                                            pInstanceVertexInputLayout,
+    TknPipeline *pTknPipeline = createPipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, spvPathCount, spvPaths,
+                                            pTknMeshVertexInputLayout,
+                                            pTknInstanceVertexInputLayout,
                                             vkPipelineInputAssemblyStateCreateInfo,
                                             vkPipelineViewportStateCreateInfo,
                                             vkPipelineRasterizationStateCreateInfo,
@@ -996,57 +996,57 @@ static int luaCreatePipelinePtr(lua_State *pLuaState)
     tknFree(pColorBlendAttachments);
     tknFree(pDynamicStates);
 
-    // Return Pipeline as userdata
-    lua_pushlightuserdata(pLuaState, pPipeline);
+    // Return TknPipeline as userdata
+    lua_pushlightuserdata(pLuaState, pTknPipeline);
     return 1;
 }
 
 static int luaDestroyPipelinePtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Pipeline *pPipeline = (Pipeline *)lua_touserdata(pLuaState, -1);
-    destroyPipelinePtr(pGfxContext, pPipeline);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknPipeline *pTknPipeline = (TknPipeline *)lua_touserdata(pLuaState, -1);
+    destroyPipelinePtr(pTknGfxContext, pTknPipeline);
     return 0;
 }
 
 static int luaCreateDrawCallPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -5);
-    Pipeline *pPipeline = (Pipeline *)lua_touserdata(pLuaState, -4);
-    Material *pMaterial = (Material *)lua_touserdata(pLuaState, -3);
-    Mesh *pMesh = (Mesh *)lua_touserdata(pLuaState, -2);
-    Instance *pInstance = (Instance *)lua_touserdata(pLuaState, -1);
-    DrawCall *pDrawCall = createDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance);
-    lua_pushlightuserdata(pLuaState, pDrawCall);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -5);
+    TknPipeline *pTknPipeline = (TknPipeline *)lua_touserdata(pLuaState, -4);
+    TknMaterial *pTknMaterial = (TknMaterial *)lua_touserdata(pLuaState, -3);
+    TknMesh *pTknMesh = (TknMesh *)lua_touserdata(pLuaState, -2);
+    TknInstance *pTknInstance = (TknInstance *)lua_touserdata(pLuaState, -1);
+    TknDrawCall *pTknDrawCall = createDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance);
+    lua_pushlightuserdata(pLuaState, pTknDrawCall);
     return 1;
 }
 
 static int luaDestroyDrawCallPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    DrawCall *pDrawCall = (DrawCall *)lua_touserdata(pLuaState, -1);
-    destroyDrawCallPtr(pGfxContext, pDrawCall);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknDrawCall *pTknDrawCall = (TknDrawCall *)lua_touserdata(pLuaState, -1);
+    destroyDrawCallPtr(pTknGfxContext, pTknDrawCall);
     return 0;
 }
 
 static int luaInsertDrawCallPtr(lua_State *pLuaState)
 {
-    DrawCall *pDrawCall = (DrawCall *)lua_touserdata(pLuaState, -2);
+    TknDrawCall *pTknDrawCall = (TknDrawCall *)lua_touserdata(pLuaState, -2);
     uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    insertDrawCallPtr(pDrawCall, index);
+    insertDrawCallPtr(pTknDrawCall, index);
     return 0;
 }
 
 static int luaRemoveDrawCallPtr(lua_State *pLuaState)
 {
-    DrawCall *pDrawCall = (DrawCall *)lua_touserdata(pLuaState, -1);
-    removeDrawCallPtr(pDrawCall);
+    TknDrawCall *pTknDrawCall = (TknDrawCall *)lua_touserdata(pLuaState, -1);
+    removeDrawCallPtr(pTknDrawCall);
     return 0;
 }
 
 static int luaCreateVertexInputLayoutPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
 
     // Get layout array
     lua_len(pLuaState, -1);
@@ -1102,78 +1102,78 @@ static int luaCreateVertexInputLayoutPtr(lua_State *pLuaState)
         lua_pop(pLuaState, 1);
     }
 
-    VertexInputLayout *pVertexInputLayout = createVertexInputLayoutPtr(pGfxContext, attributeCount, names, sizes);
+    TknVertexInputLayout *pTknVertexInputLayout = createVertexInputLayoutPtr(pTknGfxContext, attributeCount, names, sizes);
 
     tknFree(names);
     tknFree(sizes);
 
-    lua_pushlightuserdata(pLuaState, pVertexInputLayout);
+    lua_pushlightuserdata(pLuaState, pTknVertexInputLayout);
     return 1;
 }
 
 static int luaDestroyVertexInputLayoutPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    VertexInputLayout *pVertexInputLayout = (VertexInputLayout *)lua_touserdata(pLuaState, -1);
-    destroyVertexInputLayoutPtr(pGfxContext, pVertexInputLayout);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknVertexInputLayout *pTknVertexInputLayout = (TknVertexInputLayout *)lua_touserdata(pLuaState, -1);
+    destroyVertexInputLayoutPtr(pTknGfxContext, pTknVertexInputLayout);
     return 0;
 }
 
 static int luaRemoveDrawCallAtIndex(lua_State *pLuaState)
 {
-    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -3);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -3);
     uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -2);
     uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    removeDrawCallAtIndex(pRenderPass, subpassIndex, index);
+    removeDrawCallAtIndex(pTknRenderPass, subpassIndex, index);
     return 0;
 }
 
 static int luaGetDrawCallAtIndex(lua_State *pLuaState)
 {
-    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -3);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -3);
     uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -2);
     uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    DrawCall *pDrawCall = getDrawCallAtIndex(pRenderPass, subpassIndex, index);
-    lua_pushlightuserdata(pLuaState, pDrawCall);
+    TknDrawCall *pTknDrawCall = getDrawCallAtIndex(pTknRenderPass, subpassIndex, index);
+    lua_pushlightuserdata(pLuaState, pTknDrawCall);
     return 1;
 }
 
 static int luaGetDrawCallCount(lua_State *pLuaState)
 {
-    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -2);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -2);
     uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -1);
-    uint32_t count = getDrawCallCount(pRenderPass, subpassIndex);
+    uint32_t count = getDrawCallCount(pTknRenderPass, subpassIndex);
     lua_pushinteger(pLuaState, (lua_Integer)count);
     return 1;
 }
 
 static int luaCreateUniformBufferPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -3);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -3);
     // layout at -2, data at -1
 
     VkDeviceSize size;
     void *packedData = packDataFromLayout(pLuaState, -2, -1, &size);
 
-    UniformBuffer *pUniformBuffer = createUniformBufferPtr(pGfxContext, packedData, size);
+    TknUniformBuffer *pTknUniformBuffer = createUniformBufferPtr(pTknGfxContext, packedData, size);
 
     tknFree(packedData);
-    lua_pushlightuserdata(pLuaState, pUniformBuffer);
+    lua_pushlightuserdata(pLuaState, pTknUniformBuffer);
     return 1;
 }
 
 static int luaDestroyUniformBufferPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    UniformBuffer *pUniformBuffer = (UniformBuffer *)lua_touserdata(pLuaState, -1);
-    destroyUniformBufferPtr(pGfxContext, pUniformBuffer);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknUniformBuffer *pTknUniformBuffer = (TknUniformBuffer *)lua_touserdata(pLuaState, -1);
+    destroyUniformBufferPtr(pTknGfxContext, pTknUniformBuffer);
     return 0;
 }
 
 static int luaUpdateUniformBufferPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -5);
-    UniformBuffer *pUniformBuffer = (UniformBuffer *)lua_touserdata(pLuaState, -4);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -5);
+    TknUniformBuffer *pTknUniformBuffer = (TknUniformBuffer *)lua_touserdata(pLuaState, -4);
     // layout at -3, data at -2, size at -1
 
     VkDeviceSize size;
@@ -1182,7 +1182,7 @@ static int luaUpdateUniformBufferPtr(lua_State *pLuaState)
     // Use the provided size if available, otherwise use calculated size
     VkDeviceSize finalSize = lua_isnil(pLuaState, -1) ? size : (VkDeviceSize)lua_tointeger(pLuaState, -1);
 
-    updateUniformBufferPtr(pGfxContext, pUniformBuffer, packedData, finalSize);
+    updateUniformBufferPtr(pTknGfxContext, pTknUniformBuffer, packedData, finalSize);
 
     tknFree(packedData);
     return 0;
@@ -1190,9 +1190,9 @@ static int luaUpdateUniformBufferPtr(lua_State *pLuaState)
 
 static int luaCreateMeshPtrWithData(lua_State *pLuaState)
 {
-    // Parameters: pGfxContext, pVertexInputLayout, vertexLayout, vertices, indexType, indices
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -6);
-    VertexInputLayout *pVertexInputLayout = (VertexInputLayout *)lua_touserdata(pLuaState, -5);
+    // Parameters: pTknGfxContext, pTknVertexInputLayout, vertexLayout, vertices, indexType, indices
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -6);
+    TknVertexInputLayout *pTknVertexInputLayout = (TknVertexInputLayout *)lua_touserdata(pLuaState, -5);
     // vertexLayout at -4, vertices at -3, indexType at -2, indices at -1
 
     VkDeviceSize vertexSize;
@@ -1234,21 +1234,21 @@ static int luaCreateMeshPtrWithData(lua_State *pLuaState)
         }
     }
 
-    Mesh *pMesh = createMeshPtrWithData(pGfxContext, pVertexInputLayout, vertexData, vertexCount, indexType, indexData, indexCount);
+    TknMesh *pTknMesh = createMeshPtrWithData(pTknGfxContext, pTknVertexInputLayout, vertexData, vertexCount, indexType, indexData, indexCount);
 
     tknFree(vertexData);
     if (indexData)
         tknFree(indexData);
 
-    lua_pushlightuserdata(pLuaState, pMesh);
+    lua_pushlightuserdata(pLuaState, pTknMesh);
     return 1;
 }
 
 static int luaDestroyMeshPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Mesh *pMesh = (Mesh *)lua_touserdata(pLuaState, -1);
-    destroyMeshPtr(pGfxContext, pMesh);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknMesh *pTknMesh = (TknMesh *)lua_touserdata(pLuaState, -1);
+    destroyMeshPtr(pTknGfxContext, pTknMesh);
     return 0;
 }
 
@@ -1277,7 +1277,7 @@ static int luaSaveMeshPtrToPlyFile(lua_State *pLuaState)
         lua_pop(pLuaState, 1);
     }
 
-    VertexInputLayout *pMeshVertexInputLayout = (VertexInputLayout *)lua_touserdata(pLuaState, -4);
+    TknVertexInputLayout *pTknMeshVertexInputLayout = (TknVertexInputLayout *)lua_touserdata(pLuaState, -4);
 
     // Pack vertex data from layout
     VkDeviceSize vertexSize;
@@ -1318,7 +1318,7 @@ static int luaSaveMeshPtrToPlyFile(lua_State *pLuaState)
 
     // Call the C function
     saveMeshPtrToPlyFile(vertexPropertyCount, vertexPropertyNames, vertexPropertyTypes,
-                         pMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount, plyFilePath);
+                         pTknMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount, plyFilePath);
 
     // Clean up
     tknFree(vertexPropertyNames);
@@ -1332,8 +1332,8 @@ static int luaSaveMeshPtrToPlyFile(lua_State *pLuaState)
 
 static int luaCreateInstancePtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -4);
-    VertexInputLayout *pVertexInputLayout = (VertexInputLayout *)lua_touserdata(pLuaState, -3);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
+    TknVertexInputLayout *pTknVertexInputLayout = (TknVertexInputLayout *)lua_touserdata(pLuaState, -3);
     // instanceLayout at -2, instances at -1
 
     VkDeviceSize instanceSize;
@@ -1347,25 +1347,25 @@ static int luaCreateInstancePtr(lua_State *pLuaState)
         instanceCount = (uint32_t)(instanceSize / layoutSize);
     }
 
-    Instance *pInstance = createInstancePtr(pGfxContext, pVertexInputLayout, instanceCount, instanceData);
+    TknInstance *pTknInstance = createInstancePtr(pTknGfxContext, pTknVertexInputLayout, instanceCount, instanceData);
 
     tknFree(instanceData);
-    lua_pushlightuserdata(pLuaState, pInstance);
+    lua_pushlightuserdata(pLuaState, pTknInstance);
     return 1;
 }
 
 static int luaDestroyInstancePtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Instance *pInstance = (Instance *)lua_touserdata(pLuaState, -1);
-    destroyInstancePtr(pGfxContext, pInstance);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknInstance *pTknInstance = (TknInstance *)lua_touserdata(pLuaState, -1);
+    destroyInstancePtr(pTknGfxContext, pTknInstance);
     return 0;
 }
 
 static int luaUpdateInstancePtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -4);
-    Instance *pInstance = (Instance *)lua_touserdata(pLuaState, -3);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
+    TknInstance *pTknInstance = (TknInstance *)lua_touserdata(pLuaState, -3);
     // instanceLayout at -2, instances at -1
 
     VkDeviceSize instanceSize;
@@ -1379,7 +1379,7 @@ static int luaUpdateInstancePtr(lua_State *pLuaState)
         instanceCount = (uint32_t)(instanceSize / layoutSize);
     }
 
-    updateInstancePtr(pGfxContext, pInstance, instanceData, instanceCount);
+    updateInstancePtr(pTknGfxContext, pTknInstance, instanceData, instanceCount);
 
     tknFree(instanceData);
     return 0;
@@ -1387,51 +1387,51 @@ static int luaUpdateInstancePtr(lua_State *pLuaState)
 
 static int luaGetGlobalMaterialPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
-    Material *pMaterial = getGlobalMaterialPtr(pGfxContext);
-    lua_pushlightuserdata(pLuaState, pMaterial);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -1);
+    TknMaterial *pTknMaterial = getGlobalMaterialPtr(pTknGfxContext);
+    lua_pushlightuserdata(pLuaState, pTknMaterial);
     return 1;
 }
 
 static int luaGetSubpassMaterialPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -3);
-    RenderPass *pRenderPass = (RenderPass *)lua_touserdata(pLuaState, -2);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -3);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -2);
     uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -1);
-    Material *pMaterial = getSubpassMaterialPtr(pGfxContext, pRenderPass, subpassIndex);
-    printf("Subpass Material: %p\n", (void *)pMaterial);
-    lua_pushlightuserdata(pLuaState, pMaterial);
+    TknMaterial *pTknMaterial = getSubpassMaterialPtr(pTknGfxContext, pTknRenderPass, subpassIndex);
+    printf("Subpass TknMaterial: %p\n", (void *)pTknMaterial);
+    lua_pushlightuserdata(pLuaState, pTknMaterial);
     return 1;
 }
 
 static int luaCreatePipelineMaterialPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Pipeline *pPipeline = (Pipeline *)lua_touserdata(pLuaState, -1);
-    Material *pMaterial = createPipelineMaterialPtr(pGfxContext, pPipeline);
-    lua_pushlightuserdata(pLuaState, pMaterial);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknPipeline *pTknPipeline = (TknPipeline *)lua_touserdata(pLuaState, -1);
+    TknMaterial *pTknMaterial = createPipelineMaterialPtr(pTknGfxContext, pTknPipeline);
+    lua_pushlightuserdata(pLuaState, pTknMaterial);
     return 1;
 }
 
 static int luaDestroyPipelineMaterialPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Material *pMaterial = (Material *)lua_touserdata(pLuaState, -1);
-    destroyPipelineMaterialPtr(pGfxContext, pMaterial);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknMaterial *pTknMaterial = (TknMaterial *)lua_touserdata(pLuaState, -1);
+    destroyPipelineMaterialPtr(pTknGfxContext, pTknMaterial);
     return 0;
 }
 
 static int luaUpdateMaterialPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -3);
-    Material *pMaterial = (Material *)lua_touserdata(pLuaState, -2);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -3);
+    TknMaterial *pTknMaterial = (TknMaterial *)lua_touserdata(pLuaState, -2);
 
-    // Get inputBindings array
+    // Get tknInputBindings array
     lua_len(pLuaState, -1);
     uint32_t inputBindingCount = (uint32_t)lua_tointeger(pLuaState, -1);
     lua_pop(pLuaState, 1);
 
-    InputBinding *inputBindings = tknMalloc(sizeof(InputBinding) * inputBindingCount);
+    TknInputBinding *tknInputBindings = tknMalloc(sizeof(TknInputBinding) * inputBindingCount);
 
     for (uint32_t i = 0; i < inputBindingCount; i++)
     {
@@ -1447,56 +1447,56 @@ static int luaUpdateMaterialPtr(lua_State *pLuaState)
         uint32_t binding = (uint32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
 
-        inputBindings[i].vkDescriptorType = vkDescriptorType;
-        inputBindings[i].binding = binding;
+        tknInputBindings[i].vkDescriptorType = vkDescriptorType;
+        tknInputBindings[i].binding = binding;
 
         // Parse different descriptor types based on current supported types
         if (vkDescriptorType == VK_DESCRIPTOR_TYPE_SAMPLER)
         {
             lua_getfield(pLuaState, -1, "pSampler");
-            Sampler *pSampler = (Sampler *)lua_touserdata(pLuaState, -1);
+            TknSampler *pTknSampler = (TknSampler *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
-            inputBindings[i].inputBindingUnion.combinedImageSamplerBinding.pSampler = pSampler;
+            tknInputBindings[i].tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknSampler = pTknSampler;
         }
         else if (vkDescriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         {
             lua_getfield(pLuaState, -1, "pUniformBuffer");
-            UniformBuffer *pUniformBuffer = (UniformBuffer *)lua_touserdata(pLuaState, -1);
+            TknUniformBuffer *pTknUniformBuffer = (TknUniformBuffer *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
 
-            inputBindings[i].inputBindingUnion.uniformBufferBinding.pUniformBuffer = pUniformBuffer;
+            tknInputBindings[i].tknInputBindingUnion.tknUniformBufferBinding.pTknUniformBuffer = pTknUniformBuffer;
         }
         else if (vkDescriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
         {
             lua_getfield(pLuaState, -1, "pSampler");
-            Sampler *pSampler = (Sampler *)lua_touserdata(pLuaState, -1);
+            TknSampler *pTknSampler = (TknSampler *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
-            inputBindings[i].inputBindingUnion.combinedImageSamplerBinding.pSampler = pSampler;
+            tknInputBindings[i].tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknSampler = pTknSampler;
 
             lua_getfield(pLuaState, -1, "pImage");
-            Image *pImage = (Image *)lua_touserdata(pLuaState, -1);
+            TknImage *pTknImage = (TknImage *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
-            inputBindings[i].inputBindingUnion.combinedImageSamplerBinding.pImage = pImage;
+            tknInputBindings[i].tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknImage = pTknImage;
         }
         else
         {
-            tknError("Unsupported descriptor type in InputBinding: %d", vkDescriptorType);
+            tknError("Unsupported descriptor type in TknInputBinding: %d", vkDescriptorType);
         }
 
         lua_pop(pLuaState, 1); // Remove the binding table
     }
 
-    updateMaterialPtr(pGfxContext, pMaterial, inputBindingCount, inputBindings);
+    updateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindingCount, tknInputBindings);
 
-    tknFree(inputBindings);
+    tknFree(tknInputBindings);
     return 0;
 }
 
 static int luaUpdateMeshPtr(lua_State *pLuaState)
 {
-    // Parameters: pGfxContext, pMesh, vertexLayout, vertices, indexType, indices
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -6);
-    Mesh *pMesh = (Mesh *)lua_touserdata(pLuaState, -5);
+    // Parameters: pTknGfxContext, pTknMesh, vertexLayout, vertices, indexType, indices
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -6);
+    TknMesh *pTknMesh = (TknMesh *)lua_touserdata(pLuaState, -5);
     // vertexLayout at -4, vertices at -3, indexType at -2, indices at -1
 
     VkDeviceSize vertexSize;
@@ -1544,7 +1544,7 @@ static int luaUpdateMeshPtr(lua_State *pLuaState)
         }
     }
 
-    updateMeshPtr(pGfxContext, pMesh, NULL, vertexData, vertexCount, (uint32_t)indexType, indexData, indexCount);
+    updateMeshPtr(pTknGfxContext, pTknMesh, NULL, vertexData, vertexCount, (uint32_t)indexType, indexData, indexCount);
 
     if (vertexData)
         tknFree(vertexData);
@@ -1556,8 +1556,8 @@ static int luaUpdateMeshPtr(lua_State *pLuaState)
 
 static int luaCreateImagePtr(lua_State *pLuaState)
 {
-    // Parameters: pGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, data (optional)
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -8);
+    // Parameters: pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, data (optional)
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -8);
 
     // Parse VkExtent3D (table with width, height, depth)
     VkExtent3D vkExtent3D;
@@ -1598,21 +1598,21 @@ static int luaCreateImagePtr(lua_State *pLuaState)
         }
     }
 
-    Image *pImage = createImagePtr(pGfxContext, vkExtent3D, vkFormat, vkImageTiling,
+    TknImage *pTknImage = createImagePtr(pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling,
                                    vkImageUsageFlags, vkMemoryPropertyFlags,
                                    vkImageAspectFlags, data, dataSize);
     if (data != NULL)
     {
         tknFree(data);
     }
-    lua_pushlightuserdata(pLuaState, pImage);
+    lua_pushlightuserdata(pLuaState, pTknImage);
     return 1;
 }
 
 static int luaCreateSamplerPtr(lua_State *pLuaState)
 {
-    // Parameters: pGfxContext, magFilter, minFilter, mipmapMode, addressModeU, addressModeV, addressModeW, mipLodBias, anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -13);
+    // Parameters: pTknGfxContext, magFilter, minFilter, mipmapMode, addressModeU, addressModeV, addressModeW, mipLodBias, anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -13);
     VkFilter magFilter = (VkFilter)lua_tointeger(pLuaState, -12);
     VkFilter minFilter = (VkFilter)lua_tointeger(pLuaState, -11);
     VkSamplerMipmapMode mipmapMode = (VkSamplerMipmapMode)lua_tointeger(pLuaState, -10);
@@ -1626,27 +1626,27 @@ static int luaCreateSamplerPtr(lua_State *pLuaState)
     float maxLod = (float)lua_tonumber(pLuaState, -2);
     VkBorderColor borderColor = (VkBorderColor)lua_tointeger(pLuaState, -1);
 
-    Sampler *pSampler = createSamplerPtr(pGfxContext, magFilter, minFilter, mipmapMode,
+    TknSampler *pTknSampler = createSamplerPtr(pTknGfxContext, magFilter, minFilter, mipmapMode,
                                          addressModeU, addressModeV, addressModeW, mipLodBias,
                                          anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor);
 
-    lua_pushlightuserdata(pLuaState, pSampler);
+    lua_pushlightuserdata(pLuaState, pTknSampler);
     return 1;
 }
 
 static int luaDestroySamplerPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Sampler *pSampler = (Sampler *)lua_touserdata(pLuaState, -1);
-    destroySamplerPtr(pGfxContext, pSampler);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknSampler *pTknSampler = (TknSampler *)lua_touserdata(pLuaState, -1);
+    destroySamplerPtr(pTknGfxContext, pTknSampler);
     return 0;
 }
 
 static int luaDestroyImagePtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
-    Image *pImage = (Image *)lua_touserdata(pLuaState, -1);
-    destroyImagePtr(pGfxContext, pImage);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknImage *pTknImage = (TknImage *)lua_touserdata(pLuaState, -1);
+    destroyImagePtr(pTknGfxContext, pTknImage);
     return 0;
 }
 
@@ -1665,29 +1665,29 @@ static int luaCreateASTCFromMemory(lua_State *pLuaState)
         lua_pushnil(pLuaState);
         return 1;
     }
-    ASTCImage *astcImage = createASTCFromMemory(data, bufferSize);
-    if (!astcImage)
+    TknASTCImage *tknAstcImage = createASTCFromMemory(data, bufferSize);
+    if (!tknAstcImage)
     {
         lua_pushnil(pLuaState);
         return 1;
     }
-    // Return multiple values: astcImage pointer, data, width, height, vkFormat, dataSize
-    lua_pushlightuserdata(pLuaState, astcImage);                  // ASTCImage pointer
-    lua_pushlstring(pLuaState, astcImage->data, astcImage->size); // Binary data with exact length
-    lua_pushinteger(pLuaState, astcImage->width);                 // width
-    lua_pushinteger(pLuaState, astcImage->height);                // height
-    lua_pushinteger(pLuaState, astcImage->vkFormat);              // vkFormat
-    lua_pushinteger(pLuaState, astcImage->size);                  // dataSize
+    // Return multiple values: tknAstcImage pointer, data, width, height, vkFormat, dataSize
+    lua_pushlightuserdata(pLuaState, tknAstcImage);                  // TknASTCImage pointer
+    lua_pushlstring(pLuaState, tknAstcImage->data, tknAstcImage->size); // Binary data with exact length
+    lua_pushinteger(pLuaState, tknAstcImage->width);                 // width
+    lua_pushinteger(pLuaState, tknAstcImage->height);                // height
+    lua_pushinteger(pLuaState, tknAstcImage->vkFormat);              // vkFormat
+    lua_pushinteger(pLuaState, tknAstcImage->size);                  // dataSize
     return 6;
 }
 
 static int luaDestroyASTCImage(lua_State *pLuaState)
 {
-    // Parameters: astcImage (as lightuserdata)
-    ASTCImage *astcImage = (ASTCImage *)lua_touserdata(pLuaState, -1);
-    if (astcImage)
+    // Parameters: tknAstcImage (as lightuserdata)
+    TknASTCImage *tknAstcImage = (TknASTCImage *)lua_touserdata(pLuaState, -1);
+    if (tknAstcImage)
     {
-        destroyASTCImage(astcImage);
+        destroyASTCImage(tknAstcImage);
     }
     return 0;
 }
@@ -1701,23 +1701,23 @@ static int luaCreateTknFontLibraryPtr(lua_State *pLuaState)
 
 static int luaDestroyTknFontLibraryPtr(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -2);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
     TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -1);
-    destroyTknFontLibraryPtr(pTknFontLibrary, pGfxContext);
+    destroyTknFontLibraryPtr(pTknFontLibrary, pTknGfxContext);
     return 0;
 }
 
 static int luaCreateTknFontPtr(lua_State *pLuaState)
 {
     TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -5);
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -4);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
     const char *fontPath = lua_tostring(pLuaState, -3);
     uint32_t fontSize = (uint32_t)lua_tointeger(pLuaState, -2);
     uint32_t atlasLength = (uint32_t)lua_tointeger(pLuaState, -1);
 
-    TknFont *pTknFont = createTknFontPtr(pTknFontLibrary, pGfxContext, fontPath, fontSize, atlasLength);
+    TknFont *pTknFont = createTknFontPtr(pTknFontLibrary, pTknGfxContext, fontPath, fontSize, atlasLength);
     lua_pushlightuserdata(pLuaState, pTknFont);
-    lua_pushlightuserdata(pLuaState, pTknFont->pImage);
+    lua_pushlightuserdata(pLuaState, pTknFont->pTknImage);
     return 2;
 }
 
@@ -1725,16 +1725,16 @@ static int luaDestroyTknFontPtr(lua_State *pLuaState)
 {
     TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, -3);
     TknFont *pTknFont = (TknFont *)lua_touserdata(pLuaState, -2);
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
-    destroyTknFontPtr(pTknFontLibrary, pTknFont, pGfxContext);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -1);
+    destroyTknFontPtr(pTknFontLibrary, pTknFont, pTknGfxContext);
     return 0;
 }
 
 static int luaFlushTknFontPtr(lua_State *pLuaState)
 {
     TknFont *pTknFont = (TknFont *)lua_touserdata(pLuaState, -2);
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
-    flushTknFontPtr(pTknFont, pGfxContext);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -1);
+    flushTknFontPtr(pTknFont, pTknGfxContext);
     return 0;
 }
 
@@ -1765,8 +1765,8 @@ static int luaLoadTknChar(lua_State *pLuaState)
 
 static int luaWaitRenderFence(lua_State *pLuaState)
 {
-    GfxContext *pGfxContext = (GfxContext *)lua_touserdata(pLuaState, -1);
-    waitGfxRenderFence(pGfxContext);
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -1);
+    waitGfxRenderFence(pTknGfxContext);
     return 0;
 }
 

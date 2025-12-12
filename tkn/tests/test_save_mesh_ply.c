@@ -9,9 +9,9 @@
 // Use the project's public header for engine types and function declarations
 #include "tkn.h"
 
-// Complete the opaque VertexInputLayout declared in tkn.h so we can
+// Complete the opaque TknVertexInputLayout declared in tkn.h so we can
 // construct one in this test. Fields must match the engine's layout.
-struct VertexInputLayout {
+struct TknVertexInputLayout {
     uint32_t attributeCount;
     const char **names;
     uint32_t *sizes;
@@ -23,7 +23,7 @@ struct VertexInputLayout {
 void test_saveMeshPtrToPlyFile_with_lua_format() {
     printf("Testing real saveMeshPtrToPlyFile function with Lua vertex format...\n");
     
-    // Create VertexInputLayout matching Lua format:
+    // Create TknVertexInputLayout matching Lua format:
     // position: TYPE_FLOAT, count = 3 (3 * 4 = 12 bytes)
     // color: TYPE_UINT32, count = 1 (1 * 4 = 4 bytes)  
     // normal: TYPE_UINT32, count = 1 (1 * 4 = 4 bytes)
@@ -35,7 +35,7 @@ void test_saveMeshPtrToPlyFile_with_lua_format() {
     uint32_t attributeCount = 3;
     uint32_t stride = 20;
     
-    VertexInputLayout layout = {
+    TknVertexInputLayout layout = {
         .attributeCount = attributeCount,
         .names = attributeNames,
         .sizes = attributeSizes,
@@ -43,7 +43,7 @@ void test_saveMeshPtrToPlyFile_with_lua_format() {
         .stride = stride
     };
     
-    printf("✓ VertexInputLayout created:\n");
+    printf("✓ TknVertexInputLayout created:\n");
     printf("  - attributeCount: %u\n", layout.attributeCount);
     printf("  - stride: %u\n", layout.stride);
     printf("  - offsets: [%u, %u, %u]\n", 
@@ -79,7 +79,7 @@ void test_saveMeshPtrToPlyFile_with_lua_format() {
     printf("  - vertexCount: %u\n", vertexCount);
     printf("  - vertexDataSize: %zu bytes\n", vertexDataSize);
     
-    // Define PLY property names and types that match the VertexInputLayout
+    // Define PLY property names and types that match the TknVertexInputLayout
     const char *propertyNames[] = {
         "x", "y", "z",           // position (3 floats)
         "color",                 // color (1 uint32) 

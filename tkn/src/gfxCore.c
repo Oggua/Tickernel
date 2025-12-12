@@ -73,7 +73,7 @@ static uint32_t getMemoryTypeIndex(VkPhysicalDevice vkPhysicalDevice, uint32_t t
     return UINT32_MAX;
 }
 
-void clearBindingPtrHashSet(GfxContext *pGfxContext, TknHashSet bindingPtrHashSet)
+void clearBindingPtrHashSet(TknGfxContext *pTknGfxContext, TknHashSet bindingPtrHashSet)
 {
     for (uint32_t i = 0; i < bindingPtrHashSet.capacity; i++)
     {
@@ -82,20 +82,20 @@ void clearBindingPtrHashSet(GfxContext *pGfxContext, TknHashSet bindingPtrHashSe
         {
             Binding *pBinding = *(Binding **)node->data;
             node = node->pNextNode;
-            InputBinding inputBinding = {
+            TknInputBinding tknInputBinding = {
                 .vkDescriptorType = pBinding->vkDescriptorType,
-                .inputBindingUnion = getEmptyInputBindingUnion(pGfxContext, pBinding->vkDescriptorType),
+                .tknInputBindingUnion = getEmptyInputBindingUnion(pTknGfxContext, pBinding->vkDescriptorType),
                 .binding = pBinding->binding,
             };
-            updateMaterialPtr(pGfxContext, pBinding->pMaterial, 1, &inputBinding);
+            updateMaterialPtr(pTknGfxContext, pBinding->pTknMaterial, 1, &tknInputBinding);
         }
     }
 }
 
-void createVkImage(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, VkImage *pVkImage, VkDeviceMemory *pVkDeviceMemory, VkImageView *pVkImageView)
+void createVkImage(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, VkImage *pVkImage, VkDeviceMemory *pVkDeviceMemory, VkImageView *pVkImageView)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
-    VkPhysicalDevice vkPhysicalDevice = pGfxContext->vkPhysicalDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
+    VkPhysicalDevice vkPhysicalDevice = pTknGfxContext->vkPhysicalDevice;
     VkImageCreateInfo imageCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = NULL,
@@ -151,18 +151,18 @@ void createVkImage(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat vkFo
     };
     assertVkResult(vkCreateImageView(vkDevice, &imageViewCreateInfo, NULL, pVkImageView));
 }
-void destroyVkImage(GfxContext *pGfxContext, VkImage vkImage, VkDeviceMemory vkDeviceMemory, VkImageView vkImageView)
+void destroyVkImage(TknGfxContext *pTknGfxContext, VkImage vkImage, VkDeviceMemory vkDeviceMemory, VkImageView vkImageView)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     vkDestroyImageView(vkDevice, vkImageView, NULL);
     vkDestroyImage(vkDevice, vkImage, NULL);
     vkFreeMemory(vkDevice, vkDeviceMemory, NULL);
 }
 
-void createVkBuffer(GfxContext *pGfxContext, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkBuffer *pVkBuffer, VkDeviceMemory *pVkDeviceMemory)
+void createVkBuffer(TknGfxContext *pTknGfxContext, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkBuffer *pVkBuffer, VkDeviceMemory *pVkDeviceMemory)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
-    VkPhysicalDevice vkPhysicalDevice = pGfxContext->vkPhysicalDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
+    VkPhysicalDevice vkPhysicalDevice = pTknGfxContext->vkPhysicalDevice;
     VkBufferCreateInfo bufferCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = NULL,
@@ -186,15 +186,15 @@ void createVkBuffer(GfxContext *pGfxContext, VkDeviceSize bufferSize, VkBufferUs
     assertVkResult(vkAllocateMemory(vkDevice, &memoryAllocateInfo, NULL, pVkDeviceMemory));
     assertVkResult(vkBindBufferMemory(vkDevice, *pVkBuffer, *pVkDeviceMemory, 0));
 }
-void destroyVkBuffer(GfxContext *pGfxContext, VkBuffer vkBuffer, VkDeviceMemory vkDeviceMemory)
+void destroyVkBuffer(TknGfxContext *pTknGfxContext, VkBuffer vkBuffer, VkDeviceMemory vkDeviceMemory)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     vkDestroyBuffer(vkDevice, vkBuffer, NULL);
     vkFreeMemory(vkDevice, vkDeviceMemory, NULL);
 }
-VertexInputLayout *createVertexInputLayoutPtr(GfxContext *pGfxContext, uint32_t attributeCount, const char **names, uint32_t *sizes)
+TknVertexInputLayout *createVertexInputLayoutPtr(TknGfxContext *pTknGfxContext, uint32_t attributeCount, const char **names, uint32_t *sizes)
 {
-    VertexInputLayout *pVertexInputLayout = tknMalloc(sizeof(VertexInputLayout));
+    TknVertexInputLayout *pTknVertexInputLayout = tknMalloc(sizeof(TknVertexInputLayout));
     const char **namesCopy = tknMalloc(sizeof(char *) * attributeCount);
     // Deep copy the strings, not just the pointers
     for (uint32_t i = 0; i < attributeCount; i++)
@@ -213,7 +213,7 @@ VertexInputLayout *createVertexInputLayoutPtr(GfxContext *pGfxContext, uint32_t 
         offsets[i] = stride;
         stride += sizes[i];
     }
-    *pVertexInputLayout = (VertexInputLayout){
+    *pTknVertexInputLayout = (TknVertexInputLayout){
         .attributeCount = attributeCount,
         .names = namesCopy,
         .sizes = sizesCopy,
@@ -221,31 +221,31 @@ VertexInputLayout *createVertexInputLayoutPtr(GfxContext *pGfxContext, uint32_t 
         .stride = stride,
         .referencePtrHashSet = tknCreateHashSet(sizeof(void *)),
     };
-    tknAddToHashSet(&pGfxContext->vertexInputLayoutPtrHashSet, &pVertexInputLayout);
-    return pVertexInputLayout;
+    tknAddToHashSet(&pTknGfxContext->vertexInputLayoutPtrHashSet, &pTknVertexInputLayout);
+    return pTknVertexInputLayout;
 }
-void destroyVertexInputLayoutPtr(GfxContext *pGfxContext, VertexInputLayout *pVertexInputLayout)
+void destroyVertexInputLayoutPtr(TknGfxContext *pTknGfxContext, TknVertexInputLayout *pTknVertexInputLayout)
 {
-    tknAssert(0 == pVertexInputLayout->referencePtrHashSet.count, "Cannot destroy vertex input layout with meshes | instance attached!");
-    tknRemoveFromHashSet(&pGfxContext->vertexInputLayoutPtrHashSet, &pVertexInputLayout);
-    tknDestroyHashSet(pVertexInputLayout->referencePtrHashSet);
+    tknAssert(0 == pTknVertexInputLayout->referencePtrHashSet.count, "Cannot destroy vertex input layout with meshes | instance attached!");
+    tknRemoveFromHashSet(&pTknGfxContext->vertexInputLayoutPtrHashSet, &pTknVertexInputLayout);
+    tknDestroyHashSet(pTknVertexInputLayout->referencePtrHashSet);
 
     // Free the deep-copied strings
-    for (uint32_t i = 0; i < pVertexInputLayout->attributeCount; i++)
+    for (uint32_t i = 0; i < pTknVertexInputLayout->attributeCount; i++)
     {
-        tknFree((void *)pVertexInputLayout->names[i]);
+        tknFree((void *)pTknVertexInputLayout->names[i]);
     }
-    tknFree(pVertexInputLayout->names);
-    tknFree(pVertexInputLayout->sizes);
-    tknFree(pVertexInputLayout->offsets);
-    tknFree(pVertexInputLayout);
+    tknFree(pTknVertexInputLayout->names);
+    tknFree(pTknVertexInputLayout->sizes);
+    tknFree(pTknVertexInputLayout->offsets);
+    tknFree(pTknVertexInputLayout);
 }
 
-DescriptorSet *createDescriptorSetPtr(GfxContext *pGfxContext, uint32_t spvReflectShaderModuleCount, SpvReflectShaderModule *spvReflectShaderModules, uint32_t set)
+DescriptorSet *createDescriptorSetPtr(TknGfxContext *pTknGfxContext, uint32_t spvReflectShaderModuleCount, SpvReflectShaderModule *spvReflectShaderModules, uint32_t set)
 {
     DescriptorSet *pDescriptorSet = tknMalloc(sizeof(DescriptorSet));
 
-    TknHashSet materialPtrHashSet = tknCreateHashSet(sizeof(Material *));
+    TknHashSet materialPtrHashSet = tknCreateHashSet(sizeof(TknMaterial *));
     VkDescriptorSetLayout vkDescriptorSetLayout = VK_NULL_HANDLE;
     TknDynamicArray vkDescriptorPoolSizeDynamicArray = tknCreateDynamicArray(sizeof(VkDescriptorPoolSize), TKN_DEFAULT_COLLECTION_SIZE);
     uint32_t bindingCount = 0;
@@ -364,7 +364,7 @@ DescriptorSet *createDescriptorSetPtr(GfxContext *pGfxContext, uint32_t spvRefle
         }
     }
 
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     VkDescriptorSetLayoutCreateInfo vkDescriptorSetLayoutCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = bindingCount,
@@ -382,18 +382,18 @@ DescriptorSet *createDescriptorSetPtr(GfxContext *pGfxContext, uint32_t spvRefle
     };
     return pDescriptorSet;
 }
-void destroyDescriptorSetPtr(GfxContext *pGfxContext, DescriptorSet *pDescriptorSet)
+void destroyDescriptorSetPtr(TknGfxContext *pTknGfxContext, DescriptorSet *pDescriptorSet)
 {
     // Safely destroy all materials by repeatedly taking the first one
     while (pDescriptorSet->materialPtrHashSet.count > 0)
     {
-        Material *pMaterial = NULL;
+        TknMaterial *pTknMaterial = NULL;
         for (uint32_t nodeIndex = 0; nodeIndex < pDescriptorSet->materialPtrHashSet.capacity; nodeIndex++)
         {
             TknListNode *pNode = pDescriptorSet->materialPtrHashSet.nodePtrs[nodeIndex];
             if (pNode)
             {
-                pMaterial = *(Material **)pNode->data;
+                pTknMaterial = *(TknMaterial **)pNode->data;
                 break;
             }
             else
@@ -401,9 +401,9 @@ void destroyDescriptorSetPtr(GfxContext *pGfxContext, DescriptorSet *pDescriptor
                 // No node at this index
             }
         }
-        if (pMaterial)
+        if (pTknMaterial)
         {
-            destroyMaterialPtr(pGfxContext, pMaterial);
+            destroyMaterialPtr(pTknGfxContext, pTknMaterial);
         }
         else
         {
@@ -411,20 +411,20 @@ void destroyDescriptorSetPtr(GfxContext *pGfxContext, DescriptorSet *pDescriptor
         }
     }
     tknDestroyHashSet(pDescriptorSet->materialPtrHashSet);
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     vkDestroyDescriptorSetLayout(vkDevice, pDescriptorSet->vkDescriptorSetLayout, NULL);
     tknDestroyDynamicArray(pDescriptorSet->vkDescriptorPoolSizeDynamicArray);
     tknFree(pDescriptorSet->vkDescriptorTypes);
     tknFree(pDescriptorSet);
 }
 
-VkFormat getSupportedFormat(GfxContext *pGfxContext, uint32_t candidateCount, VkFormat *candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat getSupportedFormat(TknGfxContext *pTknGfxContext, uint32_t candidateCount, VkFormat *candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (uint32_t i = 0; i < candidateCount; i++)
     {
         VkFormat format = candidates[i];
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(pGfxContext->vkPhysicalDevice, format, &props);
+        vkGetPhysicalDeviceFormatProperties(pTknGfxContext->vkPhysicalDevice, format, &props);
         if (VK_IMAGE_TILING_LINEAR == tiling)
         {
             if ((props.linearTilingFeatures & features) == features)
@@ -456,14 +456,14 @@ VkFormat getSupportedFormat(GfxContext *pGfxContext, uint32_t candidateCount, Vk
     return VK_FORMAT_MAX_ENUM;
 }
 
-VkCommandBuffer beginSingleTimeCommands(GfxContext *pGfxContext)
+VkCommandBuffer beginSingleTimeCommands(TknGfxContext *pTknGfxContext)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
 
     VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandPool = pGfxContext->gfxVkCommandPool,
+        .commandPool = pTknGfxContext->gfxVkCommandPool,
         .commandBufferCount = 1};
 
     VkCommandBuffer vkCommandBuffer;
@@ -478,9 +478,9 @@ VkCommandBuffer beginSingleTimeCommands(GfxContext *pGfxContext)
     return vkCommandBuffer;
 }
 
-void endSingleTimeCommands(GfxContext *pGfxContext, VkCommandBuffer vkCommandBuffer)
+void endSingleTimeCommands(TknGfxContext *pTknGfxContext, VkCommandBuffer vkCommandBuffer)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
 
     assertVkResult(vkEndCommandBuffer(vkCommandBuffer));
 
@@ -489,8 +489,8 @@ void endSingleTimeCommands(GfxContext *pGfxContext, VkCommandBuffer vkCommandBuf
         .commandBufferCount = 1,
         .pCommandBuffers = &vkCommandBuffer};
 
-    assertVkResult(vkQueueSubmit(pGfxContext->vkGfxQueue, 1, &submitInfo, VK_NULL_HANDLE));
-    assertVkResult(vkQueueWaitIdle(pGfxContext->vkGfxQueue));
+    assertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, VK_NULL_HANDLE));
+    assertVkResult(vkQueueWaitIdle(pTknGfxContext->vkGfxQueue));
 
-    vkFreeCommandBuffers(vkDevice, pGfxContext->gfxVkCommandPool, 1, &vkCommandBuffer);
+    vkFreeCommandBuffers(vkDevice, pTknGfxContext->gfxVkCommandPool, 1, &vkCommandBuffer);
 }

@@ -1,8 +1,8 @@
 #include "gfxCore.h"
 
-static void getGfxAndPresentQueueFamilyIndices(GfxContext *pGfxContext, VkPhysicalDevice vkPhysicalDevice, uint32_t *pGfxQueueFamilyIndex, uint32_t *pPresentQueueFamilyIndex)
+static void getGfxAndPresentQueueFamilyIndices(TknGfxContext *pTknGfxContext, VkPhysicalDevice vkPhysicalDevice, uint32_t *pGfxQueueFamilyIndex, uint32_t *pPresentQueueFamilyIndex)
 {
-    VkSurfaceKHR vkSurface = pGfxContext->vkSurface;
+    VkSurfaceKHR vkSurface = pTknGfxContext->vkSurface;
     uint32_t queueFamilyPropertiesCount;
     vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyPropertiesCount, NULL);
     VkQueueFamilyProperties *vkQueueFamilyPropertiesArray = tknMalloc(queueFamilyPropertiesCount * sizeof(VkQueueFamilyProperties));
@@ -38,10 +38,10 @@ static void getGfxAndPresentQueueFamilyIndices(GfxContext *pGfxContext, VkPhysic
     }
     tknFree(vkQueueFamilyPropertiesArray);
 }
-static void pickPhysicalDevice(GfxContext *pGfxContext, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode)
+static void pickPhysicalDevice(TknGfxContext *pTknGfxContext, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode)
 {
     uint32_t deviceCount = -1;
-    assertVkResult(vkEnumeratePhysicalDevices(pGfxContext->vkInstance, &deviceCount, NULL));
+    assertVkResult(vkEnumeratePhysicalDevices(pTknGfxContext->vkInstance, &deviceCount, NULL));
     if (deviceCount <= 0)
     {
         printf("failed to find GPUs with Vulkan support!");
@@ -49,11 +49,11 @@ static void pickPhysicalDevice(GfxContext *pGfxContext, VkSurfaceFormatKHR targe
     else
     {
         VkPhysicalDevice *devices = tknMalloc(deviceCount * sizeof(VkPhysicalDevice));
-        assertVkResult(vkEnumeratePhysicalDevices(pGfxContext->vkInstance, &deviceCount, devices));
+        assertVkResult(vkEnumeratePhysicalDevices(pTknGfxContext->vkInstance, &deviceCount, devices));
         uint32_t maxScore = 0;
         char *targetDeviceName = NULL;
-        pGfxContext->vkPhysicalDevice = VK_NULL_HANDLE;
-        VkSurfaceKHR vkSurface = pGfxContext->vkSurface;
+        pTknGfxContext->vkPhysicalDevice = VK_NULL_HANDLE;
+        VkSurfaceKHR vkSurface = pTknGfxContext->vkSurface;
         for (uint32_t deviceIndex = 0; deviceIndex < deviceCount; deviceIndex++)
         {
             uint32_t score = 0;
@@ -109,7 +109,7 @@ static void pickPhysicalDevice(GfxContext *pGfxContext, VkSurfaceFormatKHR targe
 
             uint32_t gfxQueueFamilyIndex;
             uint32_t presentQueueFamilyIndex;
-            getGfxAndPresentQueueFamilyIndices(pGfxContext, vkPhysicalDevice, &gfxQueueFamilyIndex, &presentQueueFamilyIndex);
+            getGfxAndPresentQueueFamilyIndices(pTknGfxContext, vkPhysicalDevice, &gfxQueueFamilyIndex, &presentQueueFamilyIndex);
             if (UINT32_MAX == gfxQueueFamilyIndex || UINT32_MAX == presentQueueFamilyIndex)
             {
                 // No gfx or present queue family index
@@ -203,12 +203,12 @@ static void pickPhysicalDevice(GfxContext *pGfxContext, VkSurfaceFormatKHR targe
             {
                 maxScore = score;
                 targetDeviceName = deviceProperties.deviceName;
-                pGfxContext->vkPhysicalDevice = vkPhysicalDevice;
-                pGfxContext->gfxQueueFamilyIndex = gfxQueueFamilyIndex;
-                pGfxContext->presentQueueFamilyIndex = presentQueueFamilyIndex;
-                pGfxContext->vkPhysicalDeviceProperties = deviceProperties;
-                pGfxContext->surfaceFormat = targetVkSurfaceFormat;
-                pGfxContext->presentMode = targetVkPresentMode;
+                pTknGfxContext->vkPhysicalDevice = vkPhysicalDevice;
+                pTknGfxContext->gfxQueueFamilyIndex = gfxQueueFamilyIndex;
+                pTknGfxContext->presentQueueFamilyIndex = presentQueueFamilyIndex;
+                pTknGfxContext->vkPhysicalDeviceProperties = deviceProperties;
+                pTknGfxContext->surfaceFormat = targetVkSurfaceFormat;
+                pTknGfxContext->presentMode = targetVkPresentMode;
             }
             else
             {
@@ -217,7 +217,7 @@ static void pickPhysicalDevice(GfxContext *pGfxContext, VkSurfaceFormatKHR targe
         }
         tknFree(devices);
 
-        if (NULL != pGfxContext->vkPhysicalDevice)
+        if (NULL != pTknGfxContext->vkPhysicalDevice)
         {
             printf("Selected target physical device named %s\n", targetDeviceName);
         }
@@ -227,11 +227,11 @@ static void pickPhysicalDevice(GfxContext *pGfxContext, VkSurfaceFormatKHR targe
         }
     }
 }
-static void populateLogicalDevice(GfxContext *pGfxContext)
+static void populateLogicalDevice(TknGfxContext *pTknGfxContext)
 {
-    VkPhysicalDevice vkPhysicalDevice = pGfxContext->vkPhysicalDevice;
-    uint32_t gfxQueueFamilyIndex = pGfxContext->gfxQueueFamilyIndex;
-    uint32_t presentQueueFamilyIndex = pGfxContext->presentQueueFamilyIndex;
+    VkPhysicalDevice vkPhysicalDevice = pTknGfxContext->vkPhysicalDevice;
+    uint32_t gfxQueueFamilyIndex = pTknGfxContext->gfxQueueFamilyIndex;
+    uint32_t presentQueueFamilyIndex = pTknGfxContext->presentQueueFamilyIndex;
     float queuePriority = 1.0f;
     VkDeviceQueueCreateInfo *queueCreateInfos;
     uint32_t queueCount;
@@ -301,34 +301,34 @@ static void populateLogicalDevice(GfxContext *pGfxContext)
             .ppEnabledExtensionNames = (const char *const *)extensionNames,
             .pEnabledFeatures = &deviceFeatures,
         };
-    assertVkResult(vkCreateDevice(vkPhysicalDevice, &vkDeviceCreateInfo, NULL, &pGfxContext->vkDevice));
-    vkGetDeviceQueue(pGfxContext->vkDevice, gfxQueueFamilyIndex, 0, &pGfxContext->vkGfxQueue);
-    vkGetDeviceQueue(pGfxContext->vkDevice, presentQueueFamilyIndex, 0, &pGfxContext->vkPresentQueue);
+    assertVkResult(vkCreateDevice(vkPhysicalDevice, &vkDeviceCreateInfo, NULL, &pTknGfxContext->vkDevice));
+    vkGetDeviceQueue(pTknGfxContext->vkDevice, gfxQueueFamilyIndex, 0, &pTknGfxContext->vkGfxQueue);
+    vkGetDeviceQueue(pTknGfxContext->vkDevice, presentQueueFamilyIndex, 0, &pTknGfxContext->vkPresentQueue);
     tknFree(queueCreateInfos);
 }
-static void cleanupLogicalDevice(GfxContext *pGfxContext)
+static void cleanupLogicalDevice(TknGfxContext *pTknGfxContext)
 {
-    vkDestroyDevice(pGfxContext->vkDevice, NULL);
+    vkDestroyDevice(pTknGfxContext->vkDevice, NULL);
 }
-static void createSwapchainAttachmentPtr(GfxContext *pGfxContext, VkExtent2D targetSwapchainExtent, uint32_t targetSwapchainImageCount)
+static void createSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent2D targetSwapchainExtent, uint32_t targetSwapchainImageCount)
 {
-    Attachment *pSwapchainAttachment = tknMalloc(sizeof(Attachment));
+    TknAttachment *pSwapchainAttachment = tknMalloc(sizeof(TknAttachment));
 
-    VkPhysicalDevice vkPhysicalDevice = pGfxContext->vkPhysicalDevice;
-    VkSurfaceKHR vkSurface = pGfxContext->vkSurface;
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkPhysicalDevice vkPhysicalDevice = pTknGfxContext->vkPhysicalDevice;
+    VkSurfaceKHR vkSurface = pTknGfxContext->vkSurface;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
 
-    assertVkResult(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, vkSurface, &pGfxContext->vkSurfaceCapabilities));
+    assertVkResult(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, vkSurface, &pTknGfxContext->vkSurfaceCapabilities));
 
-    uint32_t swapchainImageCount = TKN_CLAMP(targetSwapchainImageCount, pGfxContext->vkSurfaceCapabilities.minImageCount, pGfxContext->vkSurfaceCapabilities.maxImageCount);
+    uint32_t swapchainImageCount = TKN_CLAMP(targetSwapchainImageCount, pTknGfxContext->vkSurfaceCapabilities.minImageCount, pTknGfxContext->vkSurfaceCapabilities.maxImageCount);
 
     VkExtent2D swapchainExtent;
-    swapchainExtent.width = TKN_CLAMP(targetSwapchainExtent.width, pGfxContext->vkSurfaceCapabilities.minImageExtent.width, pGfxContext->vkSurfaceCapabilities.maxImageExtent.width);
-    swapchainExtent.height = TKN_CLAMP(targetSwapchainExtent.height, pGfxContext->vkSurfaceCapabilities.minImageExtent.height, pGfxContext->vkSurfaceCapabilities.maxImageExtent.height);
+    swapchainExtent.width = TKN_CLAMP(targetSwapchainExtent.width, pTknGfxContext->vkSurfaceCapabilities.minImageExtent.width, pTknGfxContext->vkSurfaceCapabilities.maxImageExtent.width);
+    swapchainExtent.height = TKN_CLAMP(targetSwapchainExtent.height, pTknGfxContext->vkSurfaceCapabilities.minImageExtent.height, pTknGfxContext->vkSurfaceCapabilities.maxImageExtent.height);
 
-    VkSharingMode imageSharingMode = pGfxContext->gfxQueueFamilyIndex != pGfxContext->presentQueueFamilyIndex ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-    uint32_t queueFamilyIndexCount = pGfxContext->gfxQueueFamilyIndex != pGfxContext->presentQueueFamilyIndex ? 2 : 0;
-    uint32_t pQueueFamilyIndices[] = {pGfxContext->gfxQueueFamilyIndex, pGfxContext->presentQueueFamilyIndex};
+    VkSharingMode imageSharingMode = pTknGfxContext->gfxQueueFamilyIndex != pTknGfxContext->presentQueueFamilyIndex ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+    uint32_t queueFamilyIndexCount = pTknGfxContext->gfxQueueFamilyIndex != pTknGfxContext->presentQueueFamilyIndex ? 2 : 0;
+    uint32_t pQueueFamilyIndices[] = {pTknGfxContext->gfxQueueFamilyIndex, pTknGfxContext->presentQueueFamilyIndex};
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo =
         {
@@ -337,17 +337,17 @@ static void createSwapchainAttachmentPtr(GfxContext *pGfxContext, VkExtent2D tar
             .flags = 0,
             .surface = vkSurface,
             .minImageCount = swapchainImageCount,
-            .imageFormat = pGfxContext->surfaceFormat.format,
-            .imageColorSpace = pGfxContext->surfaceFormat.colorSpace,
+            .imageFormat = pTknGfxContext->surfaceFormat.format,
+            .imageColorSpace = pTknGfxContext->surfaceFormat.colorSpace,
             .imageExtent = swapchainExtent,
             .imageArrayLayers = 1,
             .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .imageSharingMode = imageSharingMode,
             .queueFamilyIndexCount = queueFamilyIndexCount,
             .pQueueFamilyIndices = pQueueFamilyIndices,
-            .preTransform = pGfxContext->vkSurfaceCapabilities.currentTransform,
+            .preTransform = pTknGfxContext->vkSurfaceCapabilities.currentTransform,
             .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            .presentMode = pGfxContext->presentMode,
+            .presentMode = pTknGfxContext->presentMode,
             .clipped = VK_TRUE,
             .oldSwapchain = VK_NULL_HANDLE,
         };
@@ -378,13 +378,13 @@ static void createSwapchainAttachmentPtr(GfxContext *pGfxContext, VkExtent2D tar
             .flags = 0,
             .image = swapchainImages[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = pGfxContext->surfaceFormat.format,
+            .format = pTknGfxContext->surfaceFormat.format,
             .components = components,
             .subresourceRange = subresourceRange,
         };
         assertVkResult(vkCreateImageView(vkDevice, &imageViewCreateInfo, NULL, &swapchainImageViews[i]));
     }
-    *pSwapchainAttachment = (Attachment){
+    *pSwapchainAttachment = (TknAttachment){
         .attachmentType = ATTACHMENT_TYPE_SWAPCHAIN,
         .attachmentUnion.swapchainAttachment = {
             .swapchainExtent = swapchainExtent,
@@ -393,17 +393,17 @@ static void createSwapchainAttachmentPtr(GfxContext *pGfxContext, VkExtent2D tar
             .swapchainImages = swapchainImages,
             .swapchainImageViews = swapchainImageViews,
         },
-        .vkFormat = pGfxContext->surfaceFormat.format,
-        .renderPassPtrHashSet = tknCreateHashSet(sizeof(RenderPass *)),
+        .vkFormat = pTknGfxContext->surfaceFormat.format,
+        .renderPassPtrHashSet = tknCreateHashSet(sizeof(TknRenderPass *)),
     };
-    pGfxContext->pSwapchainAttachment = pSwapchainAttachment;
+    pTknGfxContext->pSwapchainAttachment = pSwapchainAttachment;
 };
-static void destroySwapchainAttachmentPtr(GfxContext *pGfxContext)
+static void destroySwapchainAttachmentPtr(TknGfxContext *pTknGfxContext)
 {
-    Attachment *pSwapchainAttachment = pGfxContext->pSwapchainAttachment;
-    tknAssert(0 == pSwapchainAttachment->renderPassPtrHashSet.count, "RenderPass hash set should be empty before destroying SwapchainAttachment.");
+    TknAttachment *pSwapchainAttachment = pTknGfxContext->pSwapchainAttachment;
+    tknAssert(0 == pSwapchainAttachment->renderPassPtrHashSet.count, "TknRenderPass hash set should be empty before destroying SwapchainAttachment.");
 
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     SwapchainAttachment swapchainAttachment = pSwapchainAttachment->attachmentUnion.swapchainAttachment;
     for (uint32_t i = 0; i < swapchainAttachment.swapchainImageCount; i++)
     {
@@ -415,45 +415,45 @@ static void destroySwapchainAttachmentPtr(GfxContext *pGfxContext)
 
     tknDestroyHashSet(pSwapchainAttachment->renderPassPtrHashSet);
     tknFree(pSwapchainAttachment);
-    pGfxContext->pSwapchainAttachment = NULL;
+    pTknGfxContext->pSwapchainAttachment = NULL;
 }
-static void updateSwapchainAttachmentPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
+static void updateSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent2D swapchainExtent)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     assertVkResult(vkDeviceWaitIdle(vkDevice));
-    Attachment *pAttachment = pGfxContext->pSwapchainAttachment;
-    SwapchainAttachment *pSwapchainAttachment = &pAttachment->attachmentUnion.swapchainAttachment;
+    TknAttachment *pTknAttachment = pTknGfxContext->pSwapchainAttachment;
+    SwapchainAttachment *pSwapchainAttachment = &pTknAttachment->attachmentUnion.swapchainAttachment;
     for (uint32_t i = 0; i < pSwapchainAttachment->swapchainImageCount; i++)
     {
         vkDestroyImageView(vkDevice, pSwapchainAttachment->swapchainImageViews[i], NULL);
     }
     vkDestroySwapchainKHR(vkDevice, pSwapchainAttachment->vkSwapchain, NULL);
 
-    swapchainExtent.width = TKN_CLAMP(swapchainExtent.width, pGfxContext->vkSurfaceCapabilities.minImageExtent.width, pGfxContext->vkSurfaceCapabilities.maxImageExtent.width);
-    swapchainExtent.height = TKN_CLAMP(swapchainExtent.height, pGfxContext->vkSurfaceCapabilities.minImageExtent.height, pGfxContext->vkSurfaceCapabilities.maxImageExtent.height);
+    swapchainExtent.width = TKN_CLAMP(swapchainExtent.width, pTknGfxContext->vkSurfaceCapabilities.minImageExtent.width, pTknGfxContext->vkSurfaceCapabilities.maxImageExtent.width);
+    swapchainExtent.height = TKN_CLAMP(swapchainExtent.height, pTknGfxContext->vkSurfaceCapabilities.minImageExtent.height, pTknGfxContext->vkSurfaceCapabilities.maxImageExtent.height);
     pSwapchainAttachment->swapchainExtent = swapchainExtent;
 
-    VkSharingMode imageSharingMode = pGfxContext->gfxQueueFamilyIndex != pGfxContext->presentQueueFamilyIndex ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-    uint32_t queueFamilyIndexCount = pGfxContext->gfxQueueFamilyIndex != pGfxContext->presentQueueFamilyIndex ? 2 : 0;
-    uint32_t pQueueFamilyIndices[] = {pGfxContext->gfxQueueFamilyIndex, pGfxContext->presentQueueFamilyIndex};
+    VkSharingMode imageSharingMode = pTknGfxContext->gfxQueueFamilyIndex != pTknGfxContext->presentQueueFamilyIndex ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+    uint32_t queueFamilyIndexCount = pTknGfxContext->gfxQueueFamilyIndex != pTknGfxContext->presentQueueFamilyIndex ? 2 : 0;
+    uint32_t pQueueFamilyIndices[] = {pTknGfxContext->gfxQueueFamilyIndex, pTknGfxContext->presentQueueFamilyIndex};
     VkSwapchainCreateInfoKHR swapchainCreateInfo =
         {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
             .pNext = NULL,
             .flags = 0,
-            .surface = pGfxContext->vkSurface,
+            .surface = pTknGfxContext->vkSurface,
             .minImageCount = pSwapchainAttachment->swapchainImageCount,
-            .imageFormat = pGfxContext->surfaceFormat.format,
-            .imageColorSpace = pGfxContext->surfaceFormat.colorSpace,
+            .imageFormat = pTknGfxContext->surfaceFormat.format,
+            .imageColorSpace = pTknGfxContext->surfaceFormat.colorSpace,
             .imageExtent = swapchainExtent,
             .imageArrayLayers = 1,
             .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .imageSharingMode = imageSharingMode,
             .queueFamilyIndexCount = queueFamilyIndexCount,
             .pQueueFamilyIndices = pQueueFamilyIndices,
-            .preTransform = pGfxContext->vkSurfaceCapabilities.currentTransform,
+            .preTransform = pTknGfxContext->vkSurfaceCapabilities.currentTransform,
             .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            .presentMode = pGfxContext->presentMode,
+            .presentMode = pTknGfxContext->presentMode,
             .clipped = VK_TRUE,
             .oldSwapchain = VK_NULL_HANDLE,
         };
@@ -480,73 +480,73 @@ static void updateSwapchainAttachmentPtr(GfxContext *pGfxContext, VkExtent2D swa
             .flags = 0,
             .image = pSwapchainAttachment->swapchainImages[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = pGfxContext->surfaceFormat.format,
+            .format = pTknGfxContext->surfaceFormat.format,
             .components = components,
             .subresourceRange = subresourceRange,
         };
         assertVkResult(vkCreateImageView(vkDevice, &imageViewCreateInfo, NULL, &pSwapchainAttachment->swapchainImageViews[i]));
     }
 }
-static void populateSignals(GfxContext *pGfxContext)
+static void populateSignals(TknGfxContext *pTknGfxContext)
 {
     VkSemaphoreCreateInfo semaphoreCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         .pNext = NULL,
         .flags = 0,
     };
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     VkFenceCreateInfo fenceCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .pNext = NULL,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT,
     };
-    assertVkResult(vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, NULL, &pGfxContext->imageAvailableSemaphore));
-    assertVkResult(vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, NULL, &pGfxContext->renderFinishedSemaphore));
-    assertVkResult(vkCreateFence(vkDevice, &fenceCreateInfo, NULL, &pGfxContext->renderFinishedFence));
+    assertVkResult(vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, NULL, &pTknGfxContext->imageAvailableSemaphore));
+    assertVkResult(vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, NULL, &pTknGfxContext->renderFinishedSemaphore));
+    assertVkResult(vkCreateFence(vkDevice, &fenceCreateInfo, NULL, &pTknGfxContext->renderFinishedFence));
 }
-static void cleanupSignals(GfxContext *pGfxContext)
+static void cleanupSignals(TknGfxContext *pTknGfxContext)
 {
-    VkDevice vkDevice = pGfxContext->vkDevice;
-    vkDestroySemaphore(vkDevice, pGfxContext->imageAvailableSemaphore, NULL);
-    vkDestroySemaphore(vkDevice, pGfxContext->renderFinishedSemaphore, NULL);
-    vkDestroyFence(vkDevice, pGfxContext->renderFinishedFence, NULL);
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
+    vkDestroySemaphore(vkDevice, pTknGfxContext->imageAvailableSemaphore, NULL);
+    vkDestroySemaphore(vkDevice, pTknGfxContext->renderFinishedSemaphore, NULL);
+    vkDestroyFence(vkDevice, pTknGfxContext->renderFinishedFence, NULL);
 }
-static void populateCommandPools(GfxContext *pGfxContext)
+static void populateCommandPools(TknGfxContext *pTknGfxContext)
 {
     VkCommandPoolCreateInfo vkCommandPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = NULL,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = pGfxContext->gfxQueueFamilyIndex,
+        .queueFamilyIndex = pTknGfxContext->gfxQueueFamilyIndex,
     };
-    assertVkResult(vkCreateCommandPool(pGfxContext->vkDevice, &vkCommandPoolCreateInfo, NULL, &pGfxContext->gfxVkCommandPool));
+    assertVkResult(vkCreateCommandPool(pTknGfxContext->vkDevice, &vkCommandPoolCreateInfo, NULL, &pTknGfxContext->gfxVkCommandPool));
 }
-static void cleanupCommandPools(GfxContext *pGfxContext)
+static void cleanupCommandPools(TknGfxContext *pTknGfxContext)
 {
-    vkDestroyCommandPool(pGfxContext->vkDevice, pGfxContext->gfxVkCommandPool, NULL);
+    vkDestroyCommandPool(pTknGfxContext->vkDevice, pTknGfxContext->gfxVkCommandPool, NULL);
 }
-static void populateVkCommandBuffers(GfxContext *pGfxContext)
+static void populateVkCommandBuffers(TknGfxContext *pTknGfxContext)
 {
-    SwapchainAttachment *pSwapchainAttachment = &pGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
-    pGfxContext->gfxVkCommandBuffers = tknMalloc(sizeof(VkCommandBuffer) * pSwapchainAttachment->swapchainImageCount);
+    SwapchainAttachment *pSwapchainAttachment = &pTknGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
+    pTknGfxContext->gfxVkCommandBuffers = tknMalloc(sizeof(VkCommandBuffer) * pSwapchainAttachment->swapchainImageCount);
     VkCommandBufferAllocateInfo vkCommandBufferAllocateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .pNext = NULL,
-        .commandPool = pGfxContext->gfxVkCommandPool,
+        .commandPool = pTknGfxContext->gfxVkCommandPool,
         .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = pSwapchainAttachment->swapchainImageCount,
     };
-    assertVkResult(vkAllocateCommandBuffers(pGfxContext->vkDevice, &vkCommandBufferAllocateInfo, pGfxContext->gfxVkCommandBuffers));
+    assertVkResult(vkAllocateCommandBuffers(pTknGfxContext->vkDevice, &vkCommandBufferAllocateInfo, pTknGfxContext->gfxVkCommandBuffers));
 }
-static void cleanupVkCommandBuffers(GfxContext *pGfxContext)
+static void cleanupVkCommandBuffers(TknGfxContext *pTknGfxContext)
 {
-    SwapchainAttachment *pSwapchainAttachment = &pGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
-    vkFreeCommandBuffers(pGfxContext->vkDevice, pGfxContext->gfxVkCommandPool, pSwapchainAttachment->swapchainImageCount, pGfxContext->gfxVkCommandBuffers);
-    tknFree(pGfxContext->gfxVkCommandBuffers);
+    SwapchainAttachment *pSwapchainAttachment = &pTknGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
+    vkFreeCommandBuffers(pTknGfxContext->vkDevice, pTknGfxContext->gfxVkCommandPool, pSwapchainAttachment->swapchainImageCount, pTknGfxContext->gfxVkCommandBuffers);
+    tknFree(pTknGfxContext->gfxVkCommandBuffers);
 }
-static void recordCommandBuffer(GfxContext *pGfxContext, uint32_t swapchainIndex)
+static void recordCommandBuffer(TknGfxContext *pTknGfxContext, uint32_t swapchainIndex)
 {
-    VkCommandBuffer vkCommandBuffer = pGfxContext->gfxVkCommandBuffers[swapchainIndex];
+    VkCommandBuffer vkCommandBuffer = pTknGfxContext->gfxVkCommandBuffers[swapchainIndex];
     VkCommandBufferBeginInfo vkCommandBufferBeginInfo =
         {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -555,25 +555,25 @@ static void recordCommandBuffer(GfxContext *pGfxContext, uint32_t swapchainIndex
             .pInheritanceInfo = NULL,
         };
     assertVkResult(vkBeginCommandBuffer(vkCommandBuffer, &vkCommandBufferBeginInfo));
-    Material *pGlobalMaterial = getGlobalMaterialPtr(pGfxContext);
-    for (uint32_t renderPassIndex = 0; renderPassIndex < pGfxContext->renderPassPtrDynamicArray.count; renderPassIndex++)
+    TknMaterial *pGlobalMaterial = getGlobalMaterialPtr(pTknGfxContext);
+    for (uint32_t renderPassIndex = 0; renderPassIndex < pTknGfxContext->renderPassPtrDynamicArray.count; renderPassIndex++)
     {
-        RenderPass *pRenderPass = *(RenderPass **)tknGetFromDynamicArray(&pGfxContext->renderPassPtrDynamicArray, renderPassIndex);
+        TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->renderPassPtrDynamicArray, renderPassIndex);
         VkRenderPassBeginInfo renderPassBeginInfo = {
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
             .pNext = NULL,
-            .renderPass = pRenderPass->vkRenderPass,
-            .framebuffer = pRenderPass->vkFramebuffers[swapchainIndex],
-            .renderArea = pRenderPass->renderArea,
-            .clearValueCount = pRenderPass->attachmentCount,
-            .pClearValues = pRenderPass->vkClearValues,
+            .renderPass = pTknRenderPass->vkRenderPass,
+            .framebuffer = pTknRenderPass->vkFramebuffers[swapchainIndex],
+            .renderArea = pTknRenderPass->renderArea,
+            .clearValueCount = pTknRenderPass->attachmentCount,
+            .pClearValues = pTknRenderPass->vkClearValues,
         };
         vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         VkViewport vkViewport = {
             .x = 0.0f,
             .y = 0.0f,
-            .width = pRenderPass->renderArea.extent.width,
-            .height = pRenderPass->renderArea.extent.height,
+            .width = pTknRenderPass->renderArea.extent.width,
+            .height = pTknRenderPass->renderArea.extent.height,
             .minDepth = 0.0f,
             .maxDepth = 1.0f,
         };
@@ -581,76 +581,76 @@ static void recordCommandBuffer(GfxContext *pGfxContext, uint32_t swapchainIndex
 
         VkRect2D scissor = {
             .offset = {0, 0},
-            .extent = pRenderPass->renderArea.extent,
+            .extent = pTknRenderPass->renderArea.extent,
         };
         vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
-        for (uint32_t subpassIndex = 0; subpassIndex < pRenderPass->subpassCount; subpassIndex++)
+        for (uint32_t subpassIndex = 0; subpassIndex < pTknRenderPass->subpassCount; subpassIndex++)
         {
             if (subpassIndex > 0)
             {
                 vkCmdNextSubpass(vkCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
             }
-            struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
-            Material *pSubpassMaterial = getSubpassMaterialPtr(pGfxContext, pRenderPass, subpassIndex);
-            Pipeline *pCurrentPipeline = NULL;
+            struct Subpass *pSubpass = &pTknRenderPass->subpasses[subpassIndex];
+            TknMaterial *pSubpassMaterial = getSubpassMaterialPtr(pTknGfxContext, pTknRenderPass, subpassIndex);
+            TknPipeline *pCurrentPipeline = NULL;
             // Iterate all drawcalls in subpass order, switching pipelines as needed
             for (uint32_t drawCallIndex = 0; drawCallIndex < pSubpass->drawCallPtrDynamicArray.count; drawCallIndex++)
             {
-                DrawCall *pDrawCall = *(DrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, drawCallIndex);
-                Pipeline *pPipeline = pDrawCall->pPipeline;
+                TknDrawCall *pTknDrawCall = *(TknDrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, drawCallIndex);
+                TknPipeline *pTknPipeline = pTknDrawCall->pTknPipeline;
                 // Switch pipeline if different from previous drawcall
-                if (pPipeline != pCurrentPipeline)
+                if (pTknPipeline != pCurrentPipeline)
                 {
-                    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipeline);
-                    pCurrentPipeline = pPipeline;
+                    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipeline);
+                    pCurrentPipeline = pTknPipeline;
                 }
                 VkDescriptorSet *vkDescriptorSets = tknMalloc(sizeof(VkDescriptorSet) * TKN_MAX_DESCRIPTOR_SET);
                 vkDescriptorSets[TKN_GLOBAL_DESCRIPTOR_SET] = pGlobalMaterial->vkDescriptorSet;
                 vkDescriptorSets[TKN_SUBPASS_DESCRIPTOR_SET] = pSubpassMaterial->vkDescriptorSet;
-                if (pDrawCall->pMaterial != NULL)
+                if (pTknDrawCall->pTknMaterial != NULL)
                 {
-                    vkDescriptorSets[TKN_PIPELINE_DESCRIPTOR_SET] = pDrawCall->pMaterial->vkDescriptorSet;
-                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET, vkDescriptorSets, 0, NULL);
+                    vkDescriptorSets[TKN_PIPELINE_DESCRIPTOR_SET] = pTknDrawCall->pTknMaterial->vkDescriptorSet;
+                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET, vkDescriptorSets, 0, NULL);
                 }
                 else
                 {
-                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET - 1, vkDescriptorSets, 0, NULL);
+                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET - 1, vkDescriptorSets, 0, NULL);
                 }
                 tknFree(vkDescriptorSets);
-                Mesh *pMesh = pDrawCall->pMesh;
-                if (pMesh != NULL)
+                TknMesh *pTknMesh = pTknDrawCall->pTknMesh;
+                if (pTknMesh != NULL)
                 {
-                    if (pDrawCall->pInstance != NULL && pDrawCall->pInstance->instanceCount > 0)
+                    if (pTknDrawCall->pTknInstance != NULL && pTknDrawCall->pTknInstance->instanceCount > 0)
                     {
-                        tknAssert(pDrawCall->pMesh->vertexCount > 0, "Mesh has no vertices");
-                        VkBuffer vertexBuffers[] = {pMesh->vertexVkBuffer, pDrawCall->pInstance->instanceVkBuffer};
+                        tknAssert(pTknDrawCall->pTknMesh->vertexCount > 0, "TknMesh has no vertices");
+                        VkBuffer vertexBuffers[] = {pTknMesh->vertexVkBuffer, pTknDrawCall->pTknInstance->instanceVkBuffer};
                         VkDeviceSize offsets[] = {0, 0};
                         vkCmdBindVertexBuffers(vkCommandBuffer, 0, 2, vertexBuffers, offsets);
-                        if (pMesh->indexCount > 0)
+                        if (pTknMesh->indexCount > 0)
                         {
-                            vkCmdBindIndexBuffer(vkCommandBuffer, pMesh->indexVkBuffer, 0, pMesh->vkIndexType);
-                            vkCmdDrawIndexed(vkCommandBuffer, pMesh->indexCount, pDrawCall->pInstance->instanceCount, 0, 0, 0);
+                            vkCmdBindIndexBuffer(vkCommandBuffer, pTknMesh->indexVkBuffer, 0, pTknMesh->vkIndexType);
+                            vkCmdDrawIndexed(vkCommandBuffer, pTknMesh->indexCount, pTknDrawCall->pTknInstance->instanceCount, 0, 0, 0);
                         }
                         else
                         {
-                            vkCmdDraw(vkCommandBuffer, pMesh->vertexCount, pDrawCall->pInstance->instanceCount, 0, 0);
+                            vkCmdDraw(vkCommandBuffer, pTknMesh->vertexCount, pTknDrawCall->pTknInstance->instanceCount, 0, 0);
                         }
                     }
                     else
                     {
                         // Simple case: only bind vertex buffer (no instancing)
-                        VkBuffer vertexBuffers[] = {pMesh->vertexVkBuffer};
+                        VkBuffer vertexBuffers[] = {pTknMesh->vertexVkBuffer};
                         VkDeviceSize offsets[] = {0};
                         vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
 
-                        if (pMesh->indexCount > 0)
+                        if (pTknMesh->indexCount > 0)
                         {
-                            vkCmdBindIndexBuffer(vkCommandBuffer, pMesh->indexVkBuffer, 0, pMesh->vkIndexType);
-                            vkCmdDrawIndexed(vkCommandBuffer, pMesh->indexCount, 1, 0, 0, 0);
+                            vkCmdBindIndexBuffer(vkCommandBuffer, pTknMesh->indexVkBuffer, 0, pTknMesh->vkIndexType);
+                            vkCmdDrawIndexed(vkCommandBuffer, pTknMesh->indexCount, 1, 0, 0, 0);
                         }
                         else
                         {
-                            vkCmdDraw(vkCommandBuffer, pMesh->vertexCount, 1, 0, 0);
+                            vkCmdDraw(vkCommandBuffer, pTknMesh->vertexCount, 1, 0, 0);
                         }
                     }
                 }
@@ -665,48 +665,48 @@ static void recordCommandBuffer(GfxContext *pGfxContext, uint32_t swapchainIndex
 
     assertVkResult(vkEndCommandBuffer(vkCommandBuffer));
 }
-static void submitCommandBuffer(GfxContext *pGfxContext, uint32_t swapchainIndex)
+static void submitCommandBuffer(TknGfxContext *pTknGfxContext, uint32_t swapchainIndex)
 {
     // Submit workflow...
     VkSubmitInfo submitInfo = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = NULL,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = (VkSemaphore[]){pGfxContext->imageAvailableSemaphore},
+        .pWaitSemaphores = (VkSemaphore[]){pTknGfxContext->imageAvailableSemaphore},
         .pWaitDstStageMask = (VkPipelineStageFlags[]){VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
         .commandBufferCount = 1,
-        .pCommandBuffers = &pGfxContext->gfxVkCommandBuffers[swapchainIndex],
+        .pCommandBuffers = &pTknGfxContext->gfxVkCommandBuffers[swapchainIndex],
         .signalSemaphoreCount = 1,
-        .pSignalSemaphores = (VkSemaphore[]){pGfxContext->renderFinishedSemaphore},
+        .pSignalSemaphores = (VkSemaphore[]){pTknGfxContext->renderFinishedSemaphore},
     };
 
-    assertVkResult(vkQueueSubmit(pGfxContext->vkGfxQueue, 1, &submitInfo, pGfxContext->renderFinishedFence));
+    assertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, pTknGfxContext->renderFinishedFence));
 }
-static void present(GfxContext *pGfxContext, uint32_t swapchainIndex)
+static void present(TknGfxContext *pTknGfxContext, uint32_t swapchainIndex)
 {
-    SwapchainAttachment *pSwapchainAttachment = &pGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
+    SwapchainAttachment *pSwapchainAttachment = &pTknGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
     VkPresentInfoKHR presentInfo = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .pNext = NULL,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = (VkSemaphore[]){pGfxContext->renderFinishedSemaphore},
+        .pWaitSemaphores = (VkSemaphore[]){pTknGfxContext->renderFinishedSemaphore},
         .swapchainCount = 1,
         .pSwapchains = (VkSwapchainKHR[]){pSwapchainAttachment->vkSwapchain},
         .pImageIndices = &swapchainIndex,
         .pResults = NULL,
     };
-    VkResult result = vkQueuePresentKHR(pGfxContext->vkPresentQueue, &presentInfo);
+    VkResult result = vkQueuePresentKHR(pTknGfxContext->vkPresentQueue, &presentInfo);
     if (VK_ERROR_OUT_OF_DATE_KHR == result || VK_SUBOPTIMAL_KHR == result)
     {
         printf("Recreate swapchain because of the result: %d when presenting.\n", result);
-        updateSwapchainAttachmentPtr(pGfxContext, pSwapchainAttachment->swapchainExtent);
-        for (uint32_t renderPassIndex = 0; renderPassIndex < pGfxContext->renderPassPtrDynamicArray.count; renderPassIndex++)
+        updateSwapchainAttachmentPtr(pTknGfxContext, pSwapchainAttachment->swapchainExtent);
+        for (uint32_t renderPassIndex = 0; renderPassIndex < pTknGfxContext->renderPassPtrDynamicArray.count; renderPassIndex++)
         {
-            RenderPass *pRenderPass = *(RenderPass **)tknGetFromDynamicArray(&pGfxContext->renderPassPtrDynamicArray, renderPassIndex);
-            Attachment *pSwapchainAttachment = getSwapchainAttachmentPtr(pGfxContext);
-            if (tknContainsInHashSet(&pSwapchainAttachment->renderPassPtrHashSet, &pRenderPass))
+            TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->renderPassPtrDynamicArray, renderPassIndex);
+            TknAttachment *pSwapchainAttachment = getSwapchainAttachmentPtr(pTknGfxContext);
+            if (tknContainsInHashSet(&pSwapchainAttachment->renderPassPtrHashSet, &pTknRenderPass))
             {
-                repopulateFramebuffers(pGfxContext, pRenderPass);
+                repopulateFramebuffers(pTknGfxContext, pTknRenderPass);
             }
             else
             {
@@ -719,11 +719,11 @@ static void present(GfxContext *pGfxContext, uint32_t swapchainIndex)
         assertVkResult(result);
     }
 }
-static void setupRenderPipelineAndResources(GfxContext *pGfxContext, uint32_t spvPathCount, const char **spvPaths)
+static void setupRenderPipelineAndResources(TknGfxContext *pTknGfxContext, uint32_t spvPathCount, const char **spvPaths)
 {
     // Create empty resources for empty bindings
     uint32_t emptyData = 0;
-    pGfxContext->pEmptyUniformBuffer = createUniformBufferPtr(pGfxContext, &emptyData, sizeof(emptyData));
+    pTknGfxContext->pEmptyUniformBuffer = createUniformBufferPtr(pTknGfxContext, &emptyData, sizeof(emptyData));
 
     // Create empty sampler with default settings
     VkSamplerCreateInfo samplerCreateInfo = {
@@ -745,14 +745,14 @@ static void setupRenderPipelineAndResources(GfxContext *pGfxContext, uint32_t sp
         .maxLod = 0.0f,
     };
 
-    pGfxContext->pEmptySampler = tknMalloc(sizeof(Sampler));
-    pGfxContext->pEmptySampler->bindingPtrHashSet = tknCreateHashSet(sizeof(Binding *));
-    assertVkResult(vkCreateSampler(pGfxContext->vkDevice, &samplerCreateInfo, NULL, &pGfxContext->pEmptySampler->vkSampler));
+    pTknGfxContext->pEmptySampler = tknMalloc(sizeof(TknSampler));
+    pTknGfxContext->pEmptySampler->bindingPtrHashSet = tknCreateHashSet(sizeof(Binding *));
+    assertVkResult(vkCreateSampler(pTknGfxContext->vkDevice, &samplerCreateInfo, NULL, &pTknGfxContext->pEmptySampler->vkSampler));
 
     // Create empty image for input attachments, sampling, and storage
     VkExtent3D emptyImageExtent = {.width = 1, .height = 1, .depth = 1};
-    pGfxContext->pEmptyImage = createImagePtr(
-        pGfxContext,
+    pTknGfxContext->pEmptyImage = createImagePtr(
+        pTknGfxContext,
         emptyImageExtent,
         VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_TILING_OPTIMAL,
@@ -762,99 +762,99 @@ static void setupRenderPipelineAndResources(GfxContext *pGfxContext, uint32_t sp
         NULL,
         0);
 
-    pGfxContext->dynamicAttachmentPtrHashSet = tknCreateHashSet(sizeof(Attachment *));
-    pGfxContext->fixedAttachmentPtrHashSet = tknCreateHashSet(sizeof(Attachment *));
-    pGfxContext->renderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(RenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
+    pTknGfxContext->dynamicAttachmentPtrHashSet = tknCreateHashSet(sizeof(TknAttachment *));
+    pTknGfxContext->fixedAttachmentPtrHashSet = tknCreateHashSet(sizeof(TknAttachment *));
+    pTknGfxContext->renderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(TknRenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
     SpvReflectShaderModule *spvReflectShaderModules = tknMalloc(sizeof(SpvReflectShaderModule) * spvPathCount);
     for (uint32_t spvPathIndex = 0; spvPathIndex < spvPathCount; spvPathIndex++)
     {
         spvReflectShaderModules[spvPathIndex] = createSpvReflectShaderModule(spvPaths[spvPathIndex]);
     }
-    pGfxContext->pGlobalDescriptorSet = createDescriptorSetPtr(pGfxContext, spvPathCount, spvReflectShaderModules, TKN_GLOBAL_DESCRIPTOR_SET);
+    pTknGfxContext->pGlobalDescriptorSet = createDescriptorSetPtr(pTknGfxContext, spvPathCount, spvReflectShaderModules, TKN_GLOBAL_DESCRIPTOR_SET);
     for (uint32_t spvPathIndex = 0; spvPathIndex < spvPathCount; spvPathIndex++)
     {
         destroySpvReflectShaderModule(&spvReflectShaderModules[spvPathIndex]);
     }
     tknFree(spvReflectShaderModules);
-    createMaterialPtr(pGfxContext, pGfxContext->pGlobalDescriptorSet);
+    createMaterialPtr(pTknGfxContext, pTknGfxContext->pGlobalDescriptorSet);
 
-    pGfxContext->vertexInputLayoutPtrHashSet = tknCreateHashSet(sizeof(VertexInputLayout *));
+    pTknGfxContext->vertexInputLayoutPtrHashSet = tknCreateHashSet(sizeof(TknVertexInputLayout *));
 }
-static void teardownRenderPipelineAndResources(GfxContext *pGfxContext)
+static void teardownRenderPipelineAndResources(TknGfxContext *pTknGfxContext)
 {
-    for (uint32_t i = 0; i < pGfxContext->renderPassPtrDynamicArray.count; i++)
+    for (uint32_t i = 0; i < pTknGfxContext->renderPassPtrDynamicArray.count; i++)
     {
-        RenderPass *pRenderPass = *(RenderPass **)tknGetFromDynamicArray(&pGfxContext->renderPassPtrDynamicArray, i);
-        destroyRenderPassPtr(pGfxContext, pRenderPass);
+        TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->renderPassPtrDynamicArray, i);
+        destroyRenderPassPtr(pTknGfxContext, pTknRenderPass);
     }
-    tknClearDynamicArray(&pGfxContext->renderPassPtrDynamicArray);
-    tknAssert(pGfxContext->renderPassPtrDynamicArray.count == 0, "Render pass dynamic array should be empty before destroying GfxContext.");
-    tknDestroyDynamicArray(pGfxContext->renderPassPtrDynamicArray);
+    tknClearDynamicArray(&pTknGfxContext->renderPassPtrDynamicArray);
+    tknAssert(pTknGfxContext->renderPassPtrDynamicArray.count == 0, "Render pass dynamic array should be empty before destroying TknGfxContext.");
+    tknDestroyDynamicArray(pTknGfxContext->renderPassPtrDynamicArray);
 
-    destroyDescriptorSetPtr(pGfxContext, pGfxContext->pGlobalDescriptorSet);
-    tknAssert(pGfxContext->vertexInputLayoutPtrHashSet.count == 0, "Vertex input layout hash set should be empty before destroying GfxContext.");
-    tknDestroyHashSet(pGfxContext->vertexInputLayoutPtrHashSet);
+    destroyDescriptorSetPtr(pTknGfxContext, pTknGfxContext->pGlobalDescriptorSet);
+    tknAssert(pTknGfxContext->vertexInputLayoutPtrHashSet.count == 0, "Vertex input layout hash set should be empty before destroying TknGfxContext.");
+    tknDestroyHashSet(pTknGfxContext->vertexInputLayoutPtrHashSet);
 
-    while (pGfxContext->dynamicAttachmentPtrHashSet.count > 0)
+    while (pTknGfxContext->dynamicAttachmentPtrHashSet.count > 0)
     {
-        Attachment *pDynamicAttachment = NULL;
-        for (uint32_t nodeIndex = 0; nodeIndex < pGfxContext->dynamicAttachmentPtrHashSet.capacity; nodeIndex++)
+        TknAttachment *pDynamicAttachment = NULL;
+        for (uint32_t nodeIndex = 0; nodeIndex < pTknGfxContext->dynamicAttachmentPtrHashSet.capacity; nodeIndex++)
         {
-            TknListNode *pNode = pGfxContext->dynamicAttachmentPtrHashSet.nodePtrs[nodeIndex];
+            TknListNode *pNode = pTknGfxContext->dynamicAttachmentPtrHashSet.nodePtrs[nodeIndex];
             while (pNode)
             {
-                pDynamicAttachment = *(Attachment **)pNode->data;
+                pDynamicAttachment = *(TknAttachment **)pNode->data;
                 pNode = pNode->pNextNode;
-                destroyDynamicAttachmentPtr(pGfxContext, pDynamicAttachment);
+                destroyDynamicAttachmentPtr(pTknGfxContext, pDynamicAttachment);
             }
         }
     }
-    tknAssert(0 == pGfxContext->dynamicAttachmentPtrHashSet.count, "Dynamic attachment hash set should be empty before destroying GfxContext.");
-    tknDestroyHashSet(pGfxContext->dynamicAttachmentPtrHashSet);
+    tknAssert(0 == pTknGfxContext->dynamicAttachmentPtrHashSet.count, "Dynamic attachment hash set should be empty before destroying TknGfxContext.");
+    tknDestroyHashSet(pTknGfxContext->dynamicAttachmentPtrHashSet);
 
     // Safely destroy all fixed attachments by repeatedly taking the first one
-    while (pGfxContext->fixedAttachmentPtrHashSet.count > 0)
+    while (pTknGfxContext->fixedAttachmentPtrHashSet.count > 0)
     {
-        Attachment *pFixedAttachment = NULL;
-        for (uint32_t nodeIndex = 0; nodeIndex < pGfxContext->fixedAttachmentPtrHashSet.capacity; nodeIndex++)
+        TknAttachment *pFixedAttachment = NULL;
+        for (uint32_t nodeIndex = 0; nodeIndex < pTknGfxContext->fixedAttachmentPtrHashSet.capacity; nodeIndex++)
         {
-            TknListNode *pNode = pGfxContext->fixedAttachmentPtrHashSet.nodePtrs[nodeIndex];
+            TknListNode *pNode = pTknGfxContext->fixedAttachmentPtrHashSet.nodePtrs[nodeIndex];
             while (pNode)
             {
-                pFixedAttachment = *(Attachment **)pNode->data;
+                pFixedAttachment = *(TknAttachment **)pNode->data;
                 pNode = pNode->pNextNode;
-                destroyFixedAttachmentPtr(pGfxContext, pFixedAttachment);
+                destroyFixedAttachmentPtr(pTknGfxContext, pFixedAttachment);
             }
         }
     }
-    tknAssert(0 == pGfxContext->fixedAttachmentPtrHashSet.count, "Fixed attachment hash set should be empty before destroying GfxContext.");
-    tknDestroyHashSet(pGfxContext->fixedAttachmentPtrHashSet);
+    tknAssert(0 == pTknGfxContext->fixedAttachmentPtrHashSet.count, "Fixed attachment hash set should be empty before destroying TknGfxContext.");
+    tknDestroyHashSet(pTknGfxContext->fixedAttachmentPtrHashSet);
 
-    if (pGfxContext->pEmptyUniformBuffer)
+    if (pTknGfxContext->pEmptyUniformBuffer)
     {
-        destroyUniformBufferPtr(pGfxContext, pGfxContext->pEmptyUniformBuffer);
-        pGfxContext->pEmptyUniformBuffer = NULL;
+        destroyUniformBufferPtr(pTknGfxContext, pTknGfxContext->pEmptyUniformBuffer);
+        pTknGfxContext->pEmptyUniformBuffer = NULL;
     }
 
-    if (pGfxContext->pEmptySampler)
+    if (pTknGfxContext->pEmptySampler)
     {
-        vkDestroySampler(pGfxContext->vkDevice, pGfxContext->pEmptySampler->vkSampler, NULL);
-        tknDestroyHashSet(pGfxContext->pEmptySampler->bindingPtrHashSet);
-        tknFree(pGfxContext->pEmptySampler);
-        pGfxContext->pEmptySampler = NULL;
+        vkDestroySampler(pTknGfxContext->vkDevice, pTknGfxContext->pEmptySampler->vkSampler, NULL);
+        tknDestroyHashSet(pTknGfxContext->pEmptySampler->bindingPtrHashSet);
+        tknFree(pTknGfxContext->pEmptySampler);
+        pTknGfxContext->pEmptySampler = NULL;
     }
 
-    if (pGfxContext->pEmptyImage)
+    if (pTknGfxContext->pEmptyImage)
     {
-        destroyImagePtr(pGfxContext, pGfxContext->pEmptyImage);
-        pGfxContext->pEmptyImage = NULL;
+        destroyImagePtr(pTknGfxContext, pTknGfxContext->pEmptyImage);
+        pTknGfxContext->pEmptyImage = NULL;
     }
 }
 
-GfxContext *createGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode, VkInstance vkInstance, VkSurfaceKHR vkSurface, VkExtent2D swapchainExtent, uint32_t spvPathCount, const char **spvPaths)
+TknGfxContext *createGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode, VkInstance vkInstance, VkSurfaceKHR vkSurface, VkExtent2D swapchainExtent, uint32_t spvPathCount, const char **spvPaths)
 {
-    GfxContext *pGfxContext = tknMalloc(sizeof(GfxContext));
-    *pGfxContext = (GfxContext){
+    TknGfxContext *pTknGfxContext = tknMalloc(sizeof(TknGfxContext));
+    *pTknGfxContext = (TknGfxContext){
         .frameCount = 0,
         .vkInstance = vkInstance,
         .vkSurface = vkSurface,
@@ -884,35 +884,35 @@ GfxContext *createGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFormatKH
         .renderPassPtrDynamicArray = {},
         .pGlobalDescriptorSet = NULL,
     };
-    pickPhysicalDevice(pGfxContext, targetVkSurfaceFormat, targetVkPresentMode);
-    populateLogicalDevice(pGfxContext);
-    createSwapchainAttachmentPtr(pGfxContext, swapchainExtent, targetSwapchainImageCount);
-    populateSignals(pGfxContext);
-    populateCommandPools(pGfxContext);
-    populateVkCommandBuffers(pGfxContext);
-    setupRenderPipelineAndResources(pGfxContext, spvPathCount, spvPaths);
-    return pGfxContext;
+    pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode);
+    populateLogicalDevice(pTknGfxContext);
+    createSwapchainAttachmentPtr(pTknGfxContext, swapchainExtent, targetSwapchainImageCount);
+    populateSignals(pTknGfxContext);
+    populateCommandPools(pTknGfxContext);
+    populateVkCommandBuffers(pTknGfxContext);
+    setupRenderPipelineAndResources(pTknGfxContext, spvPathCount, spvPaths);
+    return pTknGfxContext;
 }
-void destroyGfxContextPtr(GfxContext *pGfxContext)
+void destroyGfxContextPtr(TknGfxContext *pTknGfxContext)
 {
-    assertVkResult(vkDeviceWaitIdle(pGfxContext->vkDevice));
+    assertVkResult(vkDeviceWaitIdle(pTknGfxContext->vkDevice));
 
-    teardownRenderPipelineAndResources(pGfxContext);
-    cleanupVkCommandBuffers(pGfxContext);
-    cleanupCommandPools(pGfxContext);
-    cleanupSignals(pGfxContext);
-    destroySwapchainAttachmentPtr(pGfxContext);
-    cleanupLogicalDevice(pGfxContext);
-    tknFree(pGfxContext);
+    teardownRenderPipelineAndResources(pTknGfxContext);
+    cleanupVkCommandBuffers(pTknGfxContext);
+    cleanupCommandPools(pTknGfxContext);
+    cleanupSignals(pTknGfxContext);
+    destroySwapchainAttachmentPtr(pTknGfxContext);
+    cleanupLogicalDevice(pTknGfxContext);
+    tknFree(pTknGfxContext);
 }
-void updateGfxContextPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
+void updateGfxContextPtr(TknGfxContext *pTknGfxContext, VkExtent2D swapchainExtent)
 {
-    SwapchainAttachment *pSwapchainAttachment = &pGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
-    if (pGfxContext->renderPassPtrDynamicArray.count > 0)
+    SwapchainAttachment *pSwapchainAttachment = &pTknGfxContext->pSwapchainAttachment->attachmentUnion.swapchainAttachment;
+    if (pTknGfxContext->renderPassPtrDynamicArray.count > 0)
     {
-        pGfxContext->frameCount++;
-        uint32_t swapchainIndex = pGfxContext->frameCount % pSwapchainAttachment->swapchainImageCount;
-        VkDevice vkDevice = pGfxContext->vkDevice;
+        pTknGfxContext->frameCount++;
+        uint32_t swapchainIndex = pTknGfxContext->frameCount % pSwapchainAttachment->swapchainImageCount;
+        VkDevice vkDevice = pTknGfxContext->vkDevice;
 
         if (swapchainExtent.width != pSwapchainAttachment->swapchainExtent.width || swapchainExtent.height != pSwapchainAttachment->swapchainExtent.height)
         {
@@ -921,26 +921,26 @@ void updateGfxContextPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
                    pSwapchainAttachment->swapchainExtent.height,
                    swapchainExtent.width,
                    swapchainExtent.height);
-            updateSwapchainAttachmentPtr(pGfxContext, swapchainExtent);
+            updateSwapchainAttachmentPtr(pTknGfxContext, swapchainExtent);
 
-            TknDynamicArray dirtyRenderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(RenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
+            TknDynamicArray dirtyRenderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(TknRenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
 
-            for (uint32_t i = 0; i < pGfxContext->dynamicAttachmentPtrHashSet.capacity; i++)
+            for (uint32_t i = 0; i < pTknGfxContext->dynamicAttachmentPtrHashSet.capacity; i++)
             {
-                TknListNode *pDynamicAttachmentPtrNode = pGfxContext->dynamicAttachmentPtrHashSet.nodePtrs[i];
+                TknListNode *pDynamicAttachmentPtrNode = pTknGfxContext->dynamicAttachmentPtrHashSet.nodePtrs[i];
                 while (pDynamicAttachmentPtrNode)
                 {
-                    Attachment *pDynamicAttachment = *(Attachment **)pDynamicAttachmentPtrNode->data;
-                    resizeDynamicAttachmentPtr(pGfxContext, pDynamicAttachment);
+                    TknAttachment *pDynamicAttachment = *(TknAttachment **)pDynamicAttachmentPtrNode->data;
+                    resizeDynamicAttachmentPtr(pTknGfxContext, pDynamicAttachment);
                     for (uint32_t i = 0; i < pDynamicAttachment->renderPassPtrHashSet.capacity; i++)
                     {
                         TknListNode *renderPassPtrNode = pDynamicAttachment->renderPassPtrHashSet.nodePtrs[i];
                         while (renderPassPtrNode)
                         {
-                            RenderPass *pRenderPass = *(RenderPass **)renderPassPtrNode->data;
-                            if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pRenderPass))
+                            TknRenderPass *pTknRenderPass = *(TknRenderPass **)renderPassPtrNode->data;
+                            if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass))
                             {
-                                tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pRenderPass);
+                                tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass);
                             }
                             renderPassPtrNode = renderPassPtrNode->pNextNode;
                         }
@@ -949,42 +949,42 @@ void updateGfxContextPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
                 }
             }
 
-            for (uint32_t i = 0; i < pGfxContext->pSwapchainAttachment->renderPassPtrHashSet.capacity; i++)
+            for (uint32_t i = 0; i < pTknGfxContext->pSwapchainAttachment->renderPassPtrHashSet.capacity; i++)
             {
-                TknListNode *renderPassPtrNode = pGfxContext->pSwapchainAttachment->renderPassPtrHashSet.nodePtrs[i];
+                TknListNode *renderPassPtrNode = pTknGfxContext->pSwapchainAttachment->renderPassPtrHashSet.nodePtrs[i];
                 while (renderPassPtrNode)
                 {
-                    RenderPass *pRenderPass = *(RenderPass **)renderPassPtrNode->data;
-                    if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pRenderPass))
+                    TknRenderPass *pTknRenderPass = *(TknRenderPass **)renderPassPtrNode->data;
+                    if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass))
                     {
-                        tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pRenderPass);
+                        tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass);
                     }
                     renderPassPtrNode = renderPassPtrNode->pNextNode;
                 }
             }
             for (uint32_t renderPassIndex = 0; renderPassIndex < dirtyRenderPassPtrDynamicArray.count; renderPassIndex++)
             {
-                RenderPass *pRenderPass = *(RenderPass **)tknGetFromDynamicArray(&dirtyRenderPassPtrDynamicArray, renderPassIndex);
-                repopulateFramebuffers(pGfxContext, pRenderPass);
+                TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&dirtyRenderPassPtrDynamicArray, renderPassIndex);
+                repopulateFramebuffers(pTknGfxContext, pTknRenderPass);
             }
             tknDestroyDynamicArray(dirtyRenderPassPtrDynamicArray);
         }
         else
         {
-            VkResult result = vkAcquireNextImageKHR(vkDevice, pSwapchainAttachment->vkSwapchain, UINT64_MAX, pGfxContext->imageAvailableSemaphore, VK_NULL_HANDLE, &swapchainIndex);
+            VkResult result = vkAcquireNextImageKHR(vkDevice, pSwapchainAttachment->vkSwapchain, UINT64_MAX, pTknGfxContext->imageAvailableSemaphore, VK_NULL_HANDLE, &swapchainIndex);
             if (result != VK_SUCCESS)
             {
                 if (VK_ERROR_OUT_OF_DATE_KHR == result)
                 {
                     printf("Recreate swapchain because of result: %d\n", result);
-                    updateSwapchainAttachmentPtr(pGfxContext, pSwapchainAttachment->swapchainExtent);
-                    for (uint32_t renderPassIndex = 0; renderPassIndex < pGfxContext->renderPassPtrDynamicArray.count; renderPassIndex++)
+                    updateSwapchainAttachmentPtr(pTknGfxContext, pSwapchainAttachment->swapchainExtent);
+                    for (uint32_t renderPassIndex = 0; renderPassIndex < pTknGfxContext->renderPassPtrDynamicArray.count; renderPassIndex++)
                     {
-                        RenderPass *pRenderPass = *(RenderPass **)tknGetFromDynamicArray(&pGfxContext->renderPassPtrDynamicArray, renderPassIndex);
-                        Attachment *pSwapchainAttachment = getSwapchainAttachmentPtr(pGfxContext);
-                        if (tknContainsInHashSet(&pSwapchainAttachment->renderPassPtrHashSet, &pRenderPass))
+                        TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->renderPassPtrDynamicArray, renderPassIndex);
+                        TknAttachment *pSwapchainAttachment = getSwapchainAttachmentPtr(pTknGfxContext);
+                        if (tknContainsInHashSet(&pSwapchainAttachment->renderPassPtrHashSet, &pTknRenderPass))
                         {
-                            repopulateFramebuffers(pGfxContext, pRenderPass);
+                            repopulateFramebuffers(pTknGfxContext, pTknRenderPass);
                         }
                         else
                         {
@@ -994,10 +994,10 @@ void updateGfxContextPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
                 }
                 else if (VK_SUBOPTIMAL_KHR == result)
                 {
-                    assertVkResult(vkResetFences(vkDevice, 1, &pGfxContext->renderFinishedFence));
-                    recordCommandBuffer(pGfxContext, swapchainIndex);
-                    submitCommandBuffer(pGfxContext, swapchainIndex);
-                    present(pGfxContext, swapchainIndex);
+                    assertVkResult(vkResetFences(vkDevice, 1, &pTknGfxContext->renderFinishedFence));
+                    recordCommandBuffer(pTknGfxContext, swapchainIndex);
+                    submitCommandBuffer(pTknGfxContext, swapchainIndex);
+                    present(pTknGfxContext, swapchainIndex);
                 }
                 else
                 {
@@ -1006,10 +1006,10 @@ void updateGfxContextPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
             }
             else
             {
-                assertVkResult(vkResetFences(vkDevice, 1, &pGfxContext->renderFinishedFence));
-                recordCommandBuffer(pGfxContext, swapchainIndex);
-                submitCommandBuffer(pGfxContext, swapchainIndex);
-                present(pGfxContext, swapchainIndex);
+                assertVkResult(vkResetFences(vkDevice, 1, &pTknGfxContext->renderFinishedFence));
+                recordCommandBuffer(pTknGfxContext, swapchainIndex);
+                submitCommandBuffer(pTknGfxContext, swapchainIndex);
+                present(pTknGfxContext, swapchainIndex);
             }
         }
     }
@@ -1018,11 +1018,11 @@ void updateGfxContextPtr(GfxContext *pGfxContext, VkExtent2D swapchainExtent)
         printf("No render passes available, skipping updateGfxContextPtr.\n");
     }
 }
-void waitGfxRenderFence(GfxContext *pGfxContext)
+void waitGfxRenderFence(TknGfxContext *pTknGfxContext)
 {
-    assertVkResult(vkWaitForFences(pGfxContext->vkDevice, 1, &pGfxContext->renderFinishedFence, VK_TRUE, UINT64_MAX));
+    assertVkResult(vkWaitForFences(pTknGfxContext->vkDevice, 1, &pTknGfxContext->renderFinishedFence, VK_TRUE, UINT64_MAX));
 }
-void waitGfxDeviceIdle(GfxContext *pGfxContext)
+void waitGfxDeviceIdle(TknGfxContext *pTknGfxContext)
 {
-    assertVkResult(vkDeviceWaitIdle(pGfxContext->vkDevice));
+    assertVkResult(vkDeviceWaitIdle(pTknGfxContext->vkDevice));
 }

@@ -9,7 +9,7 @@ typedef struct {
     uint8_t xsize[3];        // X size (little endian)
     uint8_t ysize[3];        // Y size (little endian)
     uint8_t zsize[3];        // Z size (little endian)
-} ASTCHeader;
+} TknASTCHeader;
 
 // Helper function to read 24-bit little endian value
 static uint32_t read24LE(const uint8_t* data) {
@@ -54,13 +54,13 @@ static VkFormat getASTCVulkanFormat(uint32_t blockWidth, uint32_t blockHeight) {
 
 
 
-ASTCImage* createASTCFromMemory(const char* buffer, size_t bufferSize) {
-    if (!buffer || bufferSize < sizeof(ASTCHeader)) {
+TknASTCImage* createASTCFromMemory(const char* buffer, size_t bufferSize) {
+    if (!buffer || bufferSize < sizeof(TknASTCHeader)) {
         printf("Error: Invalid buffer or buffer too small\n");
         return NULL;
     }
     
-    const ASTCHeader* header = (const ASTCHeader*)buffer;
+    const TknASTCHeader* header = (const TknASTCHeader*)buffer;
     
     // Check ASTC magic number (0x5CA1AB13)
     if (header->magic[0] != 0x13 || header->magic[1] != 0xAB || 
@@ -89,9 +89,9 @@ ASTCImage* createASTCFromMemory(const char* buffer, size_t bufferSize) {
     uint32_t blocksY = (height + blockHeight - 1) / blockHeight;
     uint32_t compressedSize = blocksX * blocksY * 16; // Each ASTC block is 128 bits (16 bytes)
     
-    if (sizeof(ASTCHeader) + compressedSize != bufferSize) {
+    if (sizeof(TknASTCHeader) + compressedSize != bufferSize) {
         printf("Error: ASTC file size mismatch. Expected %zu, got %zu\n", 
-               sizeof(ASTCHeader) + compressedSize, bufferSize);
+               sizeof(TknASTCHeader) + compressedSize, bufferSize);
         return NULL;
     }
     
@@ -101,28 +101,28 @@ ASTCImage* createASTCFromMemory(const char* buffer, size_t bufferSize) {
         return NULL;
     }
     
-    // Create ASTCImage structure
-    ASTCImage* astcImage = tknMalloc(sizeof(ASTCImage));
-    astcImage->width = width;
-    astcImage->height = height;
-    astcImage->vkFormat = vkFormat;
-    astcImage->size = compressedSize;
+    // Create TknASTCImage structure
+    TknASTCImage* tknAstcImage = tknMalloc(sizeof(TknASTCImage));
+    tknAstcImage->width = width;
+    tknAstcImage->height = height;
+    tknAstcImage->vkFormat = vkFormat;
+    tknAstcImage->size = compressedSize;
     
     // Copy compressed data
-    astcImage->data = tknMalloc(compressedSize);
-    memcpy(astcImage->data, buffer + sizeof(ASTCHeader), compressedSize);
+    tknAstcImage->data = tknMalloc(compressedSize);
+    memcpy(tknAstcImage->data, buffer + sizeof(TknASTCHeader), compressedSize);
     
     printf("Loaded ASTC image: %dx%d, blocks: %dx%d, format: %d, size: %u bytes\n", 
            width, height, blockWidth, blockHeight, vkFormat, compressedSize);
     
-    return astcImage;
+    return tknAstcImage;
 }
 
-void destroyASTCImage(ASTCImage* astcImage) {
-    if (astcImage) {
-        if (astcImage->data) {
-            tknFree(astcImage->data);
+void destroyASTCImage(TknASTCImage* tknAstcImage) {
+    if (tknAstcImage) {
+        if (tknAstcImage->data) {
+            tknFree(tknAstcImage->data);
         }
-        tknFree(astcImage);
+        tknFree(tknAstcImage);
     }
 }

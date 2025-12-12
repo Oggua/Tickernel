@@ -1,115 +1,115 @@
 #include "gfxCore.h"
 
-DrawCall *createDrawCallPtr(GfxContext *pGfxContext, Pipeline *pPipeline, Material *pMaterial, Mesh *pMesh, Instance *pInstance)
+TknDrawCall *createDrawCallPtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline, TknMaterial *pTknMaterial, TknMesh *pTknMesh, TknInstance *pTknInstance)
 {
-    // Validate DrawCall compatibility with Pipeline
-    if (pPipeline->pMeshVertexInputLayout != NULL)
+    // Validate TknDrawCall compatibility with TknPipeline
+    if (pTknPipeline->pTknMeshVertexInputLayout != NULL)
     {
-        tknAssert(pMesh != NULL, "DrawCall must have a Mesh when Pipeline requires mesh vertex input layout");
-        tknAssert(pMesh->pVertexInputLayout == pPipeline->pMeshVertexInputLayout, "DrawCall Mesh vertex input layout must match Pipeline mesh vertex input layout");
+        tknAssert(pTknMesh != NULL, "TknDrawCall must have a TknMesh when TknPipeline requires mesh vertex input layout");
+        tknAssert(pTknMesh->pTknVertexInputLayout == pTknPipeline->pTknMeshVertexInputLayout, "TknDrawCall TknMesh vertex input layout must match TknPipeline mesh vertex input layout");
     }
     else
     {
-        tknAssert(pMesh == NULL, "DrawCall must not have a Mesh when Pipeline does not require mesh vertex input layout");
+        tknAssert(pTknMesh == NULL, "TknDrawCall must not have a TknMesh when TknPipeline does not require mesh vertex input layout");
     }
 
-    if (pPipeline->pInstanceVertexInputLayout != NULL)
+    if (pTknPipeline->pTknInstanceVertexInputLayout != NULL)
     {
-        tknAssert(pInstance != NULL, "DrawCall must have an Instance when Pipeline requires instance vertex input layout");
-        tknAssert(pInstance->pVertexInputLayout == pPipeline->pInstanceVertexInputLayout, "DrawCall Instance vertex input layout must match Pipeline instance vertex input layout");
+        tknAssert(pTknInstance != NULL, "TknDrawCall must have an TknInstance when TknPipeline requires instance vertex input layout");
+        tknAssert(pTknInstance->pTknVertexInputLayout == pTknPipeline->pTknInstanceVertexInputLayout, "TknDrawCall TknInstance vertex input layout must match TknPipeline instance vertex input layout");
     }
     else
     {
-        tknAssert(pInstance == NULL, "DrawCall must not have an Instance when Pipeline does not require instance vertex input layout");
+        tknAssert(pTknInstance == NULL, "TknDrawCall must not have an TknInstance when TknPipeline does not require instance vertex input layout");
     }
 
-    // Validate Material compatibility
-    tknAssert(pMaterial != NULL, "DrawCall must have a Material");
-    tknAssert(pMaterial->pDescriptorSet == pPipeline->pPipelineDescriptorSet, "DrawCall Material descriptor set must match Pipeline descriptor set");
+    // Validate TknMaterial compatibility
+    tknAssert(pTknMaterial != NULL, "TknDrawCall must have a TknMaterial");
+    tknAssert(pTknMaterial->pDescriptorSet == pTknPipeline->pPipelineDescriptorSet, "TknDrawCall TknMaterial descriptor set must match TknPipeline descriptor set");
 
-    DrawCall *pDrawCall = tknMalloc(sizeof(DrawCall));
-    *pDrawCall = (DrawCall){
-        .pPipeline = pPipeline,
-        .pMaterial = pMaterial,
-        .pInstance = pInstance,
-        .pMesh = pMesh,
+    TknDrawCall *pTknDrawCall = tknMalloc(sizeof(TknDrawCall));
+    *pTknDrawCall = (TknDrawCall){
+        .pTknPipeline = pTknPipeline,
+        .pTknMaterial = pTknMaterial,
+        .pTknInstance = pTknInstance,
+        .pTknMesh = pTknMesh,
     };
-    if (pMaterial != NULL)
-        tknAddToHashSet(&pMaterial->drawCallPtrHashSet, &pDrawCall);
-    if (pInstance != NULL)
-        tknAddToHashSet(&pInstance->drawCallPtrHashSet, &pDrawCall);
-    if (pMesh != NULL)
-        tknAddToHashSet(&pMesh->drawCallPtrHashSet, &pDrawCall);
+    if (pTknMaterial != NULL)
+        tknAddToHashSet(&pTknMaterial->drawCallPtrHashSet, &pTknDrawCall);
+    if (pTknInstance != NULL)
+        tknAddToHashSet(&pTknInstance->drawCallPtrHashSet, &pTknDrawCall);
+    if (pTknMesh != NULL)
+        tknAddToHashSet(&pTknMesh->drawCallPtrHashSet, &pTknDrawCall);
 
     // Add to pipeline hashset only (dynamic array management is handled by addDrawCallToPipeline)
-    tknAddToHashSet(&pPipeline->drawCallPtrHashSet, &pDrawCall);
+    tknAddToHashSet(&pTknPipeline->drawCallPtrHashSet, &pTknDrawCall);
 
-    return pDrawCall;
+    return pTknDrawCall;
 }
 
-void destroyDrawCallPtr(GfxContext *pGfxContext, DrawCall *pDrawCall)
+void destroyDrawCallPtr(TknGfxContext *pTknGfxContext, TknDrawCall *pTknDrawCall)
 {
     // Remove from subpass drawcall queue
-    if (pDrawCall->pPipeline != NULL)
+    if (pTknDrawCall->pTknPipeline != NULL)
     {
-        RenderPass *pRenderPass = pDrawCall->pPipeline->pRenderPass;
-        struct Subpass *pSubpass = &pRenderPass->subpasses[pDrawCall->pPipeline->subpassIndex];
-        tknRemoveFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pDrawCall);
-        tknRemoveFromHashSet(&pDrawCall->pPipeline->drawCallPtrHashSet, &pDrawCall);
+        TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
+        struct Subpass *pSubpass = &pTknRenderPass->subpasses[pTknDrawCall->pTknPipeline->subpassIndex];
+        tknRemoveFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pTknDrawCall);
+        tknRemoveFromHashSet(&pTknDrawCall->pTknPipeline->drawCallPtrHashSet, &pTknDrawCall);
     }
-    if (pDrawCall->pMaterial != NULL)
-        tknRemoveFromHashSet(&pDrawCall->pMaterial->drawCallPtrHashSet, &pDrawCall);
-    if (pDrawCall->pInstance != NULL)
-        tknRemoveFromHashSet(&pDrawCall->pInstance->drawCallPtrHashSet, &pDrawCall);
-    if (pDrawCall->pMesh != NULL)
-        tknRemoveFromHashSet(&pDrawCall->pMesh->drawCallPtrHashSet, &pDrawCall);
-    *pDrawCall = (DrawCall){0};
-    tknFree(pDrawCall);
+    if (pTknDrawCall->pTknMaterial != NULL)
+        tknRemoveFromHashSet(&pTknDrawCall->pTknMaterial->drawCallPtrHashSet, &pTknDrawCall);
+    if (pTknDrawCall->pTknInstance != NULL)
+        tknRemoveFromHashSet(&pTknDrawCall->pTknInstance->drawCallPtrHashSet, &pTknDrawCall);
+    if (pTknDrawCall->pTknMesh != NULL)
+        tknRemoveFromHashSet(&pTknDrawCall->pTknMesh->drawCallPtrHashSet, &pTknDrawCall);
+    *pTknDrawCall = (TknDrawCall){0};
+    tknFree(pTknDrawCall);
 }
 
-void insertDrawCallPtr(DrawCall *pDrawCall, uint32_t index)
+void insertDrawCallPtr(TknDrawCall *pTknDrawCall, uint32_t index)
 {
-    tknAssert(pDrawCall->pPipeline != NULL, "DrawCall must be associated with a Pipeline");
-    RenderPass *pRenderPass = pDrawCall->pPipeline->pRenderPass;
-    struct Subpass *pSubpass = &pRenderPass->subpasses[pDrawCall->pPipeline->subpassIndex];
-    tknInsertIntoDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pDrawCall, index);
+    tknAssert(pTknDrawCall->pTknPipeline != NULL, "TknDrawCall must be associated with a TknPipeline");
+    TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
+    struct Subpass *pSubpass = &pTknRenderPass->subpasses[pTknDrawCall->pTknPipeline->subpassIndex];
+    tknInsertIntoDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pTknDrawCall, index);
 }
 
-void removeDrawCallPtr(DrawCall *pDrawCall)
+void removeDrawCallPtr(TknDrawCall *pTknDrawCall)
 {
-    tknAssert(pDrawCall->pPipeline != NULL, "DrawCall must be associated with a Pipeline");
-    RenderPass *pRenderPass = pDrawCall->pPipeline->pRenderPass;
-    struct Subpass *pSubpass = &pRenderPass->subpasses[pDrawCall->pPipeline->subpassIndex];
-    tknRemoveFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pDrawCall);
+    tknAssert(pTknDrawCall->pTknPipeline != NULL, "TknDrawCall must be associated with a TknPipeline");
+    TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
+    struct Subpass *pSubpass = &pTknRenderPass->subpasses[pTknDrawCall->pTknPipeline->subpassIndex];
+    tknRemoveFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, &pTknDrawCall);
     // Keep pipeline reference for hashset relationship tracking
 }
 
-void removeDrawCallAtIndex(RenderPass *pRenderPass, uint32_t subpassIndex, uint32_t index)
+void removeDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    tknAssert(subpassIndex < pRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
-    struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+    tknAssert(subpassIndex < pTknRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct Subpass *pSubpass = &pTknRenderPass->subpasses[subpassIndex];
     if (index >= pSubpass->drawCallPtrDynamicArray.count)
     {
         return;
     }
-    DrawCall *pDrawCall = *(DrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, index);
-    destroyDrawCallPtr(NULL, pDrawCall);
+    TknDrawCall *pTknDrawCall = *(TknDrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, index);
+    destroyDrawCallPtr(NULL, pTknDrawCall);
 }
 
-DrawCall *getDrawCallAtIndex(RenderPass *pRenderPass, uint32_t subpassIndex, uint32_t index)
+TknDrawCall *getDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    tknAssert(subpassIndex < pRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
-    struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+    tknAssert(subpassIndex < pTknRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct Subpass *pSubpass = &pTknRenderPass->subpasses[subpassIndex];
     if (index >= pSubpass->drawCallPtrDynamicArray.count)
     {
         return NULL;
     }
-    return *(DrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, index);
+    return *(TknDrawCall **)tknGetFromDynamicArray(&pSubpass->drawCallPtrDynamicArray, index);
 }
 
-uint32_t getDrawCallCount(RenderPass *pRenderPass, uint32_t subpassIndex)
+uint32_t getDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t subpassIndex)
 {
-    tknAssert(subpassIndex < pRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
-    struct Subpass *pSubpass = &pRenderPass->subpasses[subpassIndex];
+    tknAssert(subpassIndex < pTknRenderPass->subpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct Subpass *pSubpass = &pTknRenderPass->subpasses[subpassIndex];
     return pSubpass->drawCallPtrDynamicArray.count;
 }

@@ -25,9 +25,9 @@ static uint32_t getPlyPropertySize(const char *propertyType)
     }
 }
 
-static void copyVkBuffer(GfxContext *pGfxContext, VkBuffer srcVkBuffer, VkBuffer dstVkBuffer, VkDeviceSize size)
+static void copyVkBuffer(TknGfxContext *pTknGfxContext, VkBuffer srcVkBuffer, VkBuffer dstVkBuffer, VkDeviceSize size)
 {
-    VkCommandBuffer vkCommandBuffer = beginSingleTimeCommands(pGfxContext);
+    VkCommandBuffer vkCommandBuffer = beginSingleTimeCommands(pTknGfxContext);
 
     VkBufferCopy vkBufferCopy = {
         .srcOffset = 0,
@@ -36,7 +36,7 @@ static void copyVkBuffer(GfxContext *pGfxContext, VkBuffer srcVkBuffer, VkBuffer
     };
     vkCmdCopyBuffer(vkCommandBuffer, srcVkBuffer, dstVkBuffer, 1, &vkBufferCopy);
 
-    endSingleTimeCommands(pGfxContext, vkCommandBuffer);
+    endSingleTimeCommands(pTknGfxContext, vkCommandBuffer);
 }
 
 static bool readBinaryData(FILE *file, void **data, size_t size, const char *dataType)
@@ -60,7 +60,7 @@ static bool readBinaryData(FILE *file, void **data, size_t size, const char *dat
     return true;
 }
 
-static bool createBufferWithData(GfxContext *pGfxContext, void *data, VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer *pBuffer, VkDeviceMemory *pDeviceMemory)
+static bool createBufferWithData(TknGfxContext *pTknGfxContext, void *data, VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer *pBuffer, VkDeviceMemory *pDeviceMemory)
 {
     if (size == 0)
     {
@@ -73,41 +73,41 @@ static bool createBufferWithData(GfxContext *pGfxContext, void *data, VkDeviceSi
     VkDeviceMemory stagingBufferMemory;
     
     // Create staging buffer
-    createVkBuffer(pGfxContext, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+    createVkBuffer(pTknGfxContext, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
                    &stagingBuffer, &stagingBufferMemory);
     
     // Copy data to staging buffer
     void *mappedData;
-    VkDevice vkDevice = pGfxContext->vkDevice;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, size, 0, &mappedData);
     memcpy(mappedData, data, (size_t)size);
     vkUnmapMemory(vkDevice, stagingBufferMemory);
     
     // Create device local buffer
-    createVkBuffer(pGfxContext, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, 
+    createVkBuffer(pTknGfxContext, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, 
                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pBuffer, pDeviceMemory);
     
     // Copy from staging to device local buffer
-    copyVkBuffer(pGfxContext, stagingBuffer, *pBuffer, size);
+    copyVkBuffer(pTknGfxContext, stagingBuffer, *pBuffer, size);
     
     // Clean up staging buffer
-    destroyVkBuffer(pGfxContext, stagingBuffer, stagingBufferMemory);
+    destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
     
     return true;
 }
 
-Mesh *createMeshPtrWithData(GfxContext *pGfxContext, VertexInputLayout *pVertexInputLayout, void *vertices, uint32_t vertexCount, VkIndexType vkIndexType, void *indices, uint32_t indexCount)
+TknMesh *createMeshPtrWithData(TknGfxContext *pTknGfxContext, TknVertexInputLayout *pTknVertexInputLayout, void *vertices, uint32_t vertexCount, VkIndexType vkIndexType, void *indices, uint32_t indexCount)
 {
-    Mesh *pMesh = tknMalloc(sizeof(Mesh));
+    TknMesh *pTknMesh = tknMalloc(sizeof(TknMesh));
     VkBuffer vertexVkBuffer = VK_NULL_HANDLE;
     VkDeviceMemory vertexVkDeviceMemory = VK_NULL_HANDLE;
     VkBuffer indexVkBuffer = VK_NULL_HANDLE;
     VkDeviceMemory indexVkDeviceMemory = VK_NULL_HANDLE;
 
     // Create vertex buffer
-    VkDeviceSize vertexSize = vertexCount * pVertexInputLayout->stride;
-    createBufferWithData(pGfxContext, vertices, vertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+    VkDeviceSize vertexSize = vertexCount * pTknVertexInputLayout->stride;
+    createBufferWithData(pTknGfxContext, vertices, vertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
                         &vertexVkBuffer, &vertexVkDeviceMemory);
 
     // Create index buffer if needed
@@ -115,27 +115,27 @@ Mesh *createMeshPtrWithData(GfxContext *pGfxContext, VertexInputLayout *pVertexI
     {
         size_t indexSize = (vkIndexType == VK_INDEX_TYPE_UINT16) ? sizeof(uint16_t) : sizeof(uint32_t);
         VkDeviceSize indexBufferSize = indexCount * indexSize;
-        createBufferWithData(pGfxContext, indices, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+        createBufferWithData(pTknGfxContext, indices, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
                             &indexVkBuffer, &indexVkDeviceMemory);
     }
 
-    TknHashSet drawCallPtrHashSet = tknCreateHashSet(sizeof(DrawCall *));
-    *pMesh = (Mesh){
+    TknHashSet drawCallPtrHashSet = tknCreateHashSet(sizeof(TknDrawCall *));
+    *pTknMesh = (TknMesh){
         .vertexVkBuffer = vertexVkBuffer,
         .vertexVkDeviceMemory = vertexVkDeviceMemory,
         .vertexCount = vertexCount,
         .indexVkBuffer = indexVkBuffer,
         .indexVkDeviceMemory = indexVkDeviceMemory,
         .indexCount = indexCount,
-        .pVertexInputLayout = pVertexInputLayout,
+        .pTknVertexInputLayout = pTknVertexInputLayout,
         .vkIndexType = vkIndexType,
         .drawCallPtrHashSet = drawCallPtrHashSet,
     };
-    tknAddToHashSet(&pVertexInputLayout->referencePtrHashSet, &pMesh);
-    return pMesh;
+    tknAddToHashSet(&pTknVertexInputLayout->referencePtrHashSet, &pTknMesh);
+    return pTknMesh;
 }
 
-Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMeshVertexInputLayout, VkIndexType vkIndexType, const char *plyFilePath)
+TknMesh *createMeshPtrWithPlyFile(TknGfxContext *pTknGfxContext, TknVertexInputLayout *pTknMeshVertexInputLayout, VkIndexType vkIndexType, const char *plyFilePath)
 {
     FILE *file = fopen(plyFilePath, "rb");
     if (!file)
@@ -247,7 +247,7 @@ Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMesh
             if (inVertexElement)
             {
                 // Check if we have more attributes to match
-                if (currentAttributeIndex >= pMeshVertexInputLayout->attributeCount)
+                if (currentAttributeIndex >= pTknMeshVertexInputLayout->attributeCount)
                 {
                     tknWarning("PLY has more properties than vertex layout attributes");
                     fclose(file);
@@ -258,7 +258,7 @@ Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMesh
                 currentAttributeBytesMatched += propertySize;
 
                 // Check if current attribute is complete
-                uint32_t expectedAttributeSize = pMeshVertexInputLayout->sizes[currentAttributeIndex];
+                uint32_t expectedAttributeSize = pTknMeshVertexInputLayout->sizes[currentAttributeIndex];
                 if (currentAttributeBytesMatched == expectedAttributeSize)
                 {
                     // Attribute complete, move to next
@@ -289,10 +289,10 @@ Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMesh
     }
 
     // Check if all vertex attributes were matched completely
-    if (currentAttributeIndex != pMeshVertexInputLayout->attributeCount || currentAttributeBytesMatched != 0)
+    if (currentAttributeIndex != pTknMeshVertexInputLayout->attributeCount || currentAttributeBytesMatched != 0)
     {
         tknWarning("PLY properties don't match vertex layout: completed %u/%u attributes, %u bytes remaining",
-                   currentAttributeIndex, pMeshVertexInputLayout->attributeCount, currentAttributeBytesMatched);
+                   currentAttributeIndex, pTknMeshVertexInputLayout->attributeCount, currentAttributeBytesMatched);
         fclose(file);
         return NULL;
     }
@@ -315,7 +315,7 @@ Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMesh
     void *indices = NULL;
 
     // Read vertex data
-    size_t vertexDataSize = vertexCount * pMeshVertexInputLayout->stride;
+    size_t vertexDataSize = vertexCount * pTknMeshVertexInputLayout->stride;
     if (!readBinaryData(file, &vertices, vertexDataSize, "vertex"))
     {
         fclose(file);
@@ -337,7 +337,7 @@ Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMesh
 
     fclose(file);
 
-    Mesh *pMesh = createMeshPtrWithData(pGfxContext, pMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount);
+    TknMesh *pTknMesh = createMeshPtrWithData(pTknGfxContext, pTknMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount);
 
     // Clean up temporary data
     if (vertices)
@@ -349,68 +349,68 @@ Mesh *createMeshPtrWithPlyFile(GfxContext *pGfxContext, VertexInputLayout *pMesh
         tknFree(indices);
     }
 
-    return pMesh;
+    return pTknMesh;
 }
-void destroyMeshPtr(GfxContext *pGfxContext, Mesh *pMesh)
+void destroyMeshPtr(TknGfxContext *pTknGfxContext, TknMesh *pTknMesh)
 {
-    tknAssert(0 == pMesh->drawCallPtrHashSet.count, "Mesh still has draw calls attached!");
-    tknDestroyHashSet(pMesh->drawCallPtrHashSet);
-    tknRemoveFromHashSet(&pMesh->pVertexInputLayout->referencePtrHashSet, &pMesh);
-    if (pMesh->vertexVkBuffer != VK_NULL_HANDLE && pMesh->vertexVkDeviceMemory != VK_NULL_HANDLE)
+    tknAssert(0 == pTknMesh->drawCallPtrHashSet.count, "TknMesh still has draw calls attached!");
+    tknDestroyHashSet(pTknMesh->drawCallPtrHashSet);
+    tknRemoveFromHashSet(&pTknMesh->pTknVertexInputLayout->referencePtrHashSet, &pTknMesh);
+    if (pTknMesh->vertexVkBuffer != VK_NULL_HANDLE && pTknMesh->vertexVkDeviceMemory != VK_NULL_HANDLE)
     {
-        destroyVkBuffer(pGfxContext, pMesh->vertexVkBuffer, pMesh->vertexVkDeviceMemory);
+        destroyVkBuffer(pTknGfxContext, pTknMesh->vertexVkBuffer, pTknMesh->vertexVkDeviceMemory);
     }
-    if (pMesh->indexVkBuffer != VK_NULL_HANDLE && pMesh->indexVkDeviceMemory != VK_NULL_HANDLE)
+    if (pTknMesh->indexVkBuffer != VK_NULL_HANDLE && pTknMesh->indexVkDeviceMemory != VK_NULL_HANDLE)
     {
-        destroyVkBuffer(pGfxContext, pMesh->indexVkBuffer, pMesh->indexVkDeviceMemory);
+        destroyVkBuffer(pTknGfxContext, pTknMesh->indexVkBuffer, pTknMesh->indexVkDeviceMemory);
     }
-    tknFree(pMesh);
+    tknFree(pTknMesh);
 }
 
-void updateMeshPtr(GfxContext *pGfxContext, Mesh *pMesh, const char *format, const void *vertices, uint32_t vertexCount, uint32_t indexType, const void *indices, uint32_t indexCount)
+void updateMeshPtr(TknGfxContext *pTknGfxContext, TknMesh *pTknMesh, const char *format, const void *vertices, uint32_t vertexCount, uint32_t indexType, const void *indices, uint32_t indexCount)
 {
     // Update vertex buffer if vertices provided
     if (vertices && vertexCount > 0)
     {
-        VkDeviceSize vertexSize = vertexCount * pMesh->pVertexInputLayout->stride;
-        VkDeviceSize currentVertexSize = pMesh->vertexCount * pMesh->pVertexInputLayout->stride;
+        VkDeviceSize vertexSize = vertexCount * pTknMesh->pTknVertexInputLayout->stride;
+        VkDeviceSize currentVertexSize = pTknMesh->vertexCount * pTknMesh->pTknVertexInputLayout->stride;
 
         // Check if we need to recreate the vertex buffer
-        if (pMesh->vertexVkBuffer == VK_NULL_HANDLE || vertexSize > currentVertexSize)
+        if (pTknMesh->vertexVkBuffer == VK_NULL_HANDLE || vertexSize > currentVertexSize)
         {
             // Destroy existing buffer if it exists
-            if (pMesh->vertexVkBuffer != VK_NULL_HANDLE)
+            if (pTknMesh->vertexVkBuffer != VK_NULL_HANDLE)
             {
-                destroyVkBuffer(pGfxContext, pMesh->vertexVkBuffer, pMesh->vertexVkDeviceMemory);
+                destroyVkBuffer(pTknGfxContext, pTknMesh->vertexVkBuffer, pTknMesh->vertexVkDeviceMemory);
             }
 
             // Create new vertex buffer
-            createVkBuffer(pGfxContext, vertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pMesh->vertexVkBuffer, &pMesh->vertexVkDeviceMemory);
+            createVkBuffer(pTknGfxContext, vertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pTknMesh->vertexVkBuffer, &pTknMesh->vertexVkDeviceMemory);
         }
 
         // Create staging buffer and copy data
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
-        createVkBuffer(pGfxContext, vertexSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        createVkBuffer(pTknGfxContext, vertexSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        &stagingBuffer, &stagingBufferMemory);
 
         // Copy data to staging buffer
         void *mappedData;
-        VkDevice vkDevice = pGfxContext->vkDevice;
+        VkDevice vkDevice = pTknGfxContext->vkDevice;
         vkMapMemory(vkDevice, stagingBufferMemory, 0, vertexSize, 0, &mappedData);
         memcpy(mappedData, vertices, (size_t)vertexSize);
         vkUnmapMemory(vkDevice, stagingBufferMemory);
 
         // Copy from staging to device local buffer
-        copyVkBuffer(pGfxContext, stagingBuffer, pMesh->vertexVkBuffer, vertexSize);
+        copyVkBuffer(pTknGfxContext, stagingBuffer, pTknMesh->vertexVkBuffer, vertexSize);
 
         // Clean up staging buffer
-        destroyVkBuffer(pGfxContext, stagingBuffer, stagingBufferMemory);
+        destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
 
         // Update vertex count
-        pMesh->vertexCount = vertexCount;
+        pTknMesh->vertexCount = vertexCount;
     }
 
     // Update index buffer if indices provided
@@ -420,59 +420,59 @@ void updateMeshPtr(GfxContext *pGfxContext, Mesh *pMesh, const char *format, con
         size_t indexSize = (vkIndexType == VK_INDEX_TYPE_UINT16) ? sizeof(uint16_t) : sizeof(uint32_t);
         VkDeviceSize indexBufferSize = indexCount * indexSize;
         VkDeviceSize currentIndexSize = 0;
-        if (pMesh->indexVkBuffer != VK_NULL_HANDLE)
+        if (pTknMesh->indexVkBuffer != VK_NULL_HANDLE)
         {
-            size_t currentIndexSizePerElement = (pMesh->vkIndexType == VK_INDEX_TYPE_UINT16) ? sizeof(uint16_t) : sizeof(uint32_t);
-            currentIndexSize = pMesh->indexCount * currentIndexSizePerElement;
+            size_t currentIndexSizePerElement = (pTknMesh->vkIndexType == VK_INDEX_TYPE_UINT16) ? sizeof(uint16_t) : sizeof(uint32_t);
+            currentIndexSize = pTknMesh->indexCount * currentIndexSizePerElement;
         }
 
         // Check if we need to recreate the index buffer
-        if (pMesh->indexVkBuffer == VK_NULL_HANDLE || indexBufferSize > currentIndexSize || vkIndexType != pMesh->vkIndexType)
+        if (pTknMesh->indexVkBuffer == VK_NULL_HANDLE || indexBufferSize > currentIndexSize || vkIndexType != pTknMesh->vkIndexType)
         {
             // Destroy existing buffer if it exists
-            if (pMesh->indexVkBuffer != VK_NULL_HANDLE)
+            if (pTknMesh->indexVkBuffer != VK_NULL_HANDLE)
             {
-                destroyVkBuffer(pGfxContext, pMesh->indexVkBuffer, pMesh->indexVkDeviceMemory);
+                destroyVkBuffer(pTknGfxContext, pTknMesh->indexVkBuffer, pTknMesh->indexVkDeviceMemory);
             }
 
             // Create new index buffer
-            createVkBuffer(pGfxContext, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pMesh->indexVkBuffer, &pMesh->indexVkDeviceMemory);
+            createVkBuffer(pTknGfxContext, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &pTknMesh->indexVkBuffer, &pTknMesh->indexVkDeviceMemory);
         }
 
         // Create staging buffer and copy data
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
-        createVkBuffer(pGfxContext, indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        createVkBuffer(pTknGfxContext, indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        &stagingBuffer, &stagingBufferMemory);
 
         // Copy data to staging buffer
         void *mappedData;
-        VkDevice vkDevice = pGfxContext->vkDevice;
+        VkDevice vkDevice = pTknGfxContext->vkDevice;
         vkMapMemory(vkDevice, stagingBufferMemory, 0, indexBufferSize, 0, &mappedData);
         memcpy(mappedData, indices, (size_t)indexBufferSize);
         vkUnmapMemory(vkDevice, stagingBufferMemory);
 
         // Copy from staging to device local buffer
-        copyVkBuffer(pGfxContext, stagingBuffer, pMesh->indexVkBuffer, indexBufferSize);
+        copyVkBuffer(pTknGfxContext, stagingBuffer, pTknMesh->indexVkBuffer, indexBufferSize);
 
         // Clean up staging buffer
-        destroyVkBuffer(pGfxContext, stagingBuffer, stagingBufferMemory);
+        destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
 
         // Update index type and count
-        pMesh->vkIndexType = vkIndexType;
-        pMesh->indexCount = indexCount;
+        pTknMesh->vkIndexType = vkIndexType;
+        pTknMesh->indexCount = indexCount;
     }
 }
 
-void saveMeshPtrToPlyFile(uint32_t vertexPropertyCount, const char **vertexPropertyNames, const char **vertexPropertyTypes, VertexInputLayout *pMeshVertexInputLayout, void *vertices, uint32_t vertexCount, VkIndexType vkIndexType, void *indices, uint32_t indexCount, const char *plyFilePath)
+void saveMeshPtrToPlyFile(uint32_t vertexPropertyCount, const char **vertexPropertyNames, const char **vertexPropertyTypes, TknVertexInputLayout *pTknMeshVertexInputLayout, void *vertices, uint32_t vertexCount, VkIndexType vkIndexType, void *indices, uint32_t indexCount, const char *plyFilePath)
 {
-    // Validate that the provided property names and types match the VertexInputLayout
+    // Validate that the provided property names and types match the TknVertexInputLayout
     uint32_t propertyIndex = 0;
-    for (uint32_t i = 0; i < pMeshVertexInputLayout->attributeCount; i++)
+    for (uint32_t i = 0; i < pTknMeshVertexInputLayout->attributeCount; i++)
     {
-        uint32_t expectedAttributeSize = pMeshVertexInputLayout->sizes[i];
+        uint32_t expectedAttributeSize = pTknMeshVertexInputLayout->sizes[i];
         uint32_t accumulatedPropertySize = 0;
         
         // Accumulate property sizes until we match the expected attribute size
@@ -562,7 +562,7 @@ void saveMeshPtrToPlyFile(uint32_t vertexPropertyCount, const char **vertexPrope
     // Write binary vertex data
     if (vertexCount > 0)
     {
-        size_t vertexDataSize = vertexCount * pMeshVertexInputLayout->stride;
+        size_t vertexDataSize = vertexCount * pTknMeshVertexInputLayout->stride;
         size_t bytesWritten = fwrite(vertices, 1, vertexDataSize, file);
         if (bytesWritten != vertexDataSize)
         {

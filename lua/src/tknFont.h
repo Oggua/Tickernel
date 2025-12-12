@@ -27,7 +27,7 @@ typedef struct TknFont
     TknChar **tknCharPtrs;
     uint32_t dirtyTknCharPtrCount;
     TknChar *pDirtyTknChar;
-    Image *pImage;
+    TknImage *pTknImage;
     uint32_t atlasLength;
     uint32_t penX, penY;
     uint32_t maxRowHeight;
@@ -42,10 +42,10 @@ typedef struct
 } TknFontLibrary;
 
 TknFontLibrary *createTknFontLibraryPtr();
-void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext);
+void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext);
 
 TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode);
-void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext);
+void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext);
 
-TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength);
-void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, GfxContext *pGfxContext);
+TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength);
+void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, TknGfxContext *pTknGfxContext);

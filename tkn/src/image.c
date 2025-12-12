@@ -1,22 +1,22 @@
 #include "gfxCore.h"
 
-Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize)
+TknImage *createImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize)
 {
-    Image *pImage = tknMalloc(sizeof(Image));
+    TknImage *pTknImage = tknMalloc(sizeof(TknImage));
     VkImage vkImage;
     VkImageView vkImageView;
     VkDeviceMemory vkDeviceMemory;
 
     // Create the Vulkan image
-    createVkImage(pGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, &vkImage, &vkDeviceMemory, &vkImageView);
+    createVkImage(pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, &vkImage, &vkDeviceMemory, &vkImageView);
 
-    Image image = {
+    TknImage image = {
         .vkImage = vkImage,
         .vkDeviceMemory = vkDeviceMemory,
         .vkImageView = vkImageView,
         .bindingPtrHashSet = tknCreateHashSet(sizeof(Binding *)),
     };
-    *pImage = image;
+    *pTknImage = image;
 
     // Handle image layout initialization based on usage
     if (data != NULL && dataSize > 0)
@@ -28,18 +28,18 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
         // Create staging buffer
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
-        createVkBuffer(pGfxContext, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        createVkBuffer(pTknGfxContext, dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        &stagingBuffer, &stagingBufferMemory);
 
         // Copy data to staging buffer
         void *mappedData;
-        vkMapMemory(pGfxContext->vkDevice, stagingBufferMemory, 0, dataSize, 0, &mappedData);
+        vkMapMemory(pTknGfxContext->vkDevice, stagingBufferMemory, 0, dataSize, 0, &mappedData);
         memcpy(mappedData, data, (size_t)dataSize);
-        vkUnmapMemory(pGfxContext->vkDevice, stagingBufferMemory);
+        vkUnmapMemory(pTknGfxContext->vkDevice, stagingBufferMemory);
 
         // Begin command buffer - all operations in one submission
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pGfxContext);
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pTknGfxContext);
 
         // Transition image layout for transfer (UNDEFINED -> TRANSFER_DST)
         VkImageMemoryBarrier barrier1 = {};
@@ -48,7 +48,7 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
         barrier1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier1.image = pImage->vkImage;
+        barrier1.image = pTknImage->vkImage;
         barrier1.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier1.subresourceRange.baseMipLevel = 0;
         barrier1.subresourceRange.levelCount = 1;
@@ -74,7 +74,7 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
         region.imageOffset = (VkOffset3D){0, 0, 0};
         region.imageExtent = (VkExtent3D){width, height, 1};
 
-        vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, pImage->vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, pTknImage->vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
         // Transition image layout for shader access (TRANSFER_DST -> SHADER_READ_ONLY)
         VkImageMemoryBarrier barrier2 = {};
@@ -83,7 +83,7 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
         barrier2.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier2.image = pImage->vkImage;
+        barrier2.image = pTknImage->vkImage;
         barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier2.subresourceRange.baseMipLevel = 0;
         barrier2.subresourceRange.levelCount = 1;
@@ -98,15 +98,15 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
                              0, 0, NULL, 0, NULL, 1, &barrier2);
 
         // Submit all commands once
-        endSingleTimeCommands(pGfxContext, commandBuffer);
+        endSingleTimeCommands(pTknGfxContext, commandBuffer);
 
         // Clean up staging buffer
-        destroyVkBuffer(pGfxContext, stagingBuffer, stagingBufferMemory);
+        destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
     }
     else
     {
         // Empty image - transition from UNDEFINED to SHADER_READ_ONLY for initial state
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pGfxContext);
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands(pTknGfxContext);
 
         VkImageMemoryBarrier barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -114,7 +114,7 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = pImage->vkImage;
+        barrier.image = pTknImage->vkImage;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
@@ -128,18 +128,18 @@ Image *createImagePtr(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat v
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                              0, 0, NULL, 0, NULL, 1, &barrier);
 
-        endSingleTimeCommands(pGfxContext, commandBuffer);
+        endSingleTimeCommands(pTknGfxContext, commandBuffer);
     }
-    return pImage;
+    return pTknImage;
 }
-void destroyImagePtr(GfxContext *pGfxContext, Image *pImage)
+void destroyImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage)
 {
-    clearBindingPtrHashSet(pGfxContext, pImage->bindingPtrHashSet);
-    tknDestroyHashSet(pImage->bindingPtrHashSet);
-    destroyVkImage(pGfxContext, pImage->vkImage, pImage->vkDeviceMemory, pImage->vkImageView);
-    tknFree(pImage);
+    clearBindingPtrHashSet(pTknGfxContext, pTknImage->bindingPtrHashSet);
+    tknDestroyHashSet(pTknImage->bindingPtrHashSet);
+    destroyVkImage(pTknGfxContext, pTknImage->vkImage, pTknImage->vkDeviceMemory, pTknImage->vkImageView);
+    tknFree(pTknImage);
 }
-void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void **datas, VkOffset3D *imageOffsets, VkExtent3D *imageExtents, VkDeviceSize *dataSizes)
+void updateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t count, void **datas, VkOffset3D *imageOffsets, VkExtent3D *imageExtents, VkDeviceSize *dataSizes)
 {
     // Calculate total staging buffer size
     VkDeviceSize totalSize = 0;
@@ -151,13 +151,13 @@ void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void
     // Create staging buffer
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    createVkBuffer(pGfxContext, totalSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    createVkBuffer(pTknGfxContext, totalSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                    &stagingBuffer, &stagingBufferMemory);
 
     // Copy all data to staging buffer
     void *mappedData;
-    vkMapMemory(pGfxContext->vkDevice, stagingBufferMemory, 0, totalSize, 0, &mappedData);
+    vkMapMemory(pTknGfxContext->vkDevice, stagingBufferMemory, 0, totalSize, 0, &mappedData);
     
     VkDeviceSize currentOffset = 0;
     for (uint32_t i = 0; i < count; i++)
@@ -166,10 +166,10 @@ void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void
         currentOffset += dataSizes[i];
     }
     
-    vkUnmapMemory(pGfxContext->vkDevice, stagingBufferMemory);
+    vkUnmapMemory(pTknGfxContext->vkDevice, stagingBufferMemory);
 
     // Begin command buffer - all operations in one submission
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands(pGfxContext);
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(pTknGfxContext);
 
     // Transition image layout for transfer (SHADER_READ_ONLY -> TRANSFER_DST)
     VkImageMemoryBarrier barrier1 = {};
@@ -178,7 +178,7 @@ void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void
     barrier1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier1.image = pImage->vkImage;
+    barrier1.image = pTknImage->vkImage;
     barrier1.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier1.subresourceRange.baseMipLevel = 0;
     barrier1.subresourceRange.levelCount = 1;
@@ -212,7 +212,7 @@ void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void
     }
 
     // Copy all regions in one command
-    vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, pImage->vkImage, 
+    vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, pTknImage->vkImage, 
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, count, regions);
 
     tknFree(regions);
@@ -224,7 +224,7 @@ void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void
     barrier2.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier2.image = pImage->vkImage;
+    barrier2.image = pTknImage->vkImage;
     barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier2.subresourceRange.baseMipLevel = 0;
     barrier2.subresourceRange.levelCount = 1;
@@ -239,8 +239,8 @@ void updateImagePtr(GfxContext *pGfxContext, Image *pImage, uint32_t count, void
                          0, 0, NULL, 0, NULL, 1, &barrier2);
 
     // Submit all commands once
-    endSingleTimeCommands(pGfxContext, commandBuffer);
+    endSingleTimeCommands(pTknGfxContext, commandBuffer);
 
     // Clean up staging buffer
-    destroyVkBuffer(pGfxContext, stagingBuffer, stagingBufferMemory);
+    destroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
 }

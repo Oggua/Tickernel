@@ -4,13 +4,13 @@
 #include "tknCore.h"
 #include <spirv_reflect.h>
 
-struct Sampler
+struct TknSampler
 {
     VkSampler vkSampler;
     TknHashSet bindingPtrHashSet;
 };
 
-struct Image
+struct TknImage
 {
     VkImage vkImage;
     VkDeviceMemory vkDeviceMemory;
@@ -18,7 +18,7 @@ struct Image
     TknHashSet bindingPtrHashSet;
 };
 
-struct UniformBuffer
+struct TknUniformBuffer
 {
     VkBuffer vkBuffer;
     VkDeviceMemory vkDeviceMemory;
@@ -105,7 +105,7 @@ typedef enum
     ATTACHMENT_TYPE_FIXED,
     ATTACHMENT_TYPE_SWAPCHAIN,
 } AttachmentType;
-struct Attachment
+struct TknAttachment
 {
     AttachmentType attachmentType;
     AttachmentUnion attachmentUnion;
@@ -115,20 +115,20 @@ struct Attachment
 
 typedef struct
 {
-    Attachment *pAttachment;
+    TknAttachment *pTknAttachment;
     VkImageLayout vkImageLayout;
 } InputAttachmentBinding;
 
 typedef union
 {
-    SamplerBinding samplerBinding;
-    CombinedImageSamplerBinding combinedImageSamplerBinding;
+    TknSamplerBinding tknSamplerBinding;
+    TknCombinedImageSamplerBinding tknCombinedImageSamplerBinding;
     // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE = 2,
     // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE = 3,
     // VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER = 4,
     // VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER = 5,
     // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER = 6,
-    UniformBufferBinding uniformBufferBinding;
+    TknUniformBufferBinding tknUniformBufferBinding;
     // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER = 7,
     // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC = 8,
     // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC = 9,
@@ -140,7 +140,7 @@ typedef struct
 {
     VkDescriptorType vkDescriptorType;
     BindingUnion bindingUnion;
-    Material *pMaterial;
+    TknMaterial *pTknMaterial;
     uint32_t binding;
 } Binding;
 
@@ -160,7 +160,7 @@ typedef enum
     MAX_VERTEX_BINDING_DESCRIPTION
 } VertexBindingDescription;
 
-struct VertexInputLayout
+struct TknVertexInputLayout
 {
     uint32_t attributeCount;
     const char **names;
@@ -170,9 +170,9 @@ struct VertexInputLayout
     TknHashSet referencePtrHashSet;
 };
 
-struct Instance
+struct TknInstance
 {
-    VertexInputLayout *pVertexInputLayout;
+    TknVertexInputLayout *pTknVertexInputLayout;
     VkBuffer instanceVkBuffer;
     VkDeviceMemory instanceVkDeviceMemory;
     void *instanceMappedBuffer;
@@ -181,9 +181,9 @@ struct Instance
     TknHashSet drawCallPtrHashSet;
 };
 
-struct Mesh
+struct TknMesh
 {
-    VertexInputLayout *pVertexInputLayout;
+    TknVertexInputLayout *pTknVertexInputLayout;
     VkBuffer vertexVkBuffer;
     VkDeviceMemory vertexVkDeviceMemory;
     uint32_t vertexCount;
@@ -195,7 +195,7 @@ struct Mesh
     TknHashSet drawCallPtrHashSet;
 };
 
-struct Material
+struct TknMaterial
 {
     VkDescriptorSet vkDescriptorSet;
     uint32_t bindingCount;
@@ -205,12 +205,12 @@ struct Material
     TknHashSet drawCallPtrHashSet;
 };
 
-struct DrawCall
+struct TknDrawCall
 {
-    Pipeline *pPipeline;
-    Material *pMaterial;
-    Instance *pInstance;
-    Mesh *pMesh;
+    TknPipeline *pTknPipeline;
+    TknMaterial *pTknMaterial;
+    TknInstance *pTknInstance;
+    TknMesh *pTknMesh;
 };
 
 typedef enum
@@ -221,16 +221,16 @@ typedef enum
     TKN_MAX_DESCRIPTOR_SET,
 } TickernelDescriptorSet;
 
-struct Pipeline
+struct TknPipeline
 {
     VkPipeline vkPipeline;
     DescriptorSet *pPipelineDescriptorSet;
     VkPipelineLayout vkPipelineLayout;
-    RenderPass *pRenderPass;
+    TknRenderPass *pTknRenderPass;
     uint32_t subpassIndex;
 
-    VertexInputLayout *pMeshVertexInputLayout;
-    VertexInputLayout *pInstanceVertexInputLayout;
+    TknVertexInputLayout *pTknMeshVertexInputLayout;
+    TknVertexInputLayout *pTknInstanceVertexInputLayout;
     TknHashSet drawCallPtrHashSet;  // Only track which drawcalls belong to this pipeline
 };
 
@@ -241,11 +241,11 @@ struct Subpass
     TknDynamicArray drawCallPtrDynamicArray;  // Shared drawcall queue for all pipelines in this subpass
 };
 
-struct RenderPass
+struct TknRenderPass
 {
     VkRenderPass vkRenderPass;
     uint32_t attachmentCount;
-    Attachment **attachmentPtrs;
+    TknAttachment **attachmentPtrs;
     VkClearValue *vkClearValues;
     uint32_t vkFramebufferCount;
     VkFramebuffer *vkFramebuffers;
@@ -254,7 +254,7 @@ struct RenderPass
     struct Subpass *subpasses;
 };
 
-struct GfxContext
+struct TknGfxContext
 {
     uint32_t frameCount;
     VkInstance vkInstance;
@@ -272,7 +272,7 @@ struct GfxContext
     VkQueue vkPresentQueue;
 
     VkSurfaceCapabilitiesKHR vkSurfaceCapabilities;
-    Attachment *pSwapchainAttachment;
+    TknAttachment *pSwapchainAttachment;
 
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderFinishedSemaphore;
@@ -289,9 +289,9 @@ struct GfxContext
     TknHashSet vertexInputLayoutPtrHashSet;
 
     // Empty resources for empty bindings
-    UniformBuffer *pEmptyUniformBuffer;
-    Sampler *pEmptySampler;
-    Image *pEmptyImage;
+    TknUniformBuffer *pEmptyUniformBuffer;
+    TknSampler *pEmptySampler;
+    TknImage *pEmptyImage;
 };
 
 void assertVkResult(VkResult vkResult);
@@ -299,28 +299,28 @@ void assertVkResult(VkResult vkResult);
 SpvReflectShaderModule createSpvReflectShaderModule(const char *filePath);
 void destroySpvReflectShaderModule(SpvReflectShaderModule *pSpvReflectShaderModule);
 
-void createVkBuffer(GfxContext *pGfxContext, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkBuffer *pVkBuffer, VkDeviceMemory *pVkDeviceMemory);
-void destroyVkBuffer(GfxContext *pGfxContext, VkBuffer vkBuffer, VkDeviceMemory vkDeviceMemory);
+void createVkBuffer(TknGfxContext *pTknGfxContext, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkBuffer *pVkBuffer, VkDeviceMemory *pVkDeviceMemory);
+void destroyVkBuffer(TknGfxContext *pTknGfxContext, VkBuffer vkBuffer, VkDeviceMemory vkDeviceMemory);
 
-DescriptorSet *createDescriptorSetPtr(GfxContext *pGfxContext, uint32_t spvReflectShaderModuleCount, SpvReflectShaderModule *spvReflectShaderModules, uint32_t set);
-void destroyDescriptorSetPtr(GfxContext *pGfxContext, DescriptorSet *pDescriptorSet);
+DescriptorSet *createDescriptorSetPtr(TknGfxContext *pTknGfxContext, uint32_t spvReflectShaderModuleCount, SpvReflectShaderModule *spvReflectShaderModules, uint32_t set);
+void destroyDescriptorSetPtr(TknGfxContext *pTknGfxContext, DescriptorSet *pDescriptorSet);
 
-void populateFramebuffers(GfxContext *pGfxContext, RenderPass *pRenderPass);
-void cleanupFramebuffers(GfxContext *pGfxContext, RenderPass *pRenderPass);
-void repopulateFramebuffers(GfxContext *pGfxContext, RenderPass *pRenderPass);
+void populateFramebuffers(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass);
+void cleanupFramebuffers(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass);
+void repopulateFramebuffers(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass);
 
-Material *createMaterialPtr(GfxContext *pGfxContext, DescriptorSet *pDescriptorSet);
-void destroyMaterialPtr(GfxContext *pGfxContext, Material *pMaterial);
+TknMaterial *createMaterialPtr(TknGfxContext *pTknGfxContext, DescriptorSet *pDescriptorSet);
+void destroyMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial);
 
-void resizeDynamicAttachmentPtr(GfxContext *pGfxContext, Attachment *pAttachment);
-void bindAttachmentsToMaterialPtr(GfxContext *pGfxContext, Material *pMaterial);
-void unbindAttachmentsFromMaterialPtr(GfxContext *pGfxContext, Material *pMaterial);
-void updateAttachmentOfMaterialPtr(GfxContext *pGfxContext, Binding *pBinding);
-InputBindingUnion getEmptyInputBindingUnion(GfxContext *pGfxContext, VkDescriptorType vkDescriptorType);
-void clearBindingPtrHashSet(GfxContext *pGfxContext, TknHashSet bindingPtrHashSet);
+void resizeDynamicAttachmentPtr(TknGfxContext *pTknGfxContext, TknAttachment *pTknAttachment);
+void bindAttachmentsToMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial);
+void unbindAttachmentsFromMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial);
+void updateAttachmentOfMaterialPtr(TknGfxContext *pTknGfxContext, Binding *pBinding);
+TknInputBindingUnion getEmptyInputBindingUnion(TknGfxContext *pTknGfxContext, VkDescriptorType vkDescriptorType);
+void clearBindingPtrHashSet(TknGfxContext *pTknGfxContext, TknHashSet bindingPtrHashSet);
 
-void createVkImage(GfxContext *pGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, VkImage *pVkImage, VkDeviceMemory *pVkDeviceMemory, VkImageView *pVkImageView);
-void destroyVkImage(GfxContext *pGfxContext, VkImage vkImage, VkDeviceMemory vkDeviceMemory, VkImageView vkImageView);
+void createVkImage(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, VkImage *pVkImage, VkDeviceMemory *pVkDeviceMemory, VkImageView *pVkImageView);
+void destroyVkImage(TknGfxContext *pTknGfxContext, VkImage vkImage, VkDeviceMemory vkDeviceMemory, VkImageView vkImageView);
 
-VkCommandBuffer beginSingleTimeCommands(GfxContext *pGfxContext);
-void endSingleTimeCommands(GfxContext *pGfxContext, VkCommandBuffer vkCommandBuffer);
+VkCommandBuffer beginSingleTimeCommands(TknGfxContext *pTknGfxContext);
+void endSingleTimeCommands(TknGfxContext *pTknGfxContext, VkCommandBuffer vkCommandBuffer);

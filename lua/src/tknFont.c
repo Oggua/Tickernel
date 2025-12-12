@@ -73,7 +73,7 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
     return pNewChar;
 }
 
-void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext)
+void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext)
 {
     if (pTknFont->dirtyTknCharPtrCount == 0)
     {
@@ -136,7 +136,7 @@ void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext)
         pCurrent = pCurrent->pNextDirty;
     }
 
-    updateImagePtr(pGfxContext, pTknFont->pImage, 
+    updateImagePtr(pTknGfxContext, pTknFont->pTknImage, 
                    validCharCount, 
                    datas, offsets, extents, sizes);
 
@@ -165,7 +165,7 @@ void flushTknFontPtr(TknFont *pTknFont, GfxContext *pGfxContext)
     tknFree(sizes);
 }
 
-TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength)
+TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength)
 {
     TknFont *pTknFont = tknMalloc(sizeof(TknFont));
 
@@ -184,7 +184,7 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxConte
     unsigned char *pZeroBuffer = tknMalloc(atlasSize);
     memset(pZeroBuffer, 0, atlasSize);
     
-    pTknFont->pImage = createImagePtr(pGfxContext, (VkExtent3D){atlasLength, atlasLength, 1},
+    pTknFont->pTknImage = createImagePtr(pTknGfxContext, (VkExtent3D){atlasLength, atlasLength, 1},
                                       VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                       VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -210,7 +210,7 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxConte
     return pTknFont;
 }
 
-void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, GfxContext *pGfxContext)
+void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, TknGfxContext *pTknGfxContext)
 {
     // Remove from library's linked list
     if (pTknFontLibrary->pTknFont == pTknFont)
@@ -249,7 +249,7 @@ void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, GfxCo
 
     FT_Done_Face(pTknFont->ftFace);
     tknFree(pTknFont->tknCharPtrs);
-    destroyImagePtr(pGfxContext, pTknFont->pImage);
+    destroyImagePtr(pTknGfxContext, pTknFont->pTknImage);
     tknFree(pTknFont);
 }
 
@@ -264,11 +264,11 @@ TknFontLibrary *createTknFontLibraryPtr()
     return pLibrary;
 }
 
-void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, GfxContext *pGfxContext)
+void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext)
 {
     while (pTknFontLibrary->pTknFont)
     {
-        destroyTknFontPtr(pTknFontLibrary, pTknFontLibrary->pTknFont, pGfxContext);
+        destroyTknFontPtr(pTknFontLibrary, pTknFontLibrary->pTknFont, pTknGfxContext);
     }
     FT_Done_FreeType(pTknFontLibrary->ftLibrary);
     tknFree(pTknFontLibrary);
