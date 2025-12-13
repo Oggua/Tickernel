@@ -89,16 +89,16 @@ void tknDestroyVertexInputLayoutPtr(TknGfxContext *pTknGfxContext, TknVertexInpu
 TknRenderPass *tknCreateRenderPassPtr(TknGfxContext *pTknGfxContext, uint32_t tknAttachmentCount, VkAttachmentDescription *vkAttachmentDescriptions, TknAttachment **inputAttachmentPtrs, VkClearValue *vkClearValues, uint32_t tknSubpassCount, VkSubpassDescription *vkSubpassDescriptions, uint32_t *spvPathCounts, const char ***spvPathsArray, uint32_t vkSubpassDependencyCount, VkSubpassDependency *vkSubpassDependencies, uint32_t renderPassIndex);
 void tknDestroyRenderPassPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass);
 
-TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex, uint32_t spvPathCount, const char **spvPaths, TknVertexInputLayout *pTknMeshVertexInputLayout, TknVertexInputLayout *pTknInstanceVertexInputLayout, VkPipelineInputAssemblyStateCreateInfo vkPipelineInputAssemblyStateCreateInfo, VkPipelineViewportStateCreateInfo vkPipelineViewportStateCreateInfo, VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo, VkPipelineMultisampleStateCreateInfo vkPipelineMultisampleStateCreateInfo, VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo, VkPipelineColorBlendStateCreateInfo vkPipelineColorBlendStateCreateInfo, VkPipelineDynamicStateCreateInfo vkPipelineDynamicStateCreateInfo);
+TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t spvPathCount, const char **spvPaths, TknVertexInputLayout *pTknMeshVertexInputLayout, TknVertexInputLayout *pTknInstanceVertexInputLayout, VkPipelineInputAssemblyStateCreateInfo vkPipelineInputAssemblyStateCreateInfo, VkPipelineViewportStateCreateInfo vkPipelineViewportStateCreateInfo, VkPipelineRasterizationStateCreateInfo vkPipelineRasterizationStateCreateInfo, VkPipelineMultisampleStateCreateInfo vkPipelineMultisampleStateCreateInfo, VkPipelineDepthStencilStateCreateInfo vkPipelineDepthStencilStateCreateInfo, VkPipelineColorBlendStateCreateInfo vkPipelineColorBlendStateCreateInfo, VkPipelineDynamicStateCreateInfo vkPipelineDynamicStateCreateInfo);
 void tknDestroyPipelinePtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline);
 
 TknDrawCall *tknCreateDrawCallPtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline, TknMaterial *pTknMaterial, TknMesh *pTknMesh, TknInstance *pTknInstance);
 void tknDestroyDrawCallPtr(TknGfxContext *pTknGfxContext, TknDrawCall *pTknDrawCall);
 void tknInsertDrawCallPtr(TknDrawCall *pTknDrawCall, uint32_t index);
 void tknRemoveDrawCallPtr(TknDrawCall *pTknDrawCall);
-void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex, uint32_t index);
-TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex, uint32_t index);
-uint32_t tknGetDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex);
+void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index);
+TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index);
+uint32_t tknGetDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t subpassIndex);
 
 TknImage *tknCreateImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize);
 void tknDestroyImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage);
@@ -122,7 +122,7 @@ void tknUpdateInstancePtr(TknGfxContext *pTknGfxContext, TknInstance *pTknInstan
 void tknDestroyInstancePtr(TknGfxContext *pTknGfxContext, TknInstance *pTknInstance);
 
 TknMaterial *tknGetGlobalMaterialPtr(TknGfxContext *pTknGfxContext);
-TknMaterial *tknGetSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex);
+TknMaterial *tknGetSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t subpassIndex);
 TknMaterial *tknCreatePipelineMaterialPtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline);
 void tknDestroyPipelineMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial);
 void tknUpdateMaterialPtr(TknGfxContext *pTknGfxContext, TknMaterial *pTknMaterial, uint32_t inputBindingCount, TknInputBinding *tknInputBindings);

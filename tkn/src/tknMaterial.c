@@ -400,13 +400,13 @@ TknMaterial *tknGetGlobalMaterialPtr(TknGfxContext *pTknGfxContext)
     tknError("Failed to find global material");
     return NULL;
 }
-TknMaterial *tknGetSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex)
+TknMaterial *tknGetSubpassMaterialPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass, uint32_t subpassIndex)
 {
     tknAssert(pTknRenderPass != NULL, "Render pass is NULL");
-    tknAssert(tknSubpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index is out of bounds");
-    tknAssert(pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet != NULL, "Subpass descriptor set is NULL");
-    tknAssert(pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet->tknMaterialPtrHashSet.count == 1, "TknMaterial pointer hashset count is not 1");
-    TknHashSet tknMaterialPtrHashSet = pTknRenderPass->pTknSubpasses[tknSubpassIndex].pTknSubpassDescriptorSet->tknMaterialPtrHashSet;
+    tknAssert(subpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index is out of bounds");
+    tknAssert(pTknRenderPass->pTknSubpasses[subpassIndex].pTknSubpassDescriptorSet != NULL, "Subpass descriptor set is NULL");
+    tknAssert(pTknRenderPass->pTknSubpasses[subpassIndex].pTknSubpassDescriptorSet->tknMaterialPtrHashSet.count == 1, "TknMaterial pointer hashset count is not 1");
+    TknHashSet tknMaterialPtrHashSet = pTknRenderPass->pTknSubpasses[subpassIndex].pTknSubpassDescriptorSet->tknMaterialPtrHashSet;
     for (uint32_t nodeIndex = 0; nodeIndex < tknMaterialPtrHashSet.capacity; nodeIndex++)
     {
         TknListNode *node = tknMaterialPtrHashSet.nodePtrs[nodeIndex];

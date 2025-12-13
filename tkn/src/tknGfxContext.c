@@ -584,14 +584,14 @@ static void recordCommandBuffer(TknGfxContext *pTknGfxContext, uint32_t swapchai
             .extent = pTknRenderPass->tknRenderArea.extent,
         };
         vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
-        for (uint32_t tknSubpassIndex = 0; tknSubpassIndex < pTknRenderPass->tknSubpassCount; tknSubpassIndex++)
+        for (uint32_t subpassIndex = 0; subpassIndex < pTknRenderPass->tknSubpassCount; subpassIndex++)
         {
-            if (tknSubpassIndex > 0)
+            if (subpassIndex > 0)
             {
                 vkCmdNextSubpass(vkCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
             }
-            struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[tknSubpassIndex];
-            TknMaterial *pSubpassMaterial = tknGetSubpassMaterialPtr(pTknGfxContext, pTknRenderPass, tknSubpassIndex);
+            struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[subpassIndex];
+            TknMaterial *pSubpassMaterial = tknGetSubpassMaterialPtr(pTknGfxContext, pTknRenderPass, subpassIndex);
             TknPipeline *pCurrentPipeline = NULL;
             // Iterate all drawcalls in subpass order, switching pipelines as needed
             for (uint32_t drawCallIndex = 0; drawCallIndex < pTknSubpass->tknDrawCallPtrDynamicArray.count; drawCallIndex++)

@@ -227,7 +227,7 @@ struct TknPipeline
     TknDescriptorSet *pTknPipelineDescriptorSet;
     VkPipelineLayout vkPipelineLayout;
     TknRenderPass *pTknRenderPass;
-    uint32_t tknSubpassIndex;
+    uint32_t subpassIndex;
 
     TknVertexInputLayout *pTknMeshVertexInputLayout;
     TknVertexInputLayout *pTknInstanceVertexInputLayout;

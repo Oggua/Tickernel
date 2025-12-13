@@ -53,7 +53,7 @@ void tknDestroyDrawCallPtr(TknGfxContext *pTknGfxContext, TknDrawCall *pTknDrawC
     if (pTknDrawCall->pTknPipeline != NULL)
     {
         TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
-        struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->tknSubpassIndex];
+        struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->subpassIndex];
         tknRemoveFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, &pTknDrawCall);
         tknRemoveFromHashSet(&pTknDrawCall->pTknPipeline->tknDrawCallPtrHashSet, &pTknDrawCall);
     }
@@ -71,7 +71,7 @@ void tknInsertDrawCallPtr(TknDrawCall *pTknDrawCall, uint32_t index)
 {
     tknAssert(pTknDrawCall->pTknPipeline != NULL, "TknDrawCall must be associated with a TknPipeline");
     TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
-    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->tknSubpassIndex];
+    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->subpassIndex];
     tknInsertIntoDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, &pTknDrawCall, index);
 }
 
@@ -79,15 +79,15 @@ void tknRemoveDrawCallPtr(TknDrawCall *pTknDrawCall)
 {
     tknAssert(pTknDrawCall->pTknPipeline != NULL, "TknDrawCall must be associated with a TknPipeline");
     TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
-    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->tknSubpassIndex];
+    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->subpassIndex];
     tknRemoveFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, &pTknDrawCall);
     // Keep pipeline reference for hashset relationship tracking
 }
 
-void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex, uint32_t index)
+void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    tknAssert(tknSubpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", tknSubpassIndex);
-    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[tknSubpassIndex];
+    tknAssert(subpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[subpassIndex];
     if (index >= pTknSubpass->tknDrawCallPtrDynamicArray.count)
     {
         return;
@@ -96,10 +96,10 @@ void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t tknSubpass
     tknDestroyDrawCallPtr(NULL, pTknDrawCall);
 }
 
-TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex, uint32_t index)
+TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    tknAssert(tknSubpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", tknSubpassIndex);
-    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[tknSubpassIndex];
+    tknAssert(subpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[subpassIndex];
     if (index >= pTknSubpass->tknDrawCallPtrDynamicArray.count)
     {
         return NULL;
@@ -107,9 +107,9 @@ TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t tknSu
     return *(TknDrawCall **)tknGetFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, index);
 }
 
-uint32_t tknGetDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t tknSubpassIndex)
+uint32_t tknGetDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t subpassIndex)
 {
-    tknAssert(tknSubpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", tknSubpassIndex);
-    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[tknSubpassIndex];
+    tknAssert(subpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", subpassIndex);
+    struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[subpassIndex];
     return pTknSubpass->tknDrawCallPtrDynamicArray.count;
 }
