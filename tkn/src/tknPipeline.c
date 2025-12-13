@@ -151,8 +151,8 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                 // Always create vertex binding if mesh layout exists
                 if (pTknMeshVertexInputLayout != NULL)
                 {
-                    vkVertexInputBindingDescriptions[VERTEX_BINDING_DESCRIPTION] = (VkVertexInputBindingDescription){
-                        .binding = VERTEX_BINDING_DESCRIPTION,
+                    vkVertexInputBindingDescriptions[TKN_VERTEX_BINDING_DESCRIPTION] = (VkVertexInputBindingDescription){
+                        .binding = TKN_VERTEX_BINDING_DESCRIPTION,
                         .stride = pTknMeshVertexInputLayout->stride,
                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
                     };
@@ -161,8 +161,8 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                 // Only create instance binding if instance layout exists
                 if (pTknInstanceVertexInputLayout != NULL)
                 {
-                    vkVertexInputBindingDescriptions[INSTANCE_BINDING_DESCRIPTION] = (VkVertexInputBindingDescription){
-                        .binding = INSTANCE_BINDING_DESCRIPTION,
+                    vkVertexInputBindingDescriptions[TKN_INSTANCE_BINDING_DESCRIPTION] = (VkVertexInputBindingDescription){
+                        .binding = TKN_INSTANCE_BINDING_DESCRIPTION,
                         .stride = pTknInstanceVertexInputLayout->stride,
                         .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
                     };
@@ -182,7 +182,7 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                         {
                             if (0 == strcmp(pSpvReflectInterfaceVariable->name, pTknMeshVertexInputLayout->names[attributeIndex]))
                             {
-                                updateVkVertexInputAttributeDescriptions(*pTknMeshVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, VERTEX_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
+                                updateVkVertexInputAttributeDescriptions(*pTknMeshVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, TKN_VERTEX_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
                                 found = true;
                                 break;
                             }
@@ -196,7 +196,7 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                         {
                             if (0 == strcmp(pSpvReflectInterfaceVariable->name, pTknInstanceVertexInputLayout->names[attributeIndex]))
                             {
-                                updateVkVertexInputAttributeDescriptions(*pTknInstanceVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, INSTANCE_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
+                                updateVkVertexInputAttributeDescriptions(*pTknInstanceVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, TKN_INSTANCE_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
                                 found = true;
                                 break;
                             }
