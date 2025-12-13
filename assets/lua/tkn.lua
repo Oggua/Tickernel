@@ -77,9 +77,9 @@ function tkn.tknCreateImagePtrWithPath(tknContext, path)
                 height = height,
                 depth = 1,
             }
-            local pImage = tkn.tknCreateImagePtr(tknContext, vkExtent3D, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TEXTURE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, data)
+            local pTknImage = tkn.tknCreateImagePtr(tknContext, vkExtent3D, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TEXTURE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, data)
             tkn.tknDestroyASTCImage(pASTC)
-            return pImage, width, height
+            return pTknImage, width, height
         else
             print("Failed to create ASTC image from file: " .. path)
             return nil
@@ -91,7 +91,7 @@ function tkn.tknCreateImagePtrWithPath(tknContext, path)
 end
 
 -- Creates a mesh with default zero-initialized vertex and index data
-function tkn.tknCreateDefaultMeshPtr(pGfxContext, format, pMeshVertexInputLayout, vertexCount, indexType, indexCount)
+function tkn.tknCreateDefaultMeshPtr(pTknGfxContext, format, pTknMeshVertexInputLayout, vertexCount, indexType, indexCount)
     local vertices = {}
     local indices = {}
 
@@ -109,198 +109,198 @@ function tkn.tknCreateDefaultMeshPtr(pGfxContext, format, pMeshVertexInputLayout
         table.insert(indices, 0)
     end
 
-    return tkn.tknCreateMeshPtrWithData(pGfxContext, pMeshVertexInputLayout, format, vertices, indexType, indices)
+    return tkn.tknCreateMeshPtrWithData(pTknGfxContext, pTknMeshVertexInputLayout, format, vertices, indexType, indices)
 end
 
 -- Function declarations for IDE support (only used if C binding not available)
 if not tkn.tknGetSupportedFormat then
-    function tkn.tknGetSupportedFormat(pGfxContext, candidates, tiling, features)
+    function tkn.tknGetSupportedFormat(pTknGfxContext, candidates, tiling, features)
         error("tkn.tknGetSupportedFormat: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateDynamicAttachmentPtr then
-    function tkn.tknCreateDynamicAttachmentPtr(pGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, scaler)
+    function tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, scaler)
         error("tkn.tknCreateDynamicAttachmentPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyDynamicAttachmentPtr then
-    function tkn.tknDestroyDynamicAttachmentPtr(pGfxContext, pAttachment)
+    function tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, pAttachment)
         error("tkn.tknDestroyDynamicAttachmentPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknGetSwapchainAttachmentPtr then
-    function tkn.tknGetSwapchainAttachmentPtr(pGfxContext)
+    function tkn.tknGetSwapchainAttachmentPtr(pTknGfxContext)
         error("tkn.tknGetSwapchainAttachmentPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateVertexInputLayoutPtr then
-    function tkn.tknCreateVertexInputLayoutPtr(pGfxContext, format)
+    function tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, format)
         error("tkn.tknCreateVertexInputLayoutPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyVertexInputLayoutPtr then
-    function tkn.tknDestroyVertexInputLayoutPtr(pGfxContext, pLayout)
+    function tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, pLayout)
         error("tkn.tknDestroyVertexInputLayoutPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateRenderPassPtr then
-    function tkn.tknCreateRenderPassPtr(pGfxContext, vkAttachmentDescriptions, inputAttachmentPtrs, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
+    function tkn.tknCreateRenderPassPtr(pTknGfxContext, vkAttachmentDescriptions, inputAttachmentPtrs, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
         error("tkn.tknCreateRenderPassPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyRenderPassPtr then
-    function tkn.tknDestroyRenderPassPtr(pGfxContext, pRenderPass)
+    function tkn.tknDestroyRenderPassPtr(pTknGfxContext, pTknRenderPass)
         error("tkn.tknDestroyRenderPassPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreatePipelinePtr then
-    function tkn.tknCreatePipelinePtr(pGfxContext, pRenderPass, subpassIndex, spvPaths, pMeshVertexInputLayout, pInstanceVertexInputLayout, vkPipelineInputAssemblyStateCreateInfo, vkPipelineViewportStateCreateInfo, vkPipelineRasterizationStateCreateInfo, vkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, vkPipelineDynamicStateCreateInfo)
+    function tkn.tknCreatePipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, spvPaths, pTknMeshVertexInputLayout, pInstanceVertexInputLayout, vkPipelineInputAssemblyStateCreateInfo, vkPipelineViewportStateCreateInfo, vkPipelineRasterizationStateCreateInfo, vkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, vkPipelineDynamicStateCreateInfo)
         error("tkn.tknCreatePipelinePtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyPipelinePtr then
-    function tkn.tknDestroyPipelinePtr(pGfxContext, pPipeline)
+    function tkn.tknDestroyPipelinePtr(pTknGfxContext, pTknPipeline)
         error("tkn.tknDestroyPipelinePtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateDrawCallPtr then
-    function tkn.tknCreateDrawCallPtr(pGfxContext, pMaterial, pMesh, pInstance)
+    function tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknMaterial, pTknMesh, pTknInstance)
         error("tkn.tknCreateDrawCallPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyDrawCallPtr then
-    function tkn.tknDestroyDrawCallPtr(pGfxContext, pDrawCall)
+    function tkn.tknDestroyDrawCallPtr(pTknGfxContext, pTknDrawCall)
         error("tkn.tknDestroyDrawCallPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknInsertDrawCallPtr then
-    function tkn.tknInsertDrawCallPtr(pDrawCall, index)
+    function tkn.tknInsertDrawCallPtr(pTknDrawCall, index)
         error("tkn.tknInsertDrawCallPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknRemoveDrawCallPtr then
-    function tkn.tknRemoveDrawCallPtr(pDrawCall)
+    function tkn.tknRemoveDrawCallPtr(pTknDrawCall)
         error("tkn.tknRemoveDrawCallPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknRemoveDrawCallAtIndex then
-    function tkn.tknRemoveDrawCallAtIndex(pRenderPass, subpassIndex, index)
+    function tkn.tknRemoveDrawCallAtIndex(pTknRenderPass, subpassIndex, index)
         error("tkn.tknRemoveDrawCallAtIndex: C binding not loaded")
     end
 end
 
 if not tkn.tknGetDrawCallAtIndex then
-    function tkn.tknGetDrawCallAtIndex(pRenderPass, subpassIndex, index)
+    function tkn.tknGetDrawCallAtIndex(pTknRenderPass, subpassIndex, index)
         error("tkn.tknGetDrawCallAtIndex: C binding not loaded")
     end
 end
 
 if not tkn.tknGetDrawCallCount then
-    function tkn.tknGetDrawCallCount(pRenderPass, subpassIndex)
+    function tkn.tknGetDrawCallCount(pTknRenderPass, subpassIndex)
         error("tkn.tknGetDrawCallCount: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateUniformBufferPtr then
-    function tkn.tknCreateUniformBufferPtr(pGfxContext, format, buffer)
+    function tkn.tknCreateUniformBufferPtr(pTknGfxContext, format, buffer)
         error("tkn.tknCreateUniformBufferPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyUniformBufferPtr then
-    function tkn.tknDestroyUniformBufferPtr(pGfxContext, pUniformBuffer)
+    function tkn.tknDestroyUniformBufferPtr(pTknGfxContext, pTknUniformBuffer)
         error("tkn.tknDestroyUniformBufferPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknUpdateUniformBufferPtr then
-    function tkn.tknUpdateUniformBufferPtr(pGfxContext, pUniformBuffer, format, buffer, size)
+    function tkn.tknUpdateUniformBufferPtr(pTknGfxContext, pTknUniformBuffer, format, buffer, size)
         error("tkn.tknUpdateUniformBufferPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateInstancePtr then
-    function tkn.tknCreateInstancePtr(pGfxContext, pVertexInputLayout, format, instances)
+    function tkn.tknCreateInstancePtr(pTknGfxContext, pTknVertexInputLayout, format, instances)
         error("tkn.tknCreateInstancePtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyInstancePtr then
-    function tkn.tknDestroyInstancePtr(pGfxContext, pInstance)
+    function tkn.tknDestroyInstancePtr(pTknGfxContext, pTknInstance)
         error("tkn.tknDestroyInstancePtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateMeshPtrWithData then
-    function tkn.tknCreateMeshPtrWithData(pGfxContext, pMeshVertexInputLayout, format, vertices, indexType, indices)
+    function tkn.tknCreateMeshPtrWithData(pTknGfxContext, pTknMeshVertexInputLayout, format, vertices, indexType, indices)
         error("tkn.tknCreateMeshPtrWithData: C binding not loaded")
     end
 end
 
 if not tkn.tknUpdateMeshPtr then
-    function tkn.tknUpdateMeshPtr(pGfxContext, pMesh, format, vertices, indexType, indices)
+    function tkn.tknUpdateMeshPtr(pTknGfxContext, pTknMesh, format, vertices, indexType, indices)
         error("tkn.tknUpdateMeshPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyMeshPtr then
-    function tkn.tknDestroyMeshPtr(pGfxContext, pMesh)
+    function tkn.tknDestroyMeshPtr(pTknGfxContext, pTknMesh)
         error("tkn.tknDestroyMeshPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknGetGlobalMaterialPtr then
-    function tkn.tknGetGlobalMaterialPtr(pGfxContext)
+    function tkn.tknGetGlobalMaterialPtr(pTknGfxContext)
         error("tkn.tknGetGlobalMaterialPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknGetSubpassMaterialPtr then
-    function tkn.tknGetSubpassMaterialPtr(pGfxContext, pRenderPass, subpassIndex)
+    function tkn.tknGetSubpassMaterialPtr(pTknGfxContext, pTknRenderPass, subpassIndex)
         error("tkn.tknGetSubpassMaterialPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreatePipelineMaterialPtr then
-    function tkn.tknCreatePipelineMaterialPtr(pGfxContext, pPipeline)
+    function tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
         error("tkn.tknCreatePipelineMaterialPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyPipelineMaterialPtr then
-    function tkn.tknDestroyPipelineMaterialPtr(pGfxContext, pMaterial)
+    function tkn.tknDestroyPipelineMaterialPtr(pTknGfxContext, pTknMaterial)
         error("tkn.tknDestroyPipelineMaterialPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknUpdateMaterialPtr then
-    function tkn.tknUpdateMaterialPtr(pGfxContext, pMaterial, inputBindings)
+    function tkn.tknUpdateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindings)
         error("tkn.tknUpdateMaterialPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknCreateImagePtr then
-    function tkn.tknCreateImagePtr(pGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, data)
+    function tkn.tknCreateImagePtr(pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling, vkImageUsageFlags, vkMemoryPropertyFlags, vkImageAspectFlags, data)
         error("tkn.tknCreateImagePtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroyImagePtr then
-    function tkn.tknDestroyImagePtr(pGfxContext, pImage)
+    function tkn.tknDestroyImagePtr(pTknGfxContext, pTknImage)
         error("tkn.tknDestroyImagePtr: C binding not loaded")
     end
 end
@@ -319,13 +319,13 @@ end
 
 -- Sampler creation convenience functions
 if not tkn.tknCreateSamplerPtr then
-    function tkn.tknCreateSamplerPtr(pGfxContext, magFilter, minFilter, mipmapMode, addressModeU, addressModeV, addressModeW, mipLodBias, anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor)
+    function tkn.tknCreateSamplerPtr(pTknGfxContext, magFilter, minFilter, mipmapMode, addressModeU, addressModeV, addressModeW, mipLodBias, anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor)
         error("tkn.tknCreateSamplerPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknDestroySamplerPtr then
-    function tkn.tknDestroySamplerPtr(pGfxContext, pSampler)
+    function tkn.tknDestroySamplerPtr(pTknGfxContext, pTknSampler)
         error("tkn.tknDestroySamplerPtr: C binding not loaded")
     end
 end
@@ -350,13 +350,13 @@ if not tkn.tknCreateTknFontPtr then
 end
 
 if not tkn.tknDestroyTknFontPtr then
-    function tkn.tknDestroyTknFontPtr(pTknFontLibrary, pTknFont, pGfxContext)
+    function tkn.tknDestroyTknFontPtr(pTknFontLibrary, pTknFont, pTknGfxContext)
         error("tkn.tknDestroyTknFontPtr: C binding not loaded")
     end
 end
 
 if not tkn.tknFlushTknFontPtr then
-    function tkn.tknFlushTknFontPtr(pTknFont, pGfxContext)
+    function tkn.tknFlushTknFontPtr(pTknFont, pTknGfxContext)
         error("tkn.tknFlushTknFontPtr: C binding not loaded")
     end
 end
@@ -369,8 +369,8 @@ end
 
 if not tkn.tknWaitRenderFence then
     ---Wait for GPU render fence before modifying GPU resources
-    ---@param pGfxContext lightuserdata Graphics context pointer
-    function tkn.tknWaitRenderFence(pGfxContext)
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    function tkn.tknWaitRenderFence(pTknGfxContext)
         error("tkn.tknWaitRenderFence: C binding not loaded")
     end
 end

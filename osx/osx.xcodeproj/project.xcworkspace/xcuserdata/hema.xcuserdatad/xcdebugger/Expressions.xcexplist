@@ -6,7 +6,7 @@
          contextName = "GLOBAL">
          <PersistentStrings>
             <PersistentString
-               value = "((RenderPass **)pGfxContext-&gt;renderPassPtrDynamicArray.array)[0]">
+               value = "((RenderPass **)pTknGfxContext-&gt;renderPassPtrDynamicArray.array)[0]">
             </PersistentString>
          </PersistentStrings>
       </ContextState>

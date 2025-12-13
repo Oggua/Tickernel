@@ -1,35 +1,35 @@
 local tkn = require("tkn")
 local deferredRenderPass = require("deferredRenderer/deferredRenderPass")
 local ui = require("ui.ui")
-local input = require("input")
 local game = require("game.game")
+local input = require("input")
 local tknEngine = {}
 
-function tknEngine.start(pGfxContext, assetsPath)
+function tknEngine.start(pTknGfxContext, assetsPath)
     print("Lua start")
     tknEngine.assetsPath = assetsPath
     local renderPassIndex = 0
-    deferredRenderPass.setup(pGfxContext, assetsPath, renderPassIndex)
+    deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     renderPassIndex = renderPassIndex + 1
-    ui.setup(pGfxContext, deferredRenderPass.pSwapchainAttachment, assetsPath, renderPassIndex)
-    game.start(pGfxContext, assetsPath)
+    ui.setup(pTknGfxContext, deferredRenderPass.pSwapchainAttachment, assetsPath, renderPassIndex)
+    game.start(pTknGfxContext, assetsPath)
 end
 
-function tknEngine.stop(pGfxContext)
+function tknEngine.stop(pTknGfxContext)
     game.stop()
-    tkn.tknWaitRenderFence(pGfxContext)
-    game.stopGfx(pGfxContext)
-    ui.teardown(pGfxContext)
-    deferredRenderPass.teardown(pGfxContext)
+    tkn.tknWaitRenderFence(pTknGfxContext)
+    game.stopGfx(pTknGfxContext)
+    ui.teardown(pTknGfxContext)
+    deferredRenderPass.teardown(pTknGfxContext)
 end
 
-function tknEngine.update(pGfxContext, width, height)
+function tknEngine.update(pTknGfxContext, width, height)
     print("Lua update")
     game.update()
-    tkn.tknWaitRenderFence(pGfxContext)
+    tkn.tknWaitRenderFence(pTknGfxContext)
     print("Lua updateGfx")
-    local shouldQuit = game.updateGfx(pGfxContext, width, height)
-    ui.update(pGfxContext, width, height)
+    local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
+    ui.update(pTknGfxContext, width, height)
     return shouldQuit
 end
 

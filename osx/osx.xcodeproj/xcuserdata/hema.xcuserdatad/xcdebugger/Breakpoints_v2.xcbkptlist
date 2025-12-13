@@ -16,7 +16,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "154"
             endingLineNumber = "154"
-            landmarkName = "pickPhysicalDevice(pGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
+            landmarkName = "pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
@@ -32,7 +32,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "183"
             endingLineNumber = "183"
-            landmarkName = "pickPhysicalDevice(pGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
+            landmarkName = "pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
@@ -48,7 +48,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "212"
             endingLineNumber = "212"
-            landmarkName = "pickPhysicalDevice(pGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
+            landmarkName = "pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
@@ -64,7 +64,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "220"
             endingLineNumber = "220"
-            landmarkName = "pickPhysicalDevice(pGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
+            landmarkName = "pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode)"
             landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>

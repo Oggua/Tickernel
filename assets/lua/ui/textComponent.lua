@@ -1,100 +1,140 @@
 local tkn = require("tkn")
-local text = {
-    pool = {},
-    fonts = {},
-}
+local textComponent = {}
 
-function text.setup()
-    text.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
+function textComponent.setup(assetPath)
+    textComponent.assetsPath = assetPath
+    textComponent.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
+    textComponent.pool = {}
+    textComponent.pathToFont = {}
 end
 
-function text.teardown(pGfxContext)
-    tkn.tknDestroyTknFontLibraryPtr(pGfxContext, text.pTknFontLibrary)
-    text.pTknFontLibrary = nil
+function textComponent.teardown(pTknGfxContext)
+    tkn.tknDestroyTknFontLibraryPtr(pTknGfxContext, textComponent.pTknFontLibrary)
+    textComponent.pool = nil
+    textComponent.pathToFont = nil
+    textComponent.pTknFontLibrary = nil
+    textComponent.assetsPath = nil
 end
 
-function text.update(pGfxContext)
-    for _, font in ipairs(text.fonts) do
-        tkn.tknFlushTknFontPtr(font.pTknFont, pGfxContext)
+function textComponent.update(pTknGfxContext)
+    for path, font in pairs(textComponent.pathToFont) do
+        if font.dirty then
+            tkn.tknFlushTknFontPtr(font.pTknFont, pTknGfxContext)
+        end
+        font.dirty = false
     end
 end
 
-function text.createFont(pGfxContext, path, fontSize, atlasLength)
-    print("createFont")
-    local pTknFont, pImage = tkn.tknCreateTknFontPtr(text.pTknFontLibrary, pGfxContext, path, fontSize, atlasLength)
-    local font = {
-        path = path,
-        fontSize = fontSize,
-        atlasLength = atlasLength,
-        pTknFont = pTknFont,
-        pImage = pImage,
-    }
-    table.insert(text.fonts, font)
-    return font
+function textComponent.loadFont(pTknGfxContext, path, fontSize, atlasLength, pTknSampler, pTknPipeline)
+    print("loadFont")
+    local font = textComponent.pathToFont[path]
+    if font then
+        if fontSize > font.fontSize then
+            local fullPath = textComponent.assetsPath .. path
+            tkn.tknDestroyTknFontPtr(textComponent.pTknFontLibrary, font.pTknFont, pTknGfxContext)
+            local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textComponent.pTknFontLibrary, pTknGfxContext, fullPath, fontSize, atlasLength)
+            local inputBindings = {{
+                vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                pTknImage = pTknImage,
+                pTknSampler = pTknSampler,
+                binding = 0,
+            }}
+            tkn.tknUpdateMaterialPtr(pTknGfxContext, font.pTknMaterial, inputBindings)
+            font.fontSize = fontSize
+            font.atlasLength = atlasLength
+            font.pTknFont = pTknFont
+            font.pTknImage = pTknImage
+            font.dirty = true
+            return font
+        else
+            return font
+        end
+    else
+        local fullPath = textComponent.assetsPath .. path
+        local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textComponent.pTknFontLibrary, pTknGfxContext, fullPath, fontSize, atlasLength)
+        local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
+        local inputBindings = {{
+            vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            pTknImage = pTknImage,
+            pTknSampler = pTknSampler,
+            binding = 0,
+        }}
+        tkn.tknUpdateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindings)
+        local font = {
+            path = path,
+            fontSize = fontSize,
+            atlasLength = atlasLength,
+            pTknFont = pTknFont,
+            pTknImage = pTknImage,
+            pTknMaterial = pTknMaterial,
+            dirty = false,
+        }
+        textComponent.pathToFont[path] = font
+        return font
+    end
 end
 
-function text.destroyFont(pGfxContext, font)
-    print("destroyFont")
-    tkn.tknDestroyTknFontPtr(text.pTknFontLibrary, font.pTknFont, pGfxContext)
-    font = nil
+function textComponent.unloadFont(pTknGfxContext, font)
+    print("unloadFont")
+    textComponent.pathToFont[font.path] = nil
+    tkn.tknDestroyPipelineMaterialPtr(pTknGfxContext, font.pTknMaterial)
+    tkn.tknDestroyTknFontPtr(textComponent.pTknFontLibrary, font.pTknFont, pTknGfxContext)
 end
 
-function text.createComponent(pGfxContext, textString, font, size, color, alignH, alignV, bold, pMaterial, vertexFormat, instanceFormat, pPipeline, node)
+function textComponent.createComponent(pTknGfxContext, textString, font, size, color, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, node)
     local maxChars = #textString
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
     local indicesPerChar = bold and 24 or 6
-    local pMesh = tkn.tknCreateDefaultMeshPtr(pGfxContext, vertexFormat, vertexFormat.pVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
+    local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
 
     -- Create instance buffer (mat3 + color)
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {color},
     }
-    local pInstance = tkn.tknCreateInstancePtr(pGfxContext, instanceFormat.pVertexInputLayout, instanceFormat, instances)
+    local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
 
-    local pDrawCall = tkn.tknCreateDrawCallPtr(pGfxContext, pPipeline, pMaterial, pMesh, pInstance)
+    local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
 
-    local component = #text.pool > 0 and table.remove(text.pool) or {
+    local component = #textComponent.pool > 0 and table.remove(textComponent.pool) or {
         type = "text",
     }
     component.text = textString
-    component.content = textString
     component.font = font
     component.size = size
     component.color = color
     component.alignH = alignH
     component.alignV = alignV
     component.bold = bold
-    component.pMaterial = pMaterial
-    component.pMesh = pMesh
-    component.pInstance = pInstance
-    component.pDrawCall = pDrawCall
+    component.pTknMaterial = pTknMaterial
+    component.pTknMesh = pTknMesh
+    component.pTknInstance = pTknInstance
+    component.pTknDrawCall = pTknDrawCall
 
     return component
 end
 
-function text.destroyComponent(pGfxContext, component)
-    tkn.tknDestroyDrawCallPtr(pGfxContext, component.pDrawCall)
-    tkn.tknDestroyInstancePtr(pGfxContext, component.pInstance)
-    tkn.tknDestroyMeshPtr(pGfxContext, component.pMesh)
+function textComponent.destroyComponent(pTknGfxContext, component)
+    tkn.tknDestroyDrawCallPtr(pTknGfxContext, component.pTknDrawCall)
+    tkn.tknDestroyInstancePtr(pTknGfxContext, component.pTknInstance)
+    tkn.tknDestroyMeshPtr(pTknGfxContext, component.pTknMesh)
 
-    component.pMaterial = nil
-    component.pMesh = nil
-    component.pInstance = nil
-    component.pDrawCall = nil
+    component.pTknMaterial = nil
+    component.pTknMesh = nil
+    component.pTknInstance = nil
+    component.pTknDrawCall = nil
     component.font = nil
     component.text = ""
-    component.content = ""
     component.size = 0
     component.color = 0xFFFFFFFF
     component.alignH = 0
     component.alignV = 0
     component.bold = false
-    table.insert(text.pool, component)
+    table.insert(textComponent.pool, component)
 end
 
-function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
+function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
     -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
     local rectWidth = rect.horizontal.max - rect.horizontal.min
     local rectHeight = rect.vertical.max - rect.vertical.min
@@ -235,14 +275,15 @@ function text.updateMeshPtr(pGfxContext, component, rect, vertexFormat, screenWi
         penY = penY + lineHeight
     end
 
-    tkn.tknFlushTknFontPtr(font.pTknFont, pGfxContext)
+    tkn.tknFlushTknFontPtr(font.pTknFont, pTknGfxContext)
 
     if charIndex > 0 then
-        tkn.tknUpdateMeshPtr(pGfxContext, component.pMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
     end
+
 end
 
-function text.updateInstancePtr(pGfxContext, component, rect, instanceFormat)
-    
+function textComponent.updateInstancePtr(pTknGfxContext, component, rect, instanceFormat)
+
 end
-return text
+return textComponent

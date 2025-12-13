@@ -1453,14 +1453,14 @@ static int luaUpdateMaterialPtr(lua_State *pLuaState)
         // Parse different descriptor types based on current supported types
         if (vkDescriptorType == VK_DESCRIPTOR_TYPE_SAMPLER)
         {
-            lua_getfield(pLuaState, -1, "pSampler");
+            lua_getfield(pLuaState, -1, "pTknSampler");
             TknSampler *pTknSampler = (TknSampler *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
             tknInputBindings[i].tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknSampler = pTknSampler;
         }
         else if (vkDescriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         {
-            lua_getfield(pLuaState, -1, "pUniformBuffer");
+            lua_getfield(pLuaState, -1, "pTknUniformBuffer");
             TknUniformBuffer *pTknUniformBuffer = (TknUniformBuffer *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
 
@@ -1468,12 +1468,12 @@ static int luaUpdateMaterialPtr(lua_State *pLuaState)
         }
         else if (vkDescriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
         {
-            lua_getfield(pLuaState, -1, "pSampler");
+            lua_getfield(pLuaState, -1, "pTknSampler");
             TknSampler *pTknSampler = (TknSampler *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
             tknInputBindings[i].tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknSampler = pTknSampler;
 
-            lua_getfield(pLuaState, -1, "pImage");
+            lua_getfield(pLuaState, -1, "pTknImage");
             TknImage *pTknImage = (TknImage *)lua_touserdata(pLuaState, -1);
             lua_pop(pLuaState, 1);
             tknInputBindings[i].tknInputBindingUnion.tknCombinedImageSamplerBinding.pTknImage = pTknImage;

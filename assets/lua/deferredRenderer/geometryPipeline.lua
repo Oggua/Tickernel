@@ -1,7 +1,7 @@
 require("vulkan")
 local tkn = require("tkn")
 local geometryPipeline = {}
-function geometryPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, assetsPath, pMeshVertexInputLayout, pInstanceVertexInputLayout)
+function geometryPipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, assetsPath, pTknMeshVertexInputLayout, pInstanceVertexInputLayout)
     local geometryPipelineSpvPaths = {assetsPath .. "/shaders/opaqueGeometry.vert.spv", assetsPath .. "/shaders/opaqueGeometry.frag.spv"}
     local vkPipelineInputAssemblyStateCreateInfo = {
         topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
@@ -42,11 +42,11 @@ function geometryPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassInd
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return tkn.tknCreatePipelinePtr(pGfxContext, pRenderPass, subpassIndex, geometryPipelineSpvPaths, pMeshVertexInputLayout, pInstanceVertexInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.tknCreatePipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, geometryPipelineSpvPaths, pTknMeshVertexInputLayout, pInstanceVertexInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
-function geometryPipeline.destroyPipelinePtr(pGfxContext, pPipeline)
-    tkn.tknDestroyPipelinePtr(pGfxContext, pPipeline)
+function geometryPipeline.destroyPipelinePtr(pTknGfxContext, pTknPipeline)
+    tkn.tknDestroyPipelinePtr(pTknGfxContext, pTknPipeline)
 end
 
 return geometryPipeline

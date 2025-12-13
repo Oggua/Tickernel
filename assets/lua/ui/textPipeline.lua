@@ -2,7 +2,7 @@ require("vulkan")
 local tkn = require("tkn")
 local textPipeline = {}
 
-function textPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, assetsPath, pUIVertexInputLayout, pUIInstanceInputLayout)
+function textPipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, assetsPath, pUIVertexInputLayout, pUIInstanceInputLayout)
     local textPipelineSpvPaths = {assetsPath .. "/shaders/ui.vert.spv", assetsPath .. "/shaders/text.frag.spv"}
     local vkPipelineInputAssemblyStateCreateInfo = {
         topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -34,11 +34,11 @@ function textPipeline.createPipelinePtr(pGfxContext, pRenderPass, subpassIndex, 
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
 
-    return tkn.tknCreatePipelinePtr(pGfxContext, pRenderPass, subpassIndex, textPipelineSpvPaths, pUIVertexInputLayout, pUIInstanceInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
+    return tkn.tknCreatePipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, textPipelineSpvPaths, pUIVertexInputLayout, pUIInstanceInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
 end
 
-function textPipeline.destroyPipelinePtr(pGfxContext, pPipeline)
-    tkn.tknDestroyPipelinePtr(pGfxContext, pPipeline)
+function textPipeline.destroyPipelinePtr(pTknGfxContext, pTknPipeline)
+    tkn.tknDestroyPipelinePtr(pTknGfxContext, pTknPipeline)
 end
 
 return textPipeline

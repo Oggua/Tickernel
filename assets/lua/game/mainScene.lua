@@ -1,12 +1,10 @@
 local mainScene = {}
 local ui = require("ui.ui")
-local tkn = require("tkn")
-function mainScene.start(game, pGfxContext, assetsPath)
-    mainScene.pDefaultImage = tkn.tknCreateImagePtrWithPath(pGfxContext, assetsPath .. "/textures/default.astc")
-    mainScene.pDefaultImageMaterial = ui.createMaterialPtr(pGfxContext, mainScene.pDefaultImage, ui.renderPass.pImagePipeline)
-    mainScene.currentNode = ui.rootNode
+
+function mainScene.start(game, pTknGfxContext, assetsPath)
+    mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/default.astc")
     print("Creating FIT type container node")
-    mainScene.fitContainer = ui.addNode(pGfxContext, ui.rootNode, 1, "mainSceneRoot", {
+    mainScene.backgroundNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", {
         dirty = true,
         horizontal = {
             type = "relative",
@@ -27,23 +25,22 @@ function mainScene.start(game, pGfxContext, assetsPath)
         rotation = 0,
     })
     -- Add background image to visualize the fit container
-    ui.addImageComponent(pGfxContext, 0xFFFFFFFF, nil, mainScene.pDefaultImageMaterial, mainScene.fitContainer)
+    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, nil, mainScene.backgroundImage, mainScene.backgroundNode)
 end
 
 function mainScene.stop(game)
 end
 
-function mainScene.stopGfx(game, pGfxContext)
+function mainScene.stopGfx(game, pTknGfxContext)
     mainScene.pDefaultImageMaterial = nil
-    tkn.tknDestroyImagePtr(pGfxContext, mainScene.pDefaultImage)
-
+    ui.unloadImage(pTknGfxContext, mainScene.backgroundImage)
     print("Tearing down render pipeline")
 end
 
 function mainScene.update(game)
 end
 
-function mainScene.updateGfx(game, pGfxContext, width, height)
+function mainScene.updateGfx(game, pTknGfxContext, width, height)
     return mainScene
 end
 

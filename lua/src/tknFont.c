@@ -53,7 +53,7 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
     pTknFont->dirtyTknCharPtrCount++;
     pNewChar->pNextDirty = pTknFont->pDirtyTknChar;
     pTknFont->pDirtyTknChar = pNewChar;
-    
+
     pNewChar->bitmapSize = ftBitmap->rows * ftBitmap->pitch;
     if (pNewChar->bitmapSize > 0)
     {
@@ -64,7 +64,7 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
     {
         pNewChar->bitmapBuffer = NULL;
     }
-    
+
     pTknFont->penX += glyph->bitmap.width + 1;
     if (glyph->bitmap.rows + 1 > pTknFont->maxRowHeight)
     {
@@ -99,7 +99,7 @@ void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext)
         while (pCurrent)
         {
             TknChar *pNext = pCurrent->pNextDirty;
-            
+
             if (pCurrent->bitmapBuffer)
             {
                 tknFree(pCurrent->bitmapBuffer);
@@ -121,7 +121,7 @@ void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext)
 
     pCurrent = pTknFont->pDirtyTknChar;
     uint32_t index = 0;
-    
+
     while (pCurrent)
     {
         // Only copy chars with valid bitmap data
@@ -136,22 +136,22 @@ void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext)
         pCurrent = pCurrent->pNextDirty;
     }
 
-    tknUpdateImagePtr(pTknGfxContext, pTknFont->pTknImage, 
-                   validCharCount, 
-                   datas, offsets, extents, sizes);
+    tknUpdateImagePtr(pTknGfxContext, pTknFont->pTknImage,
+                      validCharCount,
+                      datas, offsets, extents, sizes);
 
     pCurrent = pTknFont->pDirtyTknChar;
     while (pCurrent)
     {
         TknChar *pNext = pCurrent->pNextDirty;
-        
+
         if (pCurrent->bitmapBuffer)
         {
             tknFree(pCurrent->bitmapBuffer);
             pCurrent->bitmapBuffer = NULL;
         }
         pCurrent->bitmapSize = 0;
-        
+
         pCurrent->pNextDirty = NULL;
         pCurrent = pNext;
     }
@@ -178,19 +178,19 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGf
     memset(pTknFont->tknCharPtrs, 0, sizeof(TknChar *) * pTknFont->tknCharCapacity);
 
     pTknFont->atlasLength = atlasLength;
-    
+
     // Create initial zero-filled buffer for atlas texture
     uint32_t atlasSize = atlasLength * atlasLength;
     unsigned char *pZeroBuffer = tknMalloc(atlasSize);
     memset(pZeroBuffer, 0, atlasSize);
-    
+
     pTknFont->pTknImage = tknCreateImagePtr(pTknGfxContext, (VkExtent3D){atlasLength, atlasLength, 1},
-                                      VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                                      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                      VK_IMAGE_ASPECT_COLOR_BIT,
-                                      pZeroBuffer, atlasSize);
-    
+                                            VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                            VK_IMAGE_ASPECT_COLOR_BIT,
+                                            pZeroBuffer, atlasSize);
+
     tknFree(pZeroBuffer);
 
     pTknFont->penX = 0;
@@ -236,12 +236,12 @@ void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, TknGf
         while (pCurrent)
         {
             TknChar *pNext = pCurrent->pNext;
-            
+
             if (pCurrent->bitmapBuffer)
             {
                 tknFree(pCurrent->bitmapBuffer);
             }
-            
+
             tknFree(pCurrent);
             pCurrent = pNext;
         }

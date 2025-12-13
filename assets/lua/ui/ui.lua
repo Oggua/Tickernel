@@ -5,8 +5,8 @@
 local ui = {}
 local tknMath = require("tknMath")
 local tkn = require("tkn")
-local image = require("ui.image")
-local text = require("ui.text")
+local imageComponent = require("ui.imageComponent")
+local textComponent = require("ui.textComponent")
 local uiRenderPass = require("ui.uiRenderPass")
 
 local function traverseNode(node, callback)
@@ -22,7 +22,7 @@ local function traverseNode(node, callback)
     return false
 end
 
-local function updateOrientationRecursive(pGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
+local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
     local layout = node.layout
     local orientation = layout[key]
     if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type ~= "fit" then
@@ -76,7 +76,7 @@ local function updateOrientationRecursive(pGfxContext, ui, node, key, effectiveP
 
     parentOrientationChanged = parentOrientationChanged or orientation.dirty or screenLengthChanged
     for i, child in ipairs(node.children) do
-        updateOrientationRecursive(pGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
+        updateOrientationRecursive(pTknGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
     end
 
     if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type == "fit" then
@@ -166,7 +166,7 @@ local function transformOffsetToWorld(localOffset, effectiveParent, matrixIndex,
 end
 
 -- Recursively updates the graphics (model matrix, mesh, instance) based on rect and parent transform
-local function updateGraphicsRecursive(pGfxContext, ui, node, screenSizeChanged)
+local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenSizeChanged)
     local layout = node.layout
     local rect = node.rect
 
@@ -261,60 +261,61 @@ local function updateGraphicsRecursive(pGfxContext, ui, node, screenSizeChanged)
     local colorChanged = oldColor ~= rect.color
 
     -- Update mesh if bounds changed
-    if node.component and node.component.pMesh then
+    if node.component and node.component.pTknMesh then
         if node.component.type == "image" and boundsChanged then
-            image.updateMeshPtr(pGfxContext, node.component, rect, ui.vertexFormat)
-        elseif node.component.type == "text" and (boundsChanged or screenSizeChanged) then
-            text.updateMeshPtr(pGfxContext, node.component, rect, ui.vertexFormat, ui.screenWidth, ui.screenHeight)
+            imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat)
+        elseif node.component.type == "text" and (boundsChanged or screenSizeChanged or textComponent.font.dirty) then
+            textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, ui.screenWidth, ui.screenHeight)
         end
     end
 
     -- Update instance if model or color changed
-    if node.component and node.component.pInstance and (modelChanged or colorChanged) then
+    if node.component and node.component.pTknInstance and (modelChanged or colorChanged) then
         local instances = {
             model = rect.model,
             color = {node.component.color},
         }
-        tkn.tknUpdateInstancePtr(pGfxContext, node.component.pInstance, ui.instanceFormat, instances)
+        tkn.tknUpdateInstancePtr(pTknGfxContext, node.component.pTknInstance, ui.instanceFormat, instances)
     end
 
     -- Recursively update children
     for _, child in ipairs(node.children) do
-        updateGraphicsRecursive(pGfxContext, ui, child, screenSizeChanged)
+        updateGraphicsRecursive(pTknGfxContext, ui, child, screenSizeChanged)
     end
 end
 
-local function addComponent(pGfxContext, node, component)
+local function addComponent(pTknGfxContext, node, component)
     if node.component then
         print("WARNING: ui.addComponent: node already has a component")
     else
         node.component = component
-        if component.pDrawCall then
+        if component.pTknDrawCall then
             local drawCallIndex = 0
             traverseNode(ui.rootNode, function(child)
                 if child == node then
                     return true
                 else
-                    if child.component and child.component.pDrawCall then
+                    if child.component and child.component.pTknDrawCall then
                         drawCallIndex = drawCallIndex + 1
                     end
                     return false
                 end
             end)
-            tkn.tknInsertDrawCallPtr(node.component.pDrawCall, drawCallIndex)
+            tkn.tknInsertDrawCallPtr(node.component.pTknDrawCall, drawCallIndex)
         end
     end
 end
-local function removeComponent(pGfxContext, node)
+
+local function removeComponent(pTknGfxContext, node)
     local component = node.component
     if component then
-        if component.pDrawCall then
+        if component.pTknDrawCall then
             local drawCallIndex = 0
             traverseNode(ui.rootNode, function(child)
                 if child == node then
                     return true
                 else
-                    if child.component and child.component.pDrawCall then
+                    if child.component and child.component.pTknDrawCall then
                         drawCallIndex = drawCallIndex + 1
                     end
                     return false
@@ -327,15 +328,8 @@ local function removeComponent(pGfxContext, node)
         return
     end
 end
-local function destroyMaterials()
-    for _, material in ipairs(ui.materials) do
-        tkn.tknDestroyPipelineMaterialPtr(pGfxContext, material)
-    end
-    ui.materials = {}
-end
 
-function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
-    text.setup()
+function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
     -- Vertex format: position + uv (no color)
     ui.vertexFormat = {{
         name = "position",
@@ -346,7 +340,7 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
         type = tkn.type.float,
         count = 2,
     }}
-    ui.vertexFormat.pVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pGfxContext, ui.vertexFormat)
+    ui.vertexFormat.pTknVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, ui.vertexFormat)
 
     -- Instance format: mat3 (9 floats) + color (uint32)
     ui.instanceFormat = {{
@@ -358,9 +352,9 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
         type = tkn.type.uint32,
         count = 1,
     }}
-    ui.instanceFormat.pVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pGfxContext, ui.instanceFormat)
+    ui.instanceFormat.pTknVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, ui.instanceFormat)
 
-    uiRenderPass.setup(pGfxContext, pSwapchainAttachment, assetsPath, ui.vertexFormat.pVertexInputLayout, ui.instanceFormat.pVertexInputLayout, renderPassIndex)
+    uiRenderPass.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, ui.vertexFormat.pTknVertexInputLayout, ui.instanceFormat.pTknVertexInputLayout, renderPassIndex)
     ui.rootNode = {
         name = "root",
         children = {},
@@ -395,41 +389,45 @@ function ui.setup(pGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex
                 max = 1,
                 offset = 0,
             },
-            model = {1, 0, 0, -- column 0
-            0, 1, 0, -- column 1
-            0, 0, 1}, -- column 2
+            model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
             color = nil,
         },
     }
     ui.nodePool = {}
-    ui.pSampler = tkn.tknCreateSamplerPtr(pGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
+    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
-    ui.materials = {}
+
+    textComponent.setup(assetsPath)
+    imageComponent.setup(assetsPath)
 end
-function ui.teardown(pGfxContext)
-    ui.removeNode(pGfxContext, ui.rootNode)
+
+function ui.teardown(pTknGfxContext)
+    ui.removeNode(pTknGfxContext, ui.rootNode)
     ui.renderPass = nil
-    tkn.tknDestroySamplerPtr(pGfxContext, ui.pSampler)
-    ui.pSampler = nil
+    tkn.tknDestroySamplerPtr(pTknGfxContext, ui.pTknSampler)
+    ui.pTknSampler = nil
     ui.nodePool = nil
     ui.rootNode = nil
-    uiRenderPass.teardown(pGfxContext)
-    tkn.tknDestroyVertexInputLayoutPtr(pGfxContext, ui.instanceFormat.pVertexInputLayout)
-    ui.instanceFormat.pVertexInputLayout = nil
+    uiRenderPass.teardown(pTknGfxContext)
+    tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, ui.instanceFormat.pTknVertexInputLayout)
+    ui.instanceFormat.pTknVertexInputLayout = nil
     ui.instanceFormat = nil
-    tkn.tknDestroyVertexInputLayoutPtr(pGfxContext, ui.vertexFormat.pVertexInputLayout)
-    ui.vertexFormat.pVertexInputLayout = nil
+    tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, ui.vertexFormat.pTknVertexInputLayout)
+    ui.vertexFormat.pTknVertexInputLayout = nil
     ui.vertexFormat = nil
-    text.teardown(pGfxContext)
+    imageComponent.teardown(pTknGfxContext)
+    textComponent.teardown(pTknGfxContext)
 end
-function ui.update(pGfxContext, screenWidth, screenHeight)
-    updateOrientationRecursive(pGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
-    updateOrientationRecursive(pGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
-    updateGraphicsRecursive(pGfxContext, ui, ui.rootNode, ui.screenWidth ~= screenWidth or ui.screenHeight ~= screenHeight)
+
+function ui.update(pTknGfxContext, screenWidth, screenHeight)
+    updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
+    updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
+    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, ui.screenWidth ~= screenWidth or ui.screenHeight ~= screenHeight)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
-    text.update(pGfxContext)
+    textComponent.update(pTknGfxContext)
 end
+
 function ui.getNodeIndex(node)
     for i, child in ipairs(node.parent.children) do
         if child == node then
@@ -438,7 +436,7 @@ function ui.getNodeIndex(node)
     end
 end
 
-function ui.addNode(pGfxContext, parent, index, name, layout)
+function ui.addNode(pTknGfxContext, parent, index, name, layout)
     assert(parent ~= nil, "ui.addNode: parent is nil")
     assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
     local node = nil
@@ -511,7 +509,8 @@ function ui.addNode(pGfxContext, parent, index, name, layout)
 
     return node
 end
-function ui.removeNode(pGfxContext, node)
+
+function ui.removeNode(pTknGfxContext, node)
     print("Removing node: " .. node.name)
 
     -- Mark fit ancestors as dirty before removing (their bounds will change)
@@ -527,14 +526,14 @@ function ui.removeNode(pGfxContext, node)
     end
 
     for i = #node.children, 1, -1 do
-        ui.removeNode(pGfxContext, node.children[i])
+        ui.removeNode(pTknGfxContext, node.children[i])
     end
 
     if node.component then
         if node.component.type == "image" then
-            ui.removeImageComponent(pGfxContext, node)
+            ui.removeImageComponent(pTknGfxContext, node)
         elseif node.component.type == "text" then
-            ui.removeTextComponent(pGfxContext, node)
+            ui.removeTextComponent(pTknGfxContext, node)
         else
             error("ui.removeNode: unsupported component type " .. tostring(node.component.type))
         end
@@ -555,7 +554,8 @@ function ui.removeNode(pGfxContext, node)
     node.layout = nil
     table.insert(ui.nodePool, node)
 end
-function ui.moveNode(pGfxContext, node, parent, index)
+
+function ui.moveNode(pTknGfxContext, node, parent, index)
     assert(node, "ui.moveNode: node is nil")
     assert(node ~= ui.rootNode, "ui.moveNode: cannot move root node")
     assert(parent, "ui.moveNode: parent is nil")
@@ -573,8 +573,8 @@ function ui.moveNode(pGfxContext, node, parent, index)
 
     local drawCalls = {}
     traverseNode(node, function(child)
-        if child.component and child.component.pDrawCall then
-            table.insert(drawCalls, child.component.pDrawCall)
+        if child.component and child.component.pTknDrawCall then
+            table.insert(drawCalls, child.component.pTknDrawCall)
         end
     end)
 
@@ -591,7 +591,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
             if child == node then
                 return true
             else
-                if child.component and child.component.pDrawCall then
+                if child.component and child.component.pTknDrawCall then
                     drawCallStartIndex = drawCallStartIndex + 1
                 end
                 return false
@@ -613,7 +613,7 @@ function ui.moveNode(pGfxContext, node, parent, index)
             if child == node then
                 return true
             else
-                if child.component and child.component.pDrawCall then
+                if child.component and child.component.pTknDrawCall then
                     drawCallStartIndex = drawCallStartIndex + 1
                 end
                 return false
@@ -629,62 +629,40 @@ function ui.moveNode(pGfxContext, node, parent, index)
     end
 end
 
-function ui.addImageComponent(pGfxContext, color, slice, pMaterial, node)
-    local component = image.createComponent(pGfxContext, color, slice, pMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
-    addComponent(pGfxContext, node, component)
+function ui.loadImage(pTknGfxContext, path)
+    return imageComponent.loadImage(pTknGfxContext, path, ui.pTknSampler, ui.renderPass.pImagePipeline)
+end
+function ui.unloadImage(pTknGfxContext, image)
+    imageComponent.unloadImage(pTknGfxContext, image)
+end
+
+function ui.loadFont(pTknGfxContext, path, fontSize, atlasLength)
+    return textComponent.loadFont(pTknGfxContext, path, fontSize, atlasLength, ui.pTknSampler, ui.renderPass.pTextPipeline)
+end
+function ui.unloadFont(pTknGfxContext, font)
+    textComponent.unloadFont(pTknGfxContext, font)
+end
+
+function ui.addImageComponent(pTknGfxContext, color, slice, image, node)
+    local component = imageComponent.createComponent(pTknGfxContext, color, slice, image, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
+    addComponent(pTknGfxContext, node, component)
     return component
 end
-function ui.removeImageComponent(pGfxContext, node)
+function ui.removeImageComponent(pTknGfxContext, node)
     assert(node.component and node.component.type == "image", "ui.removeImageComponent: node has no image component")
     print("Removing image component")
-    image.destroyComponent(pGfxContext, node.component)
-    removeComponent(pGfxContext, node)
+    imageComponent.destroyComponent(pTknGfxContext, node.component)
+    removeComponent(pTknGfxContext, node)
 end
-
-function ui.createMaterialPtr(pGfxContext, pImage, pPipeline)
-    local pMaterial = tkn.tknCreatePipelineMaterialPtr(pGfxContext, pPipeline)
-    if pImage then
-        local inputBindings = {{
-            vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            pImage = pImage,
-            pSampler = ui.pSampler,
-            binding = 0,
-        }}
-        tkn.tknUpdateMaterialPtr(pGfxContext, pMaterial, inputBindings)
-    end
-    table.insert(ui.materials, pMaterial)
-    return pMaterial
-end
-function ui.destroyMaterialPtr(pGfxContext, pMaterial)
-    tkn.tknDestroyPipelineMaterialPtr(pGfxContext, pMaterial)
-    for i, material in ipairs(ui.materials) do
-        if material == pMaterial then
-            table.remove(ui.materials, i)
-            break
-        end
-    end
-end
-
-function ui.createFont(pGfxContext, path, fontSize, atlasLength)
-    local font = text.createFont(pGfxContext, path, fontSize, atlasLength)
-    font.pMaterial = ui.createMaterialPtr(pGfxContext, font.pImage, ui.renderPass.pTextPipeline)
-    return font
-end
-function ui.destroyFont(pGfxContext, font)
-    ui.destroyMaterialPtr(pGfxContext, font.pMaterial)
-    font.pMaterial = nil
-    text.destroyFont(pGfxContext, font)
-end
-
-function ui.addTextComponent(pGfxContext, textString, font, size, color, alignH, alignV, bold, node)
-    local component = text.createComponent(pGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
-    addComponent(pGfxContext, node, component)
+function ui.addTextComponent(pTknGfxContext, textString, font, size, color, alignH, alignV, bold, node)
+    local component = textComponent.createComponent(pTknGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
+    addComponent(pTknGfxContext, node, component)
     return component
 end
-function ui.removeTextComponent(pGfxContext, node)
+function ui.removeTextComponent(pTknGfxContext, node)
     assert(node.component and node.component.type == "text", "ui.removeTextComponent: node has no text component")
     print("Removing text component")
-    text.destroyComponent(pGfxContext, node.component)
-    removeComponent(pGfxContext, node)
+    textComponent.destroyComponent(pTknGfxContext, node.component)
+    removeComponent(pTknGfxContext, node)
 end
 return ui

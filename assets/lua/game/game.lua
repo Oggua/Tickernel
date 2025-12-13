@@ -2,23 +2,23 @@ local game = {}
 local mainScene = require("game.mainScene")
 local ui = require("ui.ui")
 
-function game.start(pGfxContext, assetsPath)
+function game.start(pTknGfxContext, assetsPath)
     game.assetsPath = assetsPath
     print(ui)
-    game.font = ui.createFont(pGfxContext, assetsPath .. "/fonts/Monaco.ttf", 32, 2048)
+    game.font = ui.loadFont(pTknGfxContext, "/fonts/Monaco.ttf", 32, 2048)
     game.currentScene = mainScene
-    game.currentScene.start(game, pGfxContext, assetsPath)
+    game.currentScene.start(game, pTknGfxContext, assetsPath)
 end
 
 function game.stop()
     game.currentScene.stop(game)
 end
 
-function game.stopGfx(pGfxContext)
-    game.currentScene.stopGfx(game, pGfxContext)
+function game.stopGfx(pTknGfxContext)
+    game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
 
-    ui.destroyFont(pGfxContext, game.font)
+    ui.unloadFont(pTknGfxContext, game.font)
     game.font = nil
 end
 
@@ -28,8 +28,8 @@ function game.update()
 end
 
 -- Called after waitRenderFence, handles GPU resources and scene switching
-function game.updateGfx(pGfxContext, width, height)
-    local nextScene = game.currentScene.updateGfx(game, pGfxContext, width, height)
+function game.updateGfx(pTknGfxContext, width, height)
+    local nextScene = game.currentScene.updateGfx(game, pTknGfxContext, width, height)
     local shouldQuit = false
     -- Check if scene wants to switch (set by update)
     if nextScene == nil then
@@ -38,10 +38,10 @@ function game.updateGfx(pGfxContext, width, height)
         if nextScene ~= game.currentScene then
             -- Switch scene: cleanup old, setup new
             game.currentScene.stop(game)
-            game.currentScene.stopGfx(game, pGfxContext)
+            game.currentScene.stopGfx(game, pTknGfxContext)
             game.currentScene = nextScene
-            game.currentScene.start(game, pGfxContext, game.assetsPath)
-            game.currentScene.updateGfx(game, pGfxContext, width, height)
+            game.currentScene.start(game, pTknGfxContext, game.assetsPath)
+            game.currentScene.updateGfx(game, pTknGfxContext, width, height)
         end
     end
     return shouldQuit
