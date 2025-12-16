@@ -58,7 +58,7 @@ function imageComponent.unloadImage(pTknGfxContext, image)
     image.path = nil
 end
 
-function imageComponent.createComponent(pTknGfxContext, color, slice, image, vertexFormat, instanceFormat, pTknPipeline, node)
+function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, vertexFormat, instanceFormat, pTknPipeline, node)
     local component = nil
     local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
 
@@ -72,16 +72,16 @@ function imageComponent.createComponent(pTknGfxContext, color, slice, image, ver
     if #imageComponent.pool > 0 then
         component = table.remove(imageComponent.pool)
         component.color = color
-        component.slice = slice
+        component.fitMode = fitMode
         component.image = image
         component.pTknMesh = pTknMesh
         component.pTknInstance = pTknInstance
         component.pTknDrawCall = pTknDrawCall
     else
         component = {
-            type = "image",
+            type = "Image",
             color = color,
-            slice = slice,
+            fitMode = fitMode,
             image = image,
             pTknMesh = pTknMesh,
             pTknInstance = pTknInstance,
@@ -99,20 +99,19 @@ function imageComponent.destroyComponent(pTknGfxContext, component)
     component.pTknMesh = nil
     component.pTknInstance = nil
     component.pTknDrawCall = nil
-    component.slice = nil
+    component.fitMode = nil
     component.color = 0xFFFFFFFF
     table.insert(imageComponent.pool, component)
 end
 
-function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFormat)
+function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
     -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
     local left = rect.horizontal.min
     local top = rect.vertical.min
     local right = rect.horizontal.max
     local bottom = rect.vertical.max
-
-    if component.slice then
-        -- Nine-slice: generate 4x4 grid with 16 vertices (pivot-centered)
+    if component.fitMode.type == "Sliced" then
+        -- Nine-fitMode: generate 4x4 grid with 16 vertices (pivot-centered)
         local vertices = {
             position = {},
             uv = {},
@@ -139,55 +138,57 @@ function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFor
     else
         -- Calculate UV based on fitMode (cover/contain)
         local u0, v0, u1, v1 = 0.0, 0.0, 1.0, 1.0
-
-        if component.fitMode and component.imageWidth and component.imageHeight then
-            local containerWidth = right - left
-            local containerHeight = bottom - top
-
-            if containerWidth > 0 and containerHeight > 0 and component.imageWidth > 0 and component.imageHeight > 0 then
-                local containerAspect = containerWidth / containerHeight
-                local imageAspect = component.imageWidth / component.imageHeight
-
-                if component.fitMode == "cover" then
-                    -- Cover: image fills container, may crop
-                    if imageAspect > containerAspect then
-                        -- Image is wider, crop left/right
-                        local scale = containerAspect / imageAspect
-                        local offset = (1.0 - scale) / 2.0
-                        u0, u1 = offset, 1.0 - offset
-                    else
-                        -- Image is taller, crop top/bottom
-                        local scale = imageAspect / containerAspect
-                        local offset = (1.0 - scale) / 2.0
-                        v0, v1 = offset, 1.0 - offset
-                    end
-                elseif component.fitMode == "contain" then
-                    -- Contain: image fits inside container, may have letterbox
-                    -- Adjust vertex positions instead of UV for true contain
-                    if imageAspect > containerAspect then
-                        -- Image is wider, add letterbox top/bottom
-                        local newHeight = containerWidth / imageAspect
-                        local offset = (containerHeight - newHeight) / 2.0
-                        top = top + offset
-                        bottom = bottom - offset
-                    else
-                        -- Image is taller, add letterbox left/right
-                        local newWidth = containerHeight * imageAspect
-                        local offset = (containerWidth - newWidth) / 2.0
-                        left = left + offset
-                        right = right - offset
-                    end
-                end
+        local containerWidth = right - left
+        local containerHeight = bottom - top
+        local containerAspect = containerWidth * screenWidth / (containerHeight * screenHeight)
+        local imageAspect = component.image.width / component.image.height
+        print("Container Aspect: " .. tostring(containerAspect) .. ", Image Aspect: " .. tostring(imageAspect))
+        if component.fitMode.type == "Cover" then
+            -- Cover: image fills container, may crop
+            if imageAspect > containerAspect then
+                -- Image is wider, crop left/right
+                local scale = containerAspect / imageAspect
+                local offset = (1.0 - scale) / 2.0
+                u0, u1 = offset, 1.0 - offset
+            else
+                -- Image is taller, crop top/bottom
+                local scale = imageAspect / containerAspect
+                local offset = (1.0 - scale) / 2.0
+                v0, v1 = offset, 1.0 - offset
             end
-        end
 
-        -- Regular quad: 4 vertices with pivot at (0, 0)
-        local vertices = {
-            position = {left, top, right, top, right, bottom, left, bottom},
-            uv = {u0, v0, u1, v0, u1, v1, u0, v1},
-        }
-        local indices = {0, 1, 2, 2, 3, 0}
-        tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            -- Regular quad: 4 vertices with pivot at (0, 0)
+            local vertices = {
+                position = {left, top, right, top, right, bottom, left, bottom},
+                uv = {u0, v0, u1, v0, u1, v1, u0, v1},
+            }
+            local indices = {0, 1, 2, 2, 3, 0}
+            tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        elseif component.fitMode.type == "Contain" then
+            -- Adjust vertex positions instead of UV for true contain
+            if imageAspect > containerAspect then
+                -- Image is wider, add letterbox top/bottom
+                local newHeight = ((containerWidth * screenWidth / 2.0) / imageAspect) / screenHeight * 2.0
+                local offset = (newHeight - containerHeight) / 2.0
+                print(offset)
+                v0, v1 = offset, 1.0 - offset
+            else
+                -- Image is taller, add letterbox left/right
+                local newWidth = (containerHeight * screenHeight / 2.0) * imageAspect / screenWidth * 2.0
+                local offset = (newWidth - containerWidth) / 2.0
+                print(offset)
+                u0, u1 = offset, 1.0 - offset
+            end
+            -- Regular quad: 4 vertices with pivot at (0, 0)
+            local vertices = {
+                position = {left, top, right, top, right, bottom, left, bottom},
+                uv = {u0, v0, u1, v0, u1, v1, u0, v1},
+            }
+            local indices = {0, 1, 2, 2, 3, 0}
+            tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+        else
+            error("Unknown fitMode type: " .. tostring(component.fitMode.type))
+        end
     end
 end
 

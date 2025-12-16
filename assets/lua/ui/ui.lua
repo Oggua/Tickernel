@@ -166,7 +166,7 @@ local function transformOffsetToWorld(localOffset, effectiveParent, matrixIndex,
 end
 
 -- Recursively updates the graphics (model matrix, mesh, instance) based on rect and parent transform
-local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenSizeChanged)
+local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight)
     local layout = node.layout
     local rect = node.rect
 
@@ -260,12 +260,14 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenSizeChang
     end
     local colorChanged = oldColor ~= rect.color
 
+    local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
     -- Update mesh if bounds changed
+    -- TODO: 把逻辑放进Component中
     if node.component and node.component.pTknMesh then
-        if node.component.type == "image" and boundsChanged then
-            imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat)
-        elseif node.component.type == "text" and (boundsChanged or screenSizeChanged or textComponent.font.dirty) then
-            textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, ui.screenWidth, ui.screenHeight)
+        if node.component.type == "Image" and (boundsChanged or screenSizeChanged) then
+            imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight)
+        elseif node.component.type == "Text" and (boundsChanged or screenSizeChanged or textComponent.font.dirty) then
+            textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight)
         end
     end
 
@@ -280,7 +282,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenSizeChang
 
     -- Recursively update children
     for _, child in ipairs(node.children) do
-        updateGraphicsRecursive(pTknGfxContext, ui, child, screenSizeChanged)
+        updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight)
     end
 end
 
@@ -422,7 +424,7 @@ end
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
-    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, ui.screenWidth ~= screenWidth or ui.screenHeight ~= screenHeight)
+    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
     textComponent.update(pTknGfxContext)
@@ -530,9 +532,9 @@ function ui.removeNode(pTknGfxContext, node)
     end
 
     if node.component then
-        if node.component.type == "image" then
+        if node.component.type == "Image" then
             ui.removeImageComponent(pTknGfxContext, node)
-        elseif node.component.type == "text" then
+        elseif node.component.type == "Text" then
             ui.removeTextComponent(pTknGfxContext, node)
         else
             error("ui.removeNode: unsupported component type " .. tostring(node.component.type))
@@ -643,13 +645,13 @@ function ui.unloadFont(pTknGfxContext, font)
     textComponent.unloadFont(pTknGfxContext, font)
 end
 
-function ui.addImageComponent(pTknGfxContext, color, slice, image, node)
-    local component = imageComponent.createComponent(pTknGfxContext, color, slice, image, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
+function ui.addImageComponent(pTknGfxContext, color, fitMode, image, node)
+    local component = imageComponent.createComponent(pTknGfxContext, color, fitMode, image, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
     addComponent(pTknGfxContext, node, component)
     return component
 end
 function ui.removeImageComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "image", "ui.removeImageComponent: node has no image component")
+    assert(node.component and node.component.type == "Image", "ui.removeImageComponent: node has no image component")
     print("Removing image component")
     imageComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)
@@ -660,7 +662,7 @@ function ui.addTextComponent(pTknGfxContext, textString, font, size, color, alig
     return component
 end
 function ui.removeTextComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "text", "ui.removeTextComponent: node has no text component")
+    assert(node.component and node.component.type == "Text", "ui.removeTextComponent: node has no text component")
     print("Removing text component")
     textComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)
