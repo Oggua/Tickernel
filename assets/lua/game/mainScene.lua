@@ -25,7 +25,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         rotation = 0,
     })
     local fitMode = {
-        type = "Cover",
+        type = "Contain",
     }
     -- Add background image to visualize the fit container
     ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.backgroundImage, mainScene.backgroundNode)

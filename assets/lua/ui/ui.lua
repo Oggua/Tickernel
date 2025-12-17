@@ -262,9 +262,8 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
 
     local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
     -- Update mesh if bounds changed
-    -- TODO: 把逻辑放进Component中
     if node.component and node.component.pTknMesh then
-        if node.component.type == "Image" and (boundsChanged or screenSizeChanged) then
+        if node.component.type == "Image" and (boundsChanged or (screenSizeChanged and imageComponent.fitMode.type ~= "Sliced")) then
             imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight)
         elseif node.component.type == "Text" and (boundsChanged or screenSizeChanged or textComponent.font.dirty) then
             textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight)
@@ -396,7 +395,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
         },
     }
     ui.nodePool = {}
-    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
+    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
 
     textComponent.setup(assetsPath)

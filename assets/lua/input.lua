@@ -1,11 +1,14 @@
-local input = {}
-input.keyCodeStates = {}
+local input = {
+    keyCodeStates = {},
+    mouseStates = {},
+    touches = {},
+}
 
 -- Key state constants - corresponding to C enum KeyState
 input.keyState = {
     idle = 0,
     down = 1,
-    up = 2
+    up = 2,
 }
 
 -- Key codes - directly corresponding to C enum KeyCode
