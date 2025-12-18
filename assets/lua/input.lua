@@ -1,17 +1,22 @@
 local input = {
     keyCodeStates = {},
-    mouseStates = {},
-    touches = {},
+    mouseCodeStates = {},
+    scrollingDelta = {
+        x = 0.0,
+        y = 0.0,
+    },
+    mousePositionNDC = {
+        x = 0.0,
+        y = 0.0,
+    },
 }
 
--- Key state constants - corresponding to C enum KeyState
-input.keyState = {
+input.inputState = {
     idle = 0,
     down = 1,
     up = 2,
 }
 
--- Key codes - directly corresponding to C enum KeyCode
 input.keyCode = {
     a = 0,
     b = 1,
@@ -109,28 +114,21 @@ input.keyCode = {
     numpad_enter = 93,
     numpad_decimal = 94,
 }
+input.mouseCode = {
+    left = 0,
+    right = 1,
+    middle = 2,
+    back = 3,
+    forward = 4,
+}
+
+function input.getMouseState(MouseCode)
+    return input.mouseCodeStates[MouseCode] or input.inputState.idle
+end
 
 -- Get the raw key state value (primary interface)
-function input.getKeyState(key)
-    return input.keyCodeStates[key] or input.keyState.idle
-end
-
--- Convenience functions (optional - can be removed if you prefer direct state checking)
-function input.isKeyPressed(key)
-    return input.getKeyState(key) == input.keyState.down
-end
-
-function input.isKeyReleased(key)
-    return input.getKeyState(key) == input.keyState.up
-end
-
-function input.isKeyIdle(key)
-    return input.getKeyState(key) == input.keyState.idle
-end
-
--- Legacy function for backward compatibility
-function input.isKeyDown(key)
-    return input.isKeyPressed(key)
+function input.getKeyState(keyCode)
+    return input.keyCodeStates[keyCode] or input.inputState.idle
 end
 
 return input

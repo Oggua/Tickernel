@@ -94,8 +94,6 @@ static int luaSetAudioPosition(lua_State *L) {
 
 @implementation EngineBinding
 
-
-
 VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
               VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -229,9 +227,13 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     LuaLibrary luaLibraries[] = {
         audioLibrary,
     };
-    
-    NSString *assetsPath = [resourcePath stringByAppendingPathComponent:@"assets"];
-    self.pTknContext = createTknContextPtr([assetsPath UTF8String], sizeof(luaLibraries) / sizeof(luaLibraries[0]), luaLibraries, 2, vkSurfaceFormatKHR,VK_PRESENT_MODE_FIFO_KHR,_vkInstance,_vkSurface,swapchainExtent);
+
+    NSString *assetsPath =
+        [resourcePath stringByAppendingPathComponent:@"assets"];
+    self.pTknContext = createTknContextPtr(
+        [assetsPath UTF8String], sizeof(luaLibraries) / sizeof(luaLibraries[0]),
+        luaLibraries, 2, vkSurfaceFormatKHR, VK_PRESENT_MODE_FIFO_KHR,
+        _vkInstance, _vkSurface, swapchainExtent);
 }
 
 - (void)teardownEngine {
@@ -240,13 +242,22 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     [self destroyVkInstance];
 }
 
-- (BOOL)updateEngine:(uint32_t)width height:(uint32_t)height keyStates:(KeyState*)keyStates;
+- (BOOL)updateEngine:(uint32_t)width
+              height:(uint32_t)height
+       keyCodeStates:(InputState *)keyCodeStates
+     mouseCodeStates:(InputState *)mouseCodeStates
+     scrollingDeltaX:(CGFloat)scrollingDeltaX
+     scrollingDeltaY:(CGFloat)scrollingDeltaY
+    mousePositionNDC:(NSPoint)mousePositionNDC;
 {
     VkExtent2D swapchainExtent = {
         .width = width,
         .height = height,
     };
-    return updateTknContext(self.pTknContext, swapchainExtent, KEY_CODE_COUNT, keyStates);
+    return updateTknContext(self.pTknContext, swapchainExtent, KEY_CODE_COUNT,
+                            keyCodeStates, MOUSE_CODE_COUNT, mouseCodeStates,
+                            scrollingDeltaX, scrollingDeltaY,
+                            mousePositionNDC.x, mousePositionNDC.y);
 }
 
 @end

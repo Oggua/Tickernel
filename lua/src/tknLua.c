@@ -104,29 +104,50 @@ void destroyTknContextPtr(TknContext *pTknContext)
     tknFree(pTknContext);
 }
 
-bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyStateCount, KeyState *keyStates)
+bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyCodeStateCount, InputState *keyCodeStates, uint32_t mouseCodeStateCount, InputState *mouseCodeStates, float scrollingDeltaX, float scrollingDeltaY, float mousePositionNDCX, float mousePositionNDCY)
 {
     lua_State *pLuaState = pTknContext->pLuaState;
     bool shouldQuit = false;
 
     // Update input states first
-    if (keyStates && keyStateCount > 0)
+    if (keyCodeStates && keyCodeStateCount > 0)
     {
         lua_getglobal(pLuaState, "require");
         lua_pushstring(pLuaState, "input");
         lua_call(pLuaState, 1, 1);
 
         lua_getfield(pLuaState, -1, "keyCodeStates");
-
-        // Use the actual keyStateCount parameter for safety
-        for (uint32_t i = 0; i < keyStateCount; i++)
+        // Use the actual keyCodeStateCount parameter for safety
+        for (uint32_t i = 0; i < keyCodeStateCount; i++)
         {
             lua_pushinteger(pLuaState, i);
-            lua_pushinteger(pLuaState, keyStates[i]); // Push KeyState enum value as integer
+            lua_pushinteger(pLuaState, keyCodeStates[i]);
             lua_settable(pLuaState, -3);
         }
+        lua_pop(pLuaState, 1);
 
-        lua_pop(pLuaState, 2); // Clean up input module and keyCodeStates table
+        lua_getfield(pLuaState, -1, "mouseCodeStates");
+        for (uint32_t i = 0; i < mouseCodeStateCount; i++)
+        {
+            lua_pushinteger(pLuaState, i);
+            lua_pushinteger(pLuaState, mouseCodeStates[i]);
+            lua_settable(pLuaState, -3);
+        }
+        lua_pop(pLuaState, 1);
+
+        lua_getfield(pLuaState, -1, "scrollingDelta");
+        lua_pushnumber(pLuaState, scrollingDeltaX);
+        lua_setfield(pLuaState, -2, "x");
+        lua_pushnumber(pLuaState, scrollingDeltaY);
+        lua_setfield(pLuaState, -2, "y");
+        lua_pop(pLuaState, 1);
+
+        lua_getfield(pLuaState, -1, "mousePositionNDC");
+        lua_pushnumber(pLuaState, mousePositionNDCX);
+        lua_setfield(pLuaState, -2, "x");
+        lua_pushnumber(pLuaState, mousePositionNDCY);
+        lua_setfield(pLuaState, -2, "y");
+        lua_pop(pLuaState, 2);
     }
 
     TknGfxContext *pTknGfxContext = pTknContext->pTknGfxContext;

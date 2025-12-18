@@ -1,9 +1,9 @@
-#import <vulkan/vulkan.h>
-#import <MetalKit/MetalKit.h>
-#import <Metal/Metal.h>
-#import <vulkan/vulkan_macos.h>
 #import "tknLua.h"
-static NSString * const AppName = @"Tickernel";
+#import <Metal/Metal.h>
+#import <MetalKit/MetalKit.h>
+#import <vulkan/vulkan.h>
+#import <vulkan/vulkan_macos.h>
+static NSString *const AppName = @"Tickernel";
 
 typedef enum {
     KEY_CODE_A = 0,
@@ -104,14 +104,34 @@ typedef enum {
     KEY_CODE_COUNT = 95
 } KeyCode;
 
+typedef enum {
+    MOUSE_CODE_LEFT = 0,
+    MOUSE_CODE_RIGHT = 1,
+    MOUSE_CODE_CENTER = 2,
+    MOUSE_CODE_BACK = 4,
+    MOUSE_CODE_FORWARD = 5,
+    MOUSE_CODE_COUNT = 6,
+} MouseCode;
+
 @interface EngineBinding : NSObject
 
-@property (nonatomic, assign) VkSurfaceKHR vkSurface;
-@property (nonatomic, assign) TknContext* pTknContext;
-@property (nonatomic, assign) VkInstance vkInstance;
+@property(nonatomic, assign) VkSurfaceKHR vkSurface;
+@property(nonatomic, assign) TknContext *pTknContext;
+@property(nonatomic, assign) VkInstance vkInstance;
 
-- (void)setupEngine: (uint32_t)width height:(uint32_t)height resourcePath:(NSString*)resourcePath pView:(void*)pView;
+- (void)setupEngine:(uint32_t)width
+             height:(uint32_t)height
+       resourcePath:(NSString *)resourcePath
+              pView:(void *)pView;
+
 - (void)teardownEngine;
-- (BOOL)updateEngine: (uint32_t)width height:(uint32_t)height keyStates:(KeyState*)keyStates;
+
+- (BOOL)updateEngine:(uint32_t)width
+              height:(uint32_t)height
+       keyCodeStates:(InputState *)keyCodeStates
+     mouseCodeStates:(InputState *)mouseCodeStates
+     scrollingDeltaX:(CGFloat)scrollingDeltaX
+     scrollingDeltaY:(CGFloat)scrollingDeltaY
+    mousePositionNDC:(NSPoint)mousePositionNDC;
 
 @end
