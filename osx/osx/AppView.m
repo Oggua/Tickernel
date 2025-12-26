@@ -78,6 +78,7 @@
 
 - (void)mouseUp:(NSEvent *)event {
     self.mouseCodeStates[event.buttonNumber] = INPUT_STATE_UP;
+    NSLog(@"!!UP");
     [super mouseUp:event];
 }
 
@@ -412,7 +413,7 @@
     self = [super initWithFrame:frameRect device:device];
     self.delegate = self;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-    self.preferredFramesPerSecond = 1;
+    self.preferredFramesPerSecond = 15;
 
     NSTrackingArea *trackingArea = [[NSTrackingArea alloc]
         initWithRect:self.bounds

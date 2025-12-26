@@ -6,6 +6,7 @@ function imageComponent.setup(assetsPath)
     imageComponent.pool = {}
     imageComponent.pathToImage = {}
 end
+
 function imageComponent.teardown(pTknGfxContext)
     for path, image in pairs(imageComponent.pathToImage) do
         tkn.tknDestroyImagePtr(pTknGfxContext, image.pTknImage)
@@ -77,6 +78,7 @@ function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, v
         component.pTknMesh = pTknMesh
         component.pTknInstance = pTknInstance
         component.pTknDrawCall = pTknDrawCall
+        component.node = node
     else
         component = {
             type = "Image",
@@ -86,10 +88,12 @@ function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, v
             pTknMesh = pTknMesh,
             pTknInstance = pTknInstance,
             pTknDrawCall = pTknDrawCall,
+            node = node,
         }
     end
     return component
 end
+
 function imageComponent.destroyComponent(pTknGfxContext, component)
     tkn.tknDestroyDrawCallPtr(pTknGfxContext, component.pTknDrawCall)
     tkn.tknDestroyInstancePtr(pTknGfxContext, component.pTknInstance)
@@ -101,6 +105,7 @@ function imageComponent.destroyComponent(pTknGfxContext, component)
     component.pTknDrawCall = nil
     component.fitMode = nil
     component.color = 0xFFFFFFFF
+    component.node = nil
     table.insert(imageComponent.pool, component)
 end
 

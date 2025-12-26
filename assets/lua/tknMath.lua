@@ -1,22 +1,37 @@
 local tknMath = {}
 
--- 3x3 matrix multiplication (a * b) - COLUMN-MAJOR format for GLSL
+function tknMath.multiplyColors(c1, c2)
+    local a1 = (c1 >> 24) & 0xFF
+    local r1 = (c1 >> 16) & 0xFF
+    local g1 = (c1 >> 8) & 0xFF
+    local b1 = c1 & 0xFF
+    local a2 = (c2 >> 24) & 0xFF
+    local r2 = (c2 >> 16) & 0xFF
+    local g2 = (c2 >> 8) & 0xFF
+    local b2 = c2 & 0xFF
+    local a = (a1 * a2) // 255
+    local r = (r1 * r2) // 255
+    local g = (g1 * g2) // 255
+    local b = (b1 * b2) // 255
+    return (a << 24) | (r << 16) | (g << 8) | b
+end
+-- 3x3 matrix multiplication (m1 * m2) - COLUMN-MAJOR format for GLSL
 -- Matrices are stored as: [col0_x, col0_y, col0_z, col1_x, col1_y, col1_z, col2_x, col2_y, col2_z]
 -- If result is provided, writes to it and returns it; otherwise creates new table
-function tknMath.multiplyMat3(a, b, result)
+function tknMath.multiplyMat3(m1, m2, result)
     local r = result or {}
     -- Column 0 of result
-    r[1] = a[1] * b[1] + a[4] * b[2] + a[7] * b[3]
-    r[2] = a[2] * b[1] + a[5] * b[2] + a[8] * b[3]
-    r[3] = a[3] * b[1] + a[6] * b[2] + a[9] * b[3]
+    r[1] = m1[1] * m2[1] + m1[4] * m2[2] + m1[7] * m2[3]
+    r[2] = m1[2] * m2[1] + m1[5] * m2[2] + m1[8] * m2[3]
+    r[3] = m1[3] * m2[1] + m1[6] * m2[2] + m1[9] * m2[3]
     -- Column 1 of result
-    r[4] = a[1] * b[4] + a[4] * b[5] + a[7] * b[6]
-    r[5] = a[2] * b[4] + a[5] * b[5] + a[8] * b[6]
-    r[6] = a[3] * b[4] + a[6] * b[5] + a[9] * b[6]
+    r[4] = m1[1] * m2[4] + m1[4] * m2[5] + m1[7] * m2[6]
+    r[5] = m1[2] * m2[4] + m1[5] * m2[5] + m1[8] * m2[6]
+    r[6] = m1[3] * m2[4] + m1[6] * m2[5] + m1[9] * m2[6]
     -- Column 2 of result
-    r[7] = a[1] * b[7] + a[4] * b[8] + a[7] * b[9]
-    r[8] = a[2] * b[7] + a[5] * b[8] + a[8] * b[9]
-    r[9] = a[3] * b[7] + a[6] * b[8] + a[9] * b[9]
+    r[7] = m1[1] * m2[7] + m1[4] * m2[8] + m1[7] * m2[9]
+    r[8] = m1[2] * m2[7] + m1[5] * m2[8] + m1[8] * m2[9]
+    r[9] = m1[3] * m2[7] + m1[6] * m2[8] + m1[9] * m2[9]
     return r
 end
 
@@ -62,33 +77,13 @@ function tknMath.smoothLerp(a, b, t)
     return a + (b - a) * t
 end
 
-local rotationMatrix = {
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
-}
+local rotationMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
-local scaleMatrix = {
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
-}
+local scaleMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
-local translateMatrix = {
-    { 1, 0, 0, 0 },
-    { 0, 1, 0, 0 },
-    { 0, 0, 1, 0 },
-    { 0, 0, 0, 1 }
-}
+local translateMatrix = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}
 
-local modelMatrix = {
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
-}
+local modelMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
 local function rotateAroundZ(angle)
     local rad = math.rad(angle)
@@ -307,26 +302,11 @@ end
 -- -- Calculate and print execution time
 -- local elapsedTime = endTime - startTime
 -- print(string.format("Execution time: %.4f seconds", elapsedTime))
-local rotationMatrix = {
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
-}
+local rotationMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
-local scaleMatrix = {
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
-}
+local scaleMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
-local translateMatrix = {
-    { 1, 0, 0, 0 },
-    { 0, 1, 0, 0 },
-    { 0, 0, 1, 0 },
-    { 0, 0, 0, 1 }
-}
+local translateMatrix = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}
 
 local function rotateAroundZ(angle)
     local rad = math.rad(angle)
@@ -411,12 +391,7 @@ local function matrixMultiply(A, B, result)
     end
 end
 
-local modelMatrix = {
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-    { 0, 0, 0, 0 }
-}
+local modelMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 function tknMath.applyTransformations(scale, x, y, z, angle, matrix)
     local rotationMatrix = rotateAroundZ(angle)
     local scaleMatrix = scaleModel(scale)
@@ -426,12 +401,7 @@ function tknMath.applyTransformations(scale, x, y, z, angle, matrix)
 end
 
 function tknMath.createMatrix()
-    return {
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-    }
+    return {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 end
 
 return tknMath

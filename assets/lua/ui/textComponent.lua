@@ -111,7 +111,7 @@ function textComponent.createComponent(pTknGfxContext, textString, font, size, c
     component.pTknMesh = pTknMesh
     component.pTknInstance = pTknInstance
     component.pTknDrawCall = pTknDrawCall
-
+    component.node = node
     return component
 end
 
@@ -131,6 +131,7 @@ function textComponent.destroyComponent(pTknGfxContext, component)
     component.alignH = 0
     component.alignV = 0
     component.bold = false
+    component.node = nil
     table.insert(textComponent.pool, component)
 end
 
