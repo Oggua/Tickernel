@@ -1,5 +1,11 @@
 local tkn = require("tkn")
 local imageComponent = {}
+imageComponent.fitModeType = {
+    normal = 1,
+    sliced = 2,
+    cover = 3,
+    contain = 4,
+}
 
 function imageComponent.setup(assetsPath)
     imageComponent.assetsPath = assetsPath
@@ -59,7 +65,7 @@ function imageComponent.unloadImage(pTknGfxContext, image)
     image.path = nil
 end
 
-function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, vertexFormat, instanceFormat, pTknPipeline, node)
+function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, node)
     local component = nil
     local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
 
@@ -75,6 +81,7 @@ function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, v
         component.color = color
         component.fitMode = fitMode
         component.image = image
+        component.uv = uv
         component.pTknMesh = pTknMesh
         component.pTknInstance = pTknInstance
         component.pTknDrawCall = pTknDrawCall
@@ -85,6 +92,7 @@ function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, v
             color = color,
             fitMode = fitMode,
             image = image,
+            uv = uv,
             pTknMesh = pTknMesh,
             pTknInstance = pTknInstance,
             pTknDrawCall = pTknDrawCall,
@@ -100,6 +108,7 @@ function imageComponent.destroyComponent(pTknGfxContext, component)
     tkn.tknDestroyMeshPtr(pTknGfxContext, component.pTknMesh)
 
     component.image = nil
+    component.uv = nil
     component.pTknMesh = nil
     component.pTknInstance = nil
     component.pTknDrawCall = nil
@@ -109,90 +118,132 @@ function imageComponent.destroyComponent(pTknGfxContext, component)
     table.insert(imageComponent.pool, component)
 end
 
-function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFormat, screenWidth, screenHeight)
-    -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
-    local left = rect.horizontal.min
-    local top = rect.vertical.min
-    local right = rect.horizontal.max
-    local bottom = rect.vertical.max
-    if component.fitMode.type == "Sliced" then
-        -- Nine-fitMode: generate 4x4 grid with 16 vertices (pivot-centered)
-        local vertices = {
-            position = {},
-            uv = {},
-        }
-        -- Simplified implementation: fill 16 vertices with default data
-        for i = 1, 16 do
-            table.insert(vertices.position, left)
-            table.insert(vertices.position, top)
-            table.insert(vertices.uv, 0.0)
-            table.insert(vertices.uv, 0.0)
-        end
-        -- Generate indices (9 quads)
-        local indices = {}
-        for quad = 1, 9 do
-            local base = (quad - 1) * 4
-            table.insert(indices, base)
-            table.insert(indices, base + 1)
-            table.insert(indices, base + 2)
-            table.insert(indices, base + 2)
-            table.insert(indices, base + 3)
-            table.insert(indices, base)
-        end
-        tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
-    else
-        -- Calculate UV based on fitMode (cover/contain)
-        local u0, v0, u1, v1 = 0.0, 0.0, 1.0, 1.0
-        local containerWidth = right - left
-        local containerHeight = bottom - top
-        local containerAspect = containerWidth * screenWidth / (containerHeight * screenHeight)
-        local imageAspect = component.image.width / component.image.height
-        print("Container Aspect: " .. tostring(containerAspect) .. ", Image Aspect: " .. tostring(imageAspect))
-        if component.fitMode.type == "Cover" then
-            -- Cover: image fills container, may crop
-            if imageAspect > containerAspect then
-                -- Image is wider, crop left/right
-                local scale = containerAspect / imageAspect
-                local offset = (1.0 - scale) / 2.0
-                u0, u1 = offset, 1.0 - offset
-            else
-                -- Image is taller, crop top/bottom
-                local scale = imageAspect / containerAspect
-                local offset = (1.0 - scale) / 2.0
-                v0, v1 = offset, 1.0 - offset
-            end
-
+function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
+    if boundsChanged or (screenSizeChanged and component.fitMode.type ~= imageComponent.fitModeType.sliced) then
+        -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
+        local left = rect.horizontal.min
+        local top = rect.vertical.min
+        local right = rect.horizontal.max
+        local bottom = rect.vertical.max
+        if component.fitMode.type == imageComponent.fitModeType.normal then
             -- Regular quad: 4 vertices with pivot at (0, 0)
             local vertices = {
                 position = {left, top, right, top, right, bottom, left, bottom},
-                uv = {u0, v0, u1, v0, u1, v1, u0, v1},
+                uv = {component.uv.u0, component.uv.v0, component.uv.u1, component.uv.v0, component.uv.u1, component.uv.v1, component.uv.u0, component.uv.v1},
             }
             local indices = {0, 1, 2, 2, 3, 0}
             tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
-        elseif component.fitMode.type == "Contain" then
-            -- Adjust vertex positions instead of UV for true contain
-            if imageAspect > containerAspect then
-                -- Image is wider, add letterbox top/bottom
-                local newHeight = ((containerWidth * screenWidth / 2.0) / imageAspect) / screenHeight * 2.0
-                local offset = (newHeight - containerHeight) / 2.0
-                print(offset)
-                v0, v1 = offset, 1.0 - offset
-            else
-                -- Image is taller, add letterbox left/right
-                local newWidth = (containerHeight * screenHeight / 2.0) * imageAspect / screenWidth * 2.0
-                local offset = (newWidth - containerWidth) / 2.0
-                print(offset)
-                u0, u1 = offset, 1.0 - offset
-            end
-            -- Regular quad: 4 vertices with pivot at (0, 0)
+        elseif component.fitMode.type == imageComponent.fitModeType.sliced then
+            -- 9-slice: calculate 16 UVs and positions based on padding and uv
+            local h = component.fitMode.horizontal
+            local v = component.fitMode.vertical
+            local u0, v0, u1, v1 = component.uv.u0, component.uv.v0, component.uv.u1, component.uv.v1
+            -- Calculate split points (4 for each axis)
+
+            local uL = u0
+            local uR = u1
+            local uML = u0 + h.minPadding / component.image.width
+            local uMR = u1 - h.maxPadding / component.image.width
+            local vT = v0
+            local vB = v1
+            local vMT = v0 + v.minPadding / component.image.height
+            local vMB = v1 - v.maxPadding / component.image.height
+
+            -- 4x4 grid of UVs
+            local uvGrid = {{uL, vT}, {uML, vT}, {uMR, vT}, {uR, vT}, {uL, vMT}, {uML, vMT}, {uMR, vMT}, {uR, vMT}, {uL, vMB}, {uML, vMB}, {uMR, vMB}, {uR, vMB}, {uL, vB}, {uML, vB}, {uMR, vB}, {uR, vB}}
+
+            -- 4x4 grid of positions (for demonstration, should be calculated with rect/padding)
+            local xL = left
+            local xR = right
+            local xML = left + (right - left) * h.minPadding / screenWidth * 2
+            local xMR = right - (right - left) * h.maxPadding / screenWidth * 2
+            local yT = top
+            local yB = bottom
+            local yMT = top + (bottom - top) * v.minPadding / screenHeight * 2
+            local yMB = bottom - (bottom - top) * v.maxPadding / screenHeight * 2
+            local posGrid = {{xL, yT}, {xML, yT}, {xMR, yT}, {xR, yT}, {xL, yMT}, {xML, yMT}, {xMR, yMT}, {xR, yMT}, {xL, yMB}, {xML, yMB}, {xMR, yMB}, {xR, yMB}, {xL, yB}, {xML, yB}, {xMR, yB}, {xR, yB}}
             local vertices = {
-                position = {left, top, right, top, right, bottom, left, bottom},
-                uv = {u0, v0, u1, v0, u1, v1, u0, v1},
+                position = {},
+                uv = {},
             }
-            local indices = {0, 1, 2, 2, 3, 0}
+            for i = 1, 16 do
+                table.insert(vertices.position, posGrid[i][1])
+                table.insert(vertices.position, posGrid[i][2])
+                table.insert(vertices.uv, uvGrid[i][1])
+                table.insert(vertices.uv, uvGrid[i][2])
+            end
+            -- Generate indices (9 quads, 2 triangles each)
+            local indices = {}
+            for row = 0, 2 do
+                for col = 0, 2 do
+                    local idx = row * 4 + col
+                    local v0 = idx
+                    local v1 = idx + 1
+                    local v2 = idx + 5
+                    local v3 = idx + 4
+                    table.insert(indices, v0)
+                    table.insert(indices, v1)
+                    table.insert(indices, v2)
+                    table.insert(indices, v2)
+                    table.insert(indices, v3)
+                    table.insert(indices, v0)
+                end
+            end
             tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         else
-            error("Unknown fitMode type: " .. tostring(component.fitMode.type))
+            -- Calculate UV based on fitMode (cover/contain)
+            local u0, v0, u1, v1 = 0.0, 0.0, 1.0, 1.0
+            local containerWidth = right - left
+            local containerHeight = bottom - top
+            local containerAspect = containerWidth * screenWidth / (containerHeight * screenHeight)
+            local imageAspect = component.image.width / component.image.height
+            print("Container Aspect: " .. tostring(containerAspect) .. ", Image Aspect: " .. tostring(imageAspect))
+            if component.fitMode.type == imageComponent.fitModeType.cover then
+                -- Cover: image fills container, may crop
+                if imageAspect > containerAspect then
+                    -- Image is wider, crop left/right
+                    local scale = containerAspect / imageAspect
+                    local offset = (1.0 - scale) / 2.0
+                    u0, u1 = offset, 1.0 - offset
+                else
+                    -- Image is taller, crop top/bottom
+                    local scale = imageAspect / containerAspect
+                    local offset = (1.0 - scale) / 2.0
+                    v0, v1 = offset, 1.0 - offset
+                end
+
+                -- Regular quad: 4 vertices with pivot at (0, 0)
+                local vertices = {
+                    position = {left, top, right, top, right, bottom, left, bottom},
+                    uv = {u0, v0, u1, v0, u1, v1, u0, v1},
+                }
+                local indices = {0, 1, 2, 2, 3, 0}
+                tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            elseif component.fitMode.type == imageComponent.fitModeType.contain then
+                -- Adjust vertex positions instead of UV for true contain
+                if imageAspect > containerAspect then
+                    -- Image is wider, add letterbox top/bottom
+                    local newHeight = ((containerWidth * screenWidth / 2.0) / imageAspect) / screenHeight * 2.0
+                    local offset = (newHeight - containerHeight) / 2.0
+                    print(offset)
+                    v0, v1 = offset, 1.0 - offset
+                else
+                    -- Image is taller, add letterbox left/right
+                    local newWidth = (containerHeight * screenHeight / 2.0) * imageAspect / screenWidth * 2.0
+                    local offset = (newWidth - containerWidth) / 2.0
+                    print(offset)
+                    u0, u1 = offset, 1.0 - offset
+                end
+                -- Regular quad: 4 vertices with pivot at (0, 0)
+                local vertices = {
+                    position = {left, top, right, top, right, bottom, left, bottom},
+                    uv = {u0, v0, u1, v0, u1, v1, u0, v1},
+                }
+                local indices = {0, 1, 2, 2, 3, 0}
+                tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            else
+                error("Unknown fitMode type: " .. tostring(component.fitMode.type))
+            end
         end
     end
 end

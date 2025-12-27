@@ -3,7 +3,6 @@
 -- The creation, deletion, and modification of drawcalls and meshes depend on the add/delete/modify operations of nodes and components.
 -- Updating mesh requires layout update first, so it always happens after the update layout phase.
 local ui = {}
-
 local tknMath = require("tknMath")
 local tkn = require("tkn")
 local imageComponent = require("ui.imageComponent")
@@ -11,6 +10,7 @@ local textComponent = require("ui.textComponent")
 local buttonComponent = require("ui.buttonComponent")
 local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
+ui.fitModeType = imageComponent.fitModeType
 
 local function traverseNode(node, callback)
     local result = callback(node)
@@ -279,15 +279,15 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         else
             rect.color = overrideColor
         end
-        
+
         local colorChanged = oldColor ~= rect.color
         local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
         -- Update mesh if bounds changed
         if node.component.pTknMesh then
-            if node.component.type == "Image" and (boundsChanged or (screenSizeChanged and imageComponent.fitMode.type ~= "Sliced")) then
-                imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight)
-            elseif node.component.type == "Text" and (boundsChanged or screenSizeChanged or textComponent.font.dirty) then
-                textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight)
+            if node.component.type == "Image" then
+                imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
+            elseif node.component.type == "Text" then
+                textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
             end
         end
 
@@ -762,8 +762,8 @@ function ui.removeButtonComponent(pTknGfxContext, node)
     removeComponent(pTknGfxContext, node)
 end
 
-function ui.addImageComponent(pTknGfxContext, color, fitMode, image, node)
-    local component = imageComponent.createComponent(pTknGfxContext, color, fitMode, image, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
+function ui.addImageComponent(pTknGfxContext, color, fitMode, image, uv, node)
+    local component = imageComponent.createComponent(pTknGfxContext, color, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
     addComponent(pTknGfxContext, node, component)
     return component
 end

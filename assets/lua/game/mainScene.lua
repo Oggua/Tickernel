@@ -2,7 +2,8 @@ local mainScene = {}
 local ui = require("ui.ui")
 local input = require("input")
 function mainScene.start(game, pTknGfxContext, assetsPath)
-    mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/default.astc")
+    mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/bg.astc")
+    mainScene.defaultImage = ui.loadImage(pTknGfxContext, "/textures/default.astc")
     print("Creating FIT type container node")
     mainScene.backgroundNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", {
         dirty = true,
@@ -25,10 +26,24 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         rotation = 0,
     })
     local fitMode = {
-        type = "Contain",
+        type = ui.fitModeType.sliced,
+        horizontal = {
+            minPadding = 128,
+            maxPadding = 128,
+        },
+        vertical = {
+            minPadding = 128,
+            maxPadding = 128,
+        },
+    }
+    local uv = {
+        u0 = 0,
+        v0 = 0,
+        u1 = 1,
+        v1 = 1,
     }
     -- Add background image to visualize the fit container
-    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.backgroundImage, mainScene.backgroundNode)
+    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.backgroundImage, uv, mainScene.backgroundNode)
 
     mainScene.buttonNode = ui.addNode(pTknGfxContext, mainScene.backgroundNode, 1, "startButton", {
         dirty = true,
@@ -36,7 +51,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             type = "anchored",
             anchor = 0.5,
             pivot = 0.5,
-            length = 256,
+            length = 512,
             offset = 0,
             scale = 1,
         },
@@ -44,7 +59,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             type = "anchored",
             anchor = 0.5,
             pivot = 0.5,
-            length = 128,
+            length = 256,
             offset = 0,
             scale = 1,
         },
@@ -85,10 +100,10 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         rotation = 0,
     })
     local fitMode = {
-        type = "Cover",
+        type = ui.fitModeType.cover,
     }
     -- Add background image to visualize the fit container
-    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.backgroundImage, mainScene.buttonBackground)
+    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.defaultImage, uv, mainScene.buttonBackground)
 end
 
 function mainScene.stop(game)
@@ -97,6 +112,7 @@ end
 function mainScene.stopGfx(game, pTknGfxContext)
     mainScene.pDefaultImageMaterial = nil
     ui.unloadImage(pTknGfxContext, mainScene.backgroundImage)
+    ui.unloadImage(pTknGfxContext, mainScene.defaultImage)
     print("Tearing down render pipeline")
 end
 
