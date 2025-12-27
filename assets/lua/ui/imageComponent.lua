@@ -149,10 +149,7 @@ function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFor
             local vMT = v0 + v.minPadding / component.image.height
             local vMB = v1 - v.maxPadding / component.image.height
 
-            -- 4x4 grid of UVs
-            local uvGrid = {{uL, vT}, {uML, vT}, {uMR, vT}, {uR, vT}, {uL, vMT}, {uML, vMT}, {uMR, vMT}, {uR, vMT}, {uL, vMB}, {uML, vMB}, {uMR, vMB}, {uR, vMB}, {uL, vB}, {uML, vB}, {uMR, vB}, {uR, vB}}
-
-            -- 4x4 grid of positions (for demonstration, should be calculated with rect/padding)
+            -- 计算所有分割点
             local xL = left
             local xR = right
             local xML = left + (right - left) * h.minPadding / screenWidth * 2
@@ -161,17 +158,45 @@ function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFor
             local yB = bottom
             local yMT = top + (bottom - top) * v.minPadding / screenHeight * 2
             local yMB = bottom - (bottom - top) * v.maxPadding / screenHeight * 2
-            local posGrid = {{xL, yT}, {xML, yT}, {xMR, yT}, {xR, yT}, {xL, yMT}, {xML, yMT}, {xMR, yMT}, {xR, yMT}, {xL, yMB}, {xML, yMB}, {xMR, yMB}, {xR, yMB}, {xL, yB}, {xML, yB}, {xMR, yB}, {xR, yB}}
+
             local vertices = {
                 position = {},
                 uv = {},
             }
-            for i = 1, 16 do
-                table.insert(vertices.position, posGrid[i][1])
-                table.insert(vertices.position, posGrid[i][2])
-                table.insert(vertices.uv, uvGrid[i][1])
-                table.insert(vertices.uv, uvGrid[i][2])
-            end
+            -- Direct assignment, no table construction
+            vertices.position[1], vertices.position[2] = xL, yT
+            vertices.position[3], vertices.position[4] = xML, yT
+            vertices.position[5], vertices.position[6] = xMR, yT
+            vertices.position[7], vertices.position[8] = xR, yT
+            vertices.position[9], vertices.position[10] = xL, yMT
+            vertices.position[11], vertices.position[12] = xML, yMT
+            vertices.position[13], vertices.position[14] = xMR, yMT
+            vertices.position[15], vertices.position[16] = xR, yMT
+            vertices.position[17], vertices.position[18] = xL, yMB
+            vertices.position[19], vertices.position[20] = xML, yMB
+            vertices.position[21], vertices.position[22] = xMR, yMB
+            vertices.position[23], vertices.position[24] = xR, yMB
+            vertices.position[25], vertices.position[26] = xL, yB
+            vertices.position[27], vertices.position[28] = xML, yB
+            vertices.position[29], vertices.position[30] = xMR, yB
+            vertices.position[31], vertices.position[32] = xR, yB
+
+            vertices.uv[1], vertices.uv[2] = uL, vT
+            vertices.uv[3], vertices.uv[4] = uML, vT
+            vertices.uv[5], vertices.uv[6] = uMR, vT
+            vertices.uv[7], vertices.uv[8] = uR, vT
+            vertices.uv[9], vertices.uv[10] = uL, vMT
+            vertices.uv[11], vertices.uv[12] = uML, vMT
+            vertices.uv[13], vertices.uv[14] = uMR, vMT
+            vertices.uv[15], vertices.uv[16] = uR, vMT
+            vertices.uv[17], vertices.uv[18] = uL, vMB
+            vertices.uv[19], vertices.uv[20] = uML, vMB
+            vertices.uv[21], vertices.uv[22] = uMR, vMB
+            vertices.uv[23], vertices.uv[24] = uR, vMB
+            vertices.uv[25], vertices.uv[26] = uL, vB
+            vertices.uv[27], vertices.uv[28] = uML, vB
+            vertices.uv[29], vertices.uv[30] = uMR, vB
+            vertices.uv[31], vertices.uv[32] = uR, vB
             -- Generate indices (9 quads, 2 triangles each)
             local indices = {}
             for row = 0, 2 do
@@ -192,24 +217,24 @@ function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFor
             tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         else
             -- Calculate UV based on fitMode (cover/contain)
-            local u0, v0, u1, v1 = 0.0, 0.0, 1.0, 1.0
+            local u0, v0, u1, v1 = component.uv.u0, component.uv.v0, component.uv.u1, component.uv.v1
             local containerWidth = right - left
             local containerHeight = bottom - top
             local containerAspect = containerWidth * screenWidth / (containerHeight * screenHeight)
-            local imageAspect = component.image.width / component.image.height
+            local imageAspect = (component.image.width * (u1 - u0)) / (component.image.height * (v1 - v0))
             print("Container Aspect: " .. tostring(containerAspect) .. ", Image Aspect: " .. tostring(imageAspect))
             if component.fitMode.type == imageComponent.fitModeType.cover then
                 -- Cover: image fills container, may crop
                 if imageAspect > containerAspect then
                     -- Image is wider, crop left/right
                     local scale = containerAspect / imageAspect
-                    local offset = (1.0 - scale) / 2.0
-                    u0, u1 = offset, 1.0 - offset
+                    local offset = (u1 - u0) * (1.0 - scale) / 2.0
+                    u0, u1 = u0 + offset, u1 - offset
                 else
                     -- Image is taller, crop top/bottom
                     local scale = imageAspect / containerAspect
-                    local offset = (1.0 - scale) / 2.0
-                    v0, v1 = offset, 1.0 - offset
+                    local offset = (v1 - v0) * (1.0 - scale) / 2.0
+                    v0, v1 = v0 + offset, v1 - offset
                 end
 
                 -- Regular quad: 4 vertices with pivot at (0, 0)
@@ -225,14 +250,12 @@ function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFor
                     -- Image is wider, add letterbox top/bottom
                     local newHeight = ((containerWidth * screenWidth / 2.0) / imageAspect) / screenHeight * 2.0
                     local offset = (newHeight - containerHeight) / 2.0
-                    print(offset)
-                    v0, v1 = offset, 1.0 - offset
+                    v0, v1 = v0 + offset, v1 - offset
                 else
                     -- Image is taller, add letterbox left/right
                     local newWidth = (containerHeight * screenHeight / 2.0) * imageAspect / screenWidth * 2.0
                     local offset = (newWidth - containerWidth) / 2.0
-                    print(offset)
-                    u0, u1 = offset, 1.0 - offset
+                    u0, u1 = u0 + offset, u1 - offset
                 end
                 -- Regular quad: 4 vertices with pivot at (0, 0)
                 local vertices = {

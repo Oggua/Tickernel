@@ -26,15 +26,15 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         rotation = 0,
     })
     local fitMode = {
-        type = ui.fitModeType.sliced,
-        horizontal = {
-            minPadding = 128,
-            maxPadding = 128,
-        },
-        vertical = {
-            minPadding = 128,
-            maxPadding = 128,
-        },
+        type = ui.fitModeType.cover,
+        -- horizontal = {
+        --     minPadding = 128,
+        --     maxPadding = 128,
+        -- },
+        -- vertical = {
+        --     minPadding = 128,
+        --     maxPadding = 128,
+        -- },
     }
     local uv = {
         u0 = 0,
@@ -43,7 +43,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         v1 = 1,
     }
     -- Add background image to visualize the fit container
-    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.backgroundImage, uv, mainScene.backgroundNode)
+    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, mainScene.defaultImage, uv, mainScene.backgroundNode)
 
     mainScene.buttonNode = ui.addNode(pTknGfxContext, mainScene.backgroundNode, 1, "startButton", {
         dirty = true,
@@ -51,7 +51,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             type = "anchored",
             anchor = 0.5,
             pivot = 0.5,
-            length = 512,
+            length = 256,
             offset = 0,
             scale = 1,
         },
@@ -59,7 +59,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             type = "anchored",
             anchor = 0.5,
             pivot = 0.5,
-            length = 256,
+            length = 64,
             offset = 0,
             scale = 1,
         },
