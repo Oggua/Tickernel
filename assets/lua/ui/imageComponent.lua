@@ -1,10 +1,10 @@
 local tkn = require("tkn")
 local imageComponent = {}
 imageComponent.fitModeType = {
-    normal = 1,
-    sliced = 2,
-    cover = 3,
-    contain = 4,
+    normal = "normal",
+    sliced = "sliced",
+    cover = "cover",
+    contain = "contain",
 }
 
 function imageComponent.setup(assetsPath)
@@ -88,7 +88,7 @@ function imageComponent.createComponent(pTknGfxContext, color, fitMode, image, u
         component.node = node
     else
         component = {
-            type = "Image",
+            type = "image",
             color = color,
             fitMode = fitMode,
             image = image,

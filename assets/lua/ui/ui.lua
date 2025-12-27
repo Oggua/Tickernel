@@ -11,7 +11,11 @@ local buttonComponent = require("ui.buttonComponent")
 local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
 ui.fitModeType = imageComponent.fitModeType
-
+ui.layoutType = {
+    anchored = "anchored",
+    relative = "relative",
+    fit = "fit",
+}
 local function traverseNode(node, callback)
     local result = callback(node)
     if result then
@@ -41,7 +45,7 @@ end
 local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
     local layout = node.layout
     local orientation = layout[key]
-    if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type ~= "fit" then
+    if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type ~= ui.layoutType.fit then
         local parentLengthNDC
         if effectiveParent then
             parentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
@@ -52,10 +56,10 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
         -- Calculate offset
         local effectiveParentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
         -- Calculate length
-        if orientation.type == "anchored" then
+        if orientation.type == ui.layoutType.anchored then
             lengthNDC = orientation.length / screenLength * 2
             offsetNDC = (orientation.anchor - effectiveParentPivot) * parentLengthNDC
-        elseif orientation.type == "relative" then
+        elseif orientation.type == ui.layoutType.relative then
             local minOffsetNDC, maxOffsetNDC
             if math.type(orientation.minOffset) == "integer" then
                 minOffsetNDC = orientation.minOffset / screenLength * 2
@@ -95,7 +99,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
         updateOrientationRecursive(pTknGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
     end
 
-    if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type == "fit" then
+    if (orientation.dirty or screenLengthChanged or parentOrientationChanged) and orientation.type == ui.layoutType.fit then
         -- Calculate fit node's bounds based on children's bounds
         local minBound = math.huge
         local maxBound = -math.huge
@@ -163,7 +167,7 @@ end
 -- Helper function to find effective parent for a given direction (skip fit nodes)
 local function findEffectiveParent(node, key)
     local effectiveParent = node.parent
-    while effectiveParent and effectiveParent.layout[key].type == "fit" do
+    while effectiveParent and effectiveParent.layout[key].type == ui.layoutType.fit do
         effectiveParent = effectiveParent.parent
     end
     return effectiveParent
@@ -218,7 +222,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     -- Find common effective parent for scale/rotation inheritance
     -- Skip nodes that are fit in BOTH directions
     local scaleRotParent = node.parent
-    while scaleRotParent and (scaleRotParent.layout.horizontal.type == "fit" and scaleRotParent.layout.vertical.type == "fit") do
+    while scaleRotParent and (scaleRotParent.layout.horizontal.type == ui.layoutType.fit and scaleRotParent.layout.vertical.type == ui.layoutType.fit) do
         scaleRotParent = scaleRotParent.parent
     end
 
@@ -284,9 +288,9 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
         -- Update mesh if bounds changed
         if node.component.pTknMesh then
-            if node.component.type == "Image" then
+            if node.component.type == "image" then
                 imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
-            elseif node.component.type == "Text" then
+            elseif node.component.type == "text" then
                 textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
             end
         end
@@ -442,7 +446,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
         layout = {
             dirty = true,
             horizontal = {
-                type = "relative",
+                type = ui.layoutType.relative,
                 pivot = 0.5,
                 minOffset = 0,
                 maxOffset = 0,
@@ -450,7 +454,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
                 scale = 1.0,
             },
             vertical = {
-                type = "relative",
+                type = ui.layoutType.relative,
                 pivot = 0.5,
                 maxOffset = 0,
                 minOffset = 0,
@@ -585,10 +589,10 @@ function ui.addNode(pTknGfxContext, parent, index, name, layout)
     -- Mark fit ancestors as dirty since their bounds depend on children
     local ancestor = parent
     while ancestor do
-        if ancestor.layout.horizontal.type == "fit" then
+        if ancestor.layout.horizontal.type == ui.layoutType.fit then
             ancestor.layout.horizontal.dirty = true
         end
-        if ancestor.layout.vertical.type == "fit" then
+        if ancestor.layout.vertical.type == ui.layoutType.fit then
             ancestor.layout.vertical.dirty = true
         end
         ancestor = ancestor.parent
@@ -604,10 +608,10 @@ local function removeNodeRecursive(pTknGfxContext, node)
     -- Mark fit ancestors as dirty before removing (their bounds will change)
     local ancestor = node.parent
     while ancestor do
-        if ancestor.layout.horizontal.type == "fit" then
+        if ancestor.layout.horizontal.type == ui.layoutType.fit then
             ancestor.layout.horizontal.dirty = true
         end
-        if ancestor.layout.vertical.type == "fit" then
+        if ancestor.layout.vertical.type == ui.layoutType.fit then
             ancestor.layout.vertical.dirty = true
         end
         ancestor = ancestor.parent
@@ -618,11 +622,11 @@ local function removeNodeRecursive(pTknGfxContext, node)
     end
 
     if node.component then
-        if node.component.type == "Image" then
+        if node.component.type == "image" then
             ui.removeImageComponent(pTknGfxContext, node)
-        elseif node.component.type == "Text" then
+        elseif node.component.type == "text" then
             ui.removeTextComponent(pTknGfxContext, node)
-        elseif node.component.type == "Button" then
+        elseif node.component.type == "button" then
             ui.removeButtonComponent(pTknGfxContext, node)
         else
             error("ui.removeNode: unsupported component type " .. tostring(node.component.type))
@@ -757,7 +761,7 @@ function ui.addButtonComponent(pTknGfxContext, callback, node)
     return component
 end
 function ui.removeButtonComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "Button", "ui.removeButtonComponent: node has no button component")
+    assert(node.component and node.component.type == "button", "ui.removeButtonComponent: node has no button component")
     buttonComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)
 end
@@ -768,7 +772,7 @@ function ui.addImageComponent(pTknGfxContext, color, fitMode, image, uv, node)
     return component
 end
 function ui.removeImageComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "Image", "ui.removeImageComponent: node has no image component")
+    assert(node.component and node.component.type == "image", "ui.removeImageComponent: node has no image component")
     imageComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)
 end
@@ -778,7 +782,7 @@ function ui.addTextComponent(pTknGfxContext, textString, font, size, color, alig
     return component
 end
 function ui.removeTextComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "Text", "ui.removeTextComponent: node has no text component")
+    assert(node.component and node.component.type == "text", "ui.removeTextComponent: node has no text component")
     print("Removing text component")
     textComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)

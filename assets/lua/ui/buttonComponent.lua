@@ -18,7 +18,7 @@ function buttonComponent.createComponent(pTknGfxContext, processInput, node)
         component.node = node
     else
         component = {
-            type = "Button",
+            type = "button",
             processInput = processInput,
             overrideColor = nil,
             node = node,

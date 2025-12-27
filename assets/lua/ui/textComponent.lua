@@ -98,7 +98,7 @@ function textComponent.createComponent(pTknGfxContext, textString, font, size, c
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
 
     local component = #textComponent.pool > 0 and table.remove(textComponent.pool) or {
-        type = "Text",
+        type = "text",
     }
     component.text = textString
     component.font = font

@@ -8,7 +8,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.backgroundNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", {
         dirty = true,
         horizontal = {
-            type = "relative",
+            type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 50,
             maxOffset = -50,
@@ -16,7 +16,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             scale = 1.0,
         },
         vertical = {
-            type = "relative",
+            type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 50,
             maxOffset = -50,
@@ -48,7 +48,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.buttonNode = ui.addNode(pTknGfxContext, mainScene.backgroundNode, 1, "startButton", {
         dirty = true,
         horizontal = {
-            type = "anchored",
+            type = ui.layoutType.anchored,
             anchor = 0.5,
             pivot = 0.5,
             length = 256,
@@ -56,7 +56,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             scale = 1,
         },
         vertical = {
-            type = "anchored",
+            type = ui.layoutType.anchored,
             anchor = 0.5,
             pivot = 0.5,
             length = 64,
@@ -69,11 +69,13 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         if inputState == input.inputState.down then
             print("Button pressed!")
             component.overrideColor = 0xFFAAAAAA
-            component.node.layout.horizontal.scale = 0.8
+            component.node.layout.horizontal.scale = 1.05
+            component.node.layout.vertical.scale = 1.05
         elseif inputState == input.inputState.up then
             print("Button released!")
             component.overrideColor = nil
             component.node.layout.horizontal.scale = 1
+            component.node.layout.vertical.scale = 1
         else
             -- Do nothing
         end
@@ -82,7 +84,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.buttonBackground = ui.addNode(pTknGfxContext, mainScene.buttonNode, 1, "buttonBackground", {
         dirty = true,
         horizontal = {
-            type = "relative",
+            type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 0,
             maxOffset = 0,
@@ -90,7 +92,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             scale = 1.0,
         },
         vertical = {
-            type = "relative",
+            type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 0,
             maxOffset = 0,
