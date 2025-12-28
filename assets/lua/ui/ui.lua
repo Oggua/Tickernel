@@ -651,12 +651,14 @@ end
 
 function ui.removeNode(pTknGfxContext, node)
     print("Removing node: " .. node.name)
+    local needUpdateTopNode = isTopNode(node)
+    local parent = node.parent
     removeNodeRecursive(pTknGfxContext, node)
-    if isTopNode(node) then
-        if node == ui.rootNode then
+    if needUpdateTopNode then
+        if parent == nil then
             ui.topNode = nil
         else
-            ui.topNode = getTopNode(node.parent)
+            ui.topNode = getTopNode(parent)
         end
     end
 end

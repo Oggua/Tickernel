@@ -6,6 +6,8 @@ function game.start(pTknGfxContext, assetsPath)
     game.assetsPath = assetsPath
     print(ui)
     game.font = ui.loadFont(pTknGfxContext, "/fonts/Monaco.ttf", 32, 2048)
+    game.uiDefaultImagePath = "/textures/uiDefault.astc"
+    game.uiDefaultImage = ui.loadImage(pTknGfxContext, game.uiDefaultImagePath)
     game.currentScene = mainScene
     game.currentScene.start(game, pTknGfxContext, assetsPath)
 end
@@ -17,7 +19,9 @@ end
 function game.stopGfx(pTknGfxContext)
     game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
-
+    
+    ui.unloadImage(pTknGfxContext, game.uiDefaultImage)
+    game.uiDefaultImage = nil
     ui.unloadFont(pTknGfxContext, game.font)
     game.font = nil
 end

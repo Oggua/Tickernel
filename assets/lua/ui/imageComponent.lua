@@ -149,15 +149,14 @@ function imageComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFor
             local vMT = v0 + v.minPadding / component.image.height
             local vMB = v1 - v.maxPadding / component.image.height
 
-            -- 计算所有分割点
             local xL = left
             local xR = right
-            local xML = left + (right - left) * h.minPadding / screenWidth * 2
-            local xMR = right - (right - left) * h.maxPadding / screenWidth * 2
+            local xML = left + h.minPadding / screenWidth * 2
+            local xMR = right - h.maxPadding / screenWidth * 2
             local yT = top
             local yB = bottom
-            local yMT = top + (bottom - top) * v.minPadding / screenHeight * 2
-            local yMB = bottom - (bottom - top) * v.maxPadding / screenHeight * 2
+            local yMT = top + v.minPadding / screenHeight * 2
+            local yMB = bottom - v.maxPadding / screenHeight * 2
 
             local vertices = {
                 position = {},
