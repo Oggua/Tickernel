@@ -294,7 +294,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     if node.pTknInstance and (modelChanged or colorChanged) then
         local instances = {
             model = rect.model,
-            color = {rect.color},
+            color = {tkn.rgbaToAbgr(rect.color)},
         }
         tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, instances)
     end

@@ -147,7 +147,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             type = ui.layoutType.anchored,
             anchor = 0.5,
             pivot = 0.5,
-            length = 256,
+            length = 512,
             offset = 0,
             scale = 1,
         },
@@ -156,13 +156,13 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             anchor = 0.5,
             pivot = 0.5,
             length = 64,
-            offset = -96,
+            offset = 0,
             scale = 1,
         },
         rotation = 0,
     }, function()
         game.switchScene(gameScene)
-    end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0xCD323232, game.font, "Start Game", 24, 0xFFFFFFFF)
+    end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0x323232CD, game.font, "Start Game", 24, 0xFFFFFFFF)
 
     local settingButtonWidget = buttonWidget.addButtonWidget(pTknGfxContext, "settingButton", mainScene.mainSceneRootNode, 2, {
         dirty = true,
@@ -170,30 +170,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             type = ui.layoutType.anchored,
             anchor = 0.5,
             pivot = 0.5,
-            length = 256,
-            offset = 0,
-            scale = 1,
-        },
-        vertical = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 64,
-            offset = 0,
-            scale = 1,
-        },
-        rotation = 0,
-    }, function()
-        game.switchScene(nil)
-    end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0xCD323232, game.font, "Settings", 24, 0xFFFFFFFF)
-
-    local quitButtonWidget = buttonWidget.addButtonWidget(pTknGfxContext, "quitButton", mainScene.mainSceneRootNode, 3, {
-        dirty = true,
-        horizontal = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 256,
+            length = 512,
             offset = 0,
             scale = 1,
         },
@@ -208,7 +185,30 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         rotation = 0,
     }, function()
         game.switchScene(nil)
-    end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0xCD323232, game.font, "Quit Game", 24, 0xFFFFFFFF)
+    end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0x323232CD, game.font, "Settings", 24, 0xFFFFFFFF)
+
+    local quitButtonWidget = buttonWidget.addButtonWidget(pTknGfxContext, "quitButton", mainScene.mainSceneRootNode, 3, {
+        dirty = true,
+        horizontal = {
+            type = ui.layoutType.anchored,
+            anchor = 0.5,
+            pivot = 0.5,
+            length = 512,
+            offset = 0,
+            scale = 1,
+        },
+        vertical = {
+            type = ui.layoutType.anchored,
+            anchor = 0.5,
+            pivot = 0.5,
+            length = 64,
+            offset = 192,
+            scale = 1,
+        },
+        rotation = 0,
+    }, function()
+        game.switchScene(nil)
+    end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0x323232CD, game.font, "Quit Game", 24, 0xFFFFFFFF)
 end
 
 function mainScene.stop(game)

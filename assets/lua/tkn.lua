@@ -65,6 +65,15 @@ tkn.defaultVkPipelineRasterizationStateCreateInfo = {
     depthBiasSlopeFactor = 0.0,
     lineWidth = 1.0,
 }
+
+function tkn.rgbaToAbgr(rgba)
+    local r = (rgba >> 24) & 0xFF
+    local g = (rgba >> 16) & 0xFF
+    local b = (rgba >> 8) & 0xFF
+    local a = rgba & 0xFF
+    return (a << 24) | (b << 16) | (g << 8) | r
+end
+
 function tkn.tknCreateImagePtrWithPath(tknContext, path)
     local astcFile = io.open(path, "rb")
     if astcFile then
