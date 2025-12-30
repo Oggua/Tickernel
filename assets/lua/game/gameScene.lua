@@ -5,7 +5,7 @@ local input = require("input")
 function gameScene.start(game, pTknGfxContext, assetsPath)
     gameScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon1.astc")
     print("Creating FIT type container node")
-    gameScene.mainSceneRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", {
+    local rootNodeLayout = {
         dirty = true,
         horizontal = {
             type = ui.layoutType.relative,
@@ -24,19 +24,19 @@ function gameScene.start(game, pTknGfxContext, assetsPath)
             scale = 1.0,
         },
         rotation = 0,
-    })
-    local fitMode = {
+    }
+    local rootNodeFitMode = {
         type = ui.fitModeType.cover,
     }
-    local uv = {
+    local rootNodeUV = {
         u0 = 0,
         v0 = 0,
         u1 = 1,
         v1 = 1,
     }
-    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, gameScene.backgroundImage, uv, gameScene.mainSceneRootNode)
+    gameScene.rootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", rootNodeLayout, 0xFFFFFFFF, rootNodeFitMode, gameScene.backgroundImage, rootNodeUV)
 
-    gameScene.buttonNode = ui.addNode(pTknGfxContext, gameScene.mainSceneRootNode, 1, "startButton", {
+    gameScene.buttonNode = ui.addNode(pTknGfxContext, gameScene.rootNode, 1, "startButton", {
         dirty = true,
         horizontal = {
             type = ui.layoutType.anchored,
@@ -56,7 +56,7 @@ function gameScene.start(game, pTknGfxContext, assetsPath)
         },
         rotation = 0,
     })
-    ui.addInteractableComponent(pTknGfxContext, function(component, xNDC, yNDC, inputState)
+    ui.addInteractableNode(pTknGfxContext, function(component, xNDC, yNDC, inputState)
         if inputState == input.inputState.down then
             print("Button pressed!")
             component.overrideColor = 0xFFAAAAAA
@@ -104,7 +104,7 @@ function gameScene.start(game, pTknGfxContext, assetsPath)
         },
     }
     -- Add background image to visualize the fit container
-    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, game.uiDefaultImage, require("atlas.uiDefault").circle32x32, gameScene.buttonBackgroundNode)
+    ui.addImageNode(pTknGfxContext, 0xFFFFFFFF, fitMode, game.uiDefaultImage, require("atlas.uiDefault").circle32x32, gameScene.buttonBackgroundNode)
 
     gameScene.textNode = ui.addNode(pTknGfxContext, gameScene.buttonBackgroundNode, 1, "buttonText", {
         dirty = true,
@@ -126,15 +126,15 @@ function gameScene.start(game, pTknGfxContext, assetsPath)
         },
         rotation = 0,
     })
-    ui.addTextComponent(pTknGfxContext, "Start", game.font, 32, 0xFF323232, 0.5, 0.5, true, gameScene.textNode)
+    ui.addTextNode(pTknGfxContext, "Start", game.font, 32, 0xFF323232, 0.5, 0.5, true, gameScene.textNode)
 end
 
 function gameScene.stop(game)
 end
 
 function gameScene.stopGfx(game, pTknGfxContext)
-    ui.removeNode(pTknGfxContext, gameScene.mainSceneRootNode)
-    gameScene.mainSceneRootNode = nil
+    ui.removeNode(pTknGfxContext, gameScene.rootNode)
+    gameScene.rootNode = nil
     ui.unloadImage(pTknGfxContext, gameScene.backgroundImage)
     gameScene.backgroundImage = nil
 end

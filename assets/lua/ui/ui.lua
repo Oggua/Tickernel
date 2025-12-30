@@ -1,16 +1,12 @@
--- UI
--- For Node's Layout, if we choose to update on real-time add/delete/modify operations, there might be cases where children are updated before parents, leading to redundant calculations. Therefore, we adopt a unified update approach during the update phase.
--- The creation, deletion, and modification of drawcalls and meshes depend on the add/delete/modify operations of nodes and components.
--- Updating mesh requires layout update first, so it always happens after the update layout phase.
 local ui = {}
 local tknMath = require("tknMath")
 local tkn = require("tkn")
-local imageComponent = require("ui.imageComponent")
-local textComponent = require("ui.textComponent")
-local interactableComponent = require("ui.interactableComponent")
+local imageNode = require("ui.imageNode")
+local textNode = require("ui.textNode")
+local interactableNode = require("ui.interactableNode")
 local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
-ui.fitModeType = imageComponent.fitModeType
+
 ui.layoutType = {
     anchored = "anchored",
     relative = "relative",
@@ -272,37 +268,35 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     rect.vertical.oldMin = rect.vertical.min
     rect.vertical.oldMax = rect.vertical.max
 
-    if node.component then
-        -- Update color from component
-        local oldColor = rect.color
-        if node.component.overrideColor then
-            overrideColor = tknMath.multiplyColors(node.component.overrideColor, overrideColor)
-        end
-        if node.component.color then
-            rect.color = tknMath.multiplyColors(node.component.color, overrideColor)
-        else
-            rect.color = overrideColor
-        end
+    -- Update color with override
+    local oldColor = rect.color
+    if node.overrideColor then
+        overrideColor = tknMath.multiplyColors(node.overrideColor, overrideColor)
+    end
+    if node.color then
+        rect.color = tknMath.multiplyColors(node.color, overrideColor)
+    else
+        rect.color = overrideColor
+    end
 
-        local colorChanged = oldColor ~= rect.color
-        local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
-        -- Update mesh if bounds changed
-        if node.component.pTknMesh then
-            if node.component.type == "image" then
-                imageComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
-            elseif node.component.type == "text" then
-                textComponent.updateMeshPtr(pTknGfxContext, node.component, rect, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
-            end
+    local colorChanged = oldColor ~= rect.color
+    local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
+    -- Update mesh if bounds changed
+    if node.pTknMesh then
+        if node.type == "imageNode" then
+            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
+        elseif node.type == "textNode" then
+            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
         end
+    end
 
-        -- Update instance if model or color changed
-        if node.component.pTknInstance and (modelChanged or colorChanged) then
-            local instances = {
-                model = rect.model,
-                color = {rect.color},
-            }
-            tkn.tknUpdateInstancePtr(pTknGfxContext, node.component.pTknInstance, ui.instanceFormat, instances)
-        end
+    -- Update instance if model or color changed
+    if node.pTknInstance and (modelChanged or colorChanged) then
+        local instances = {
+            model = rect.model,
+            color = {rect.color},
+        }
+        tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, instances)
     end
 
     -- Recursively update children
@@ -311,49 +305,19 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     end
 end
 
-local function addComponent(pTknGfxContext, node, component)
-    if node.component then
-        print("WARNING: ui.addComponent: node already has a component")
-    else
-        node.component = component
-        if component.pTknDrawCall then
-            local drawCallIndex = 0
-            traverseNode(ui.rootNode, function(child)
-                if child == node then
-                    return true
-                else
-                    if child.component and child.component.pTknDrawCall then
-                        drawCallIndex = drawCallIndex + 1
-                    end
-                    return false
-                end
-            end)
-            tkn.tknInsertDrawCallPtr(node.component.pTknDrawCall, drawCallIndex)
+local function getDrawCallIndex(pTknGfxContext, node)
+    local drawCallIndex = 0
+    traverseNode(ui.rootNode, function(child)
+        if child == node then
+            return true
+        else
+            if child and child.pTknDrawCall then
+                drawCallIndex = drawCallIndex + 1
+            end
+            return false
         end
-    end
-end
-
-local function removeComponent(pTknGfxContext, node)
-    local component = node.component
-    if component then
-        if component.pTknDrawCall then
-            local drawCallIndex = 0
-            traverseNode(ui.rootNode, function(child)
-                if child == node then
-                    return true
-                else
-                    if child.component and child.component.pTknDrawCall then
-                        drawCallIndex = drawCallIndex + 1
-                    end
-                    return false
-                end
-            end)
-            tkn.tknRemoveDrawCallAt(drawCallIndex)
-        end
-    else
-        print("ui.removeComponent: node has no component")
-        return
-    end
+    end)
+    return drawCallIndex
 end
 
 local function isTopNode(node)
@@ -385,11 +349,52 @@ local function getActiveInputNode(node, xNDC, yNDC, inputState)
         end
     end
 
-    if node.component and node.component.processInput and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
+    if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
         return node
     else
         return nil
     end
+end
+
+local function removeNodeRecursive(pTknGfxContext, node)
+    if node.parent then
+        local parent = node.parent
+        if parent.layout.horizontal.type == ui.layoutType.fit then
+            parent.layout.horizontal.dirty = true
+        end
+        if parent.layout.vertical.type == ui.layoutType.fit then
+            parent.layout.vertical.dirty = true
+        end
+    end
+    for i = #node.children, 1, -1 do
+        removeNodeRecursive(pTknGfxContext, node.children[i])
+    end
+
+    if node.type == "imageNode" then
+        imageNode.teardownNode(pTknGfxContext, node)
+    elseif node.type == "textNode" then
+        textNode.teardownNode(pTknGfxContext, node)
+    elseif node.type == "interactableNode" then
+        interactableNode.teardownNode(pTknGfxContext, node)
+    elseif node.type == "node" then
+        node.type = nil
+    else
+        error("ui.removeNode: unsupported component type " .. tostring(node.type))
+    end
+
+    -- Remove node from parent's children list
+    if node.parent then
+        local nodeIndex = ui.getNodeIndex(node)
+        if nodeIndex then
+            table.remove(node.parent.children, nodeIndex)
+        end
+    end
+
+    node.name = nil
+    node.parent = nil
+    node.children = {}
+    node.layout = nil
+    node.rect = nil
 end
 
 function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
@@ -418,6 +423,14 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
     ui.instanceFormat.pTknVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, ui.instanceFormat)
 
     uiRenderPass.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, ui.vertexFormat.pTknVertexInputLayout, ui.instanceFormat.pTknVertexInputLayout, renderPassIndex)
+
+    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
+    ui.renderPass = uiRenderPass
+
+    imageNode.setup(assetsPath)
+    ui.fitModeType = imageNode.fitModeType
+    textNode.setup(assetsPath)
+
     ui.rootNode = {
         name = "root",
         children = {},
@@ -455,14 +468,9 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
             model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
             color = nil,
         },
+        type = "node",
     }
-    ui.nodePool = {}
-    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
-    ui.renderPass = uiRenderPass
     ui.topNode = ui.rootNode
-    textComponent.setup(assetsPath)
-    imageComponent.setup(assetsPath)
-    interactableComponent.setup()
 end
 
 function ui.teardown(pTknGfxContext)
@@ -470,7 +478,6 @@ function ui.teardown(pTknGfxContext)
     ui.renderPass = nil
     tkn.tknDestroySamplerPtr(pTknGfxContext, ui.pTknSampler)
     ui.pTknSampler = nil
-    ui.nodePool = nil
     ui.rootNode = nil
     uiRenderPass.teardown(pTknGfxContext)
     tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, ui.instanceFormat.pTknVertexInputLayout)
@@ -479,9 +486,8 @@ function ui.teardown(pTknGfxContext)
     tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, ui.vertexFormat.pTknVertexInputLayout)
     ui.vertexFormat.pTknVertexInputLayout = nil
     ui.vertexFormat = nil
-    imageComponent.teardown(pTknGfxContext)
-    textComponent.teardown(pTknGfxContext)
-    interactableComponent.teardown()
+    textNode.teardown()
+    imageNode.teardown()
 end
 
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
@@ -490,18 +496,18 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, 0xFFFFFFFF)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
-    textComponent.update(pTknGfxContext)
+    textNode.update(pTknGfxContext)
 
-    if ui.activeInputNode then
-        local isActive = ui.activeInputNode.component.processInput(ui.activeInputNode.component, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+    if ui.activeInteractableNode then
+        local isActive = ui.activeInteractableNode.processInputFunction(ui.activeInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
         if isActive then
             -- Still active
         else
-            ui.activeInputNode = nil
+            ui.activeInteractableNode = nil
         end
     else
         if input.getMouseState(input.mouseCode.left) == input.inputState.down then
-            ui.activeInputNode = getActiveInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+            ui.activeInteractableNode = getActiveInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
         else
             -- No active input node
         end
@@ -516,63 +522,29 @@ function ui.getNodeIndex(node)
     end
 end
 
-function ui.addNode(pTknGfxContext, parent, index, name, layout)
+local function addNodeInternal(pTknGfxContext, parent, index, name, layout)
     assert(parent ~= nil, "ui.addNode: parent is nil")
     assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
-    local node = nil
-    if #ui.nodePool > 0 then
-        node = table.remove(ui.nodePool)
-        node.name = name
-        assert(#node.children == 0, "ui.addNode: node from pool has children")
-        node.parent = parent
-        node.component = nil
-        node.layout = layout
-        -- Ensure rect is initialized if not provided
-        if not node.rect then
-            node.rect = {
-                horizontal = {
-                    min = 0,
-                    max = 0,
-                    offset = 0,
-                },
-                vertical = {
-                    min = 0,
-                    max = 0,
-                    offset = 0,
-                },
-                model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
-                color = nil,
-            }
-        end
-        if node.layout.rotation == nil then
-            node.layout.rotation = 0
-        end
-    else
-        node = {
-            name = name,
-            children = {},
-            parent = parent,
-            component = nil,
-            layout = layout,
-        }
-        -- Ensure rect is initialized if not provided
-        if not node.rect then
-            node.rect = {
-                horizontal = {
-                    min = 0,
-                    max = 0,
-                    offset = 0,
-                },
-                vertical = {
-                    min = 0,
-                    max = 0,
-                    offset = 0,
-                },
-                model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
-                color = nil,
-            }
-        end
-    end
+    local node = {
+        name = name,
+        children = {},
+        parent = parent,
+        layout = layout,
+        rect = {
+            horizontal = {
+                min = 0,
+                max = 0,
+                offset = 0,
+            },
+            vertical = {
+                min = 0,
+                max = 0,
+                offset = 0,
+            },
+            model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+            color = nil,
+        },
+    }
     table.insert(parent.children, index, node)
 
     -- Mark fit ancestors as dirty since their bounds depend on children
@@ -593,52 +565,7 @@ function ui.addNode(pTknGfxContext, parent, index, name, layout)
     return node
 end
 
-local function removeNodeRecursive(pTknGfxContext, node)
-    -- Mark fit ancestors as dirty before removing (their bounds will change)
-    local ancestor = node.parent
-    while ancestor do
-        if ancestor.layout.horizontal.type == ui.layoutType.fit then
-            ancestor.layout.horizontal.dirty = true
-        end
-        if ancestor.layout.vertical.type == ui.layoutType.fit then
-            ancestor.layout.vertical.dirty = true
-        end
-        ancestor = ancestor.parent
-    end
-
-    for i = #node.children, 1, -1 do
-        removeNodeRecursive(pTknGfxContext, node.children[i])
-    end
-
-    if node.component then
-        if node.component.type == "image" then
-            ui.removeImageComponent(pTknGfxContext, node)
-        elseif node.component.type == "text" then
-            ui.removeTextComponent(pTknGfxContext, node)
-        elseif node.component.type == "interactable" then
-            ui.removeInteractableComponent(pTknGfxContext, node)
-        else
-            error("ui.removeNode: unsupported component type " .. tostring(node.component.type))
-        end
-    end
-
-    -- Remove node from parent's children list
-    if node.parent then
-        local nodeIndex = ui.getNodeIndex(node)
-        if nodeIndex then
-            table.remove(node.parent.children, nodeIndex)
-        end
-    end
-
-    node.name = nil
-    node.parent = nil
-    node.children = {}
-    node.component = nil
-    node.layout = nil
-    table.insert(ui.nodePool, node)
-end
-
-function ui.removeNode(pTknGfxContext, node)
+local function removeNodeInternal(pTknGfxContext, node)
     print("Removing node: " .. node.name)
     local needUpdateTopNode = isTopNode(node)
     local parent = node.parent
@@ -733,50 +660,47 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
 end
 
 function ui.loadImage(pTknGfxContext, path)
-    return imageComponent.loadImage(pTknGfxContext, path, ui.pTknSampler, ui.renderPass.pImagePipeline)
+    return imageNode.loadImage(pTknGfxContext, path, ui.pTknSampler, ui.renderPass.pImagePipeline)
 end
 function ui.unloadImage(pTknGfxContext, image)
-    imageComponent.unloadImage(pTknGfxContext, image)
+    imageNode.unloadImage(pTknGfxContext, image)
 end
 
 function ui.loadFont(pTknGfxContext, path, fontSize, atlasLength)
-    return textComponent.loadFont(pTknGfxContext, path, fontSize, atlasLength, ui.pTknSampler, ui.renderPass.pTextPipeline)
+    return textNode.loadFont(pTknGfxContext, path, fontSize, atlasLength, ui.pTknSampler, ui.renderPass.pTextPipeline)
 end
 function ui.unloadFont(pTknGfxContext, font)
-    textComponent.unloadFont(pTknGfxContext, font)
+    textNode.unloadFont(pTknGfxContext, font)
 end
 
-function ui.addInteractableComponent(pTknGfxContext, callback, node)
-    local component = interactableComponent.createComponent(pTknGfxContext, callback, node)
-    addComponent(pTknGfxContext, node, component)
-    return component
-end
-function ui.removeInteractableComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "interactable", "ui.removeInteractableComponent: node has no interactable component")
-    interactableComponent.destroyComponent(pTknGfxContext, node.component)
-    removeComponent(pTknGfxContext, node)
+function ui.addNode(pTknGfxContext, parent, index, name, layout)
+    local node = addNodeInternal(pTknGfxContext, parent, index, name, layout);
+    node.type = "node"
+    return node
 end
 
-function ui.addImageComponent(pTknGfxContext, color, fitMode, image, uv, node)
-    local component = imageComponent.createComponent(pTknGfxContext, color, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, node)
-    addComponent(pTknGfxContext, node, component)
-    return component
+function ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, layout)
+    local node = addNodeInternal(pTknGfxContext, parent, index, name, layout);
+    interactableNode.setupNode(pTknGfxContext, processInputFunction, node)
+    return node
 end
-function ui.removeImageComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "image", "ui.removeImageComponent: node has no image component")
-    imageComponent.destroyComponent(pTknGfxContext, node.component)
-    removeComponent(pTknGfxContext, node)
+
+function ui.addImageNode(pTknGfxContext, parent, index, name, layout, color, fitMode, image, uv)
+    local node = addNodeInternal(pTknGfxContext, parent, index, name, layout);
+    local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
+    imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, drawCallIndex, node)
+    return node
 end
-function ui.addTextComponent(pTknGfxContext, textString, font, size, color, alignH, alignV, bold, node)
-    local component = textComponent.createComponent(pTknGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
-    addComponent(pTknGfxContext, node, component)
-    return component
+
+function ui.addTextNode(pTknGfxContext, parent, index, name, layout, textString, font, size, color, alignH, alignV, bold)
+    local node = ui.addNode(pTknGfxContext, parent, index, name, layout);
+    local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
+    textNode.setupNode(pTknGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, drawCallIndex, node)
+    return node
 end
-function ui.removeTextComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "text", "ui.removeTextComponent: node has no text component")
-    print("Removing text component")
-    textComponent.destroyComponent(pTknGfxContext, node.component)
-    removeComponent(pTknGfxContext, node)
+
+function ui.removeNode(pTknGfxContext, node)
+    removeNodeInternal(pTknGfxContext, node)
 end
 
 function ui.rectContainsPoint(rect, xNDC, yNDC)

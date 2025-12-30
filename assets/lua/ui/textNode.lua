@@ -1,23 +1,19 @@
 local tkn = require("tkn")
-local textComponent = {}
-
-function textComponent.setup(assetPath)
-    textComponent.assetsPath = assetPath
-    textComponent.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
-    textComponent.pool = {}
-    textComponent.pathToFont = {}
+local textNode = {}
+function textNode.setup(assetsPath)
+    textNode.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
+    textNode.pathToFont = {}
+    textNode.assetsPath = assetsPath
+end
+function textNode.teardown()
+    tkn.tknDestroyTknFontLibraryPtr(textNode.pTknFontLibrary)
+    textNode.pTknFontLibrary = nil
+    textNode.pathToFont = nil
+    textNode.assetsPath = nil
 end
 
-function textComponent.teardown(pTknGfxContext)
-    tkn.tknDestroyTknFontLibraryPtr(pTknGfxContext, textComponent.pTknFontLibrary)
-    textComponent.pool = nil
-    textComponent.pathToFont = nil
-    textComponent.pTknFontLibrary = nil
-    textComponent.assetsPath = nil
-end
-
-function textComponent.update(pTknGfxContext)
-    for path, font in pairs(textComponent.pathToFont) do
+function textNode.update(pTknGfxContext)
+    for path, font in pairs(textNode.pathToFont) do
         if font.dirty then
             tkn.tknFlushTknFontPtr(font.pTknFont, pTknGfxContext)
         end
@@ -25,14 +21,14 @@ function textComponent.update(pTknGfxContext)
     end
 end
 
-function textComponent.loadFont(pTknGfxContext, path, fontSize, atlasLength, pTknSampler, pTknPipeline)
+function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, pTknSampler, pTknPipeline)
     print("loadFont")
-    local font = textComponent.pathToFont[path]
+    local path = textNode.assetsPath .. relativePath
+    local font = textNode.pathToFont[path]
     if font then
         if fontSize > font.fontSize then
-            local fullPath = textComponent.assetsPath .. path
-            tkn.tknDestroyTknFontPtr(textComponent.pTknFontLibrary, font.pTknFont, pTknGfxContext)
-            local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textComponent.pTknFontLibrary, pTknGfxContext, fullPath, fontSize, atlasLength)
+            tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
+            local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
             local inputBindings = {{
                 vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 pTknImage = pTknImage,
@@ -50,8 +46,7 @@ function textComponent.loadFont(pTknGfxContext, path, fontSize, atlasLength, pTk
             return font
         end
     else
-        local fullPath = textComponent.assetsPath .. path
-        local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textComponent.pTknFontLibrary, pTknGfxContext, fullPath, fontSize, atlasLength)
+        local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
         local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -69,19 +64,19 @@ function textComponent.loadFont(pTknGfxContext, path, fontSize, atlasLength, pTk
             pTknMaterial = pTknMaterial,
             dirty = false,
         }
-        textComponent.pathToFont[path] = font
+        textNode.pathToFont[path] = font
         return font
     end
 end
 
-function textComponent.unloadFont(pTknGfxContext, font)
+function textNode.unloadFont(pTknGfxContext, font)
     print("unloadFont")
-    textComponent.pathToFont[font.path] = nil
+    textNode.pathToFont[font.path] = nil
     tkn.tknDestroyPipelineMaterialPtr(pTknGfxContext, font.pTknMaterial)
-    tkn.tknDestroyTknFontPtr(textComponent.pTknFontLibrary, font.pTknFont, pTknGfxContext)
+    tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
 end
 
-function textComponent.createComponent(pTknGfxContext, textString, font, size, color, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, node)
+function textNode.setupNode(pTknGfxContext, textString, font, size, color, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, drawCallIndex, node)
     local maxChars = #textString
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
@@ -94,63 +89,57 @@ function textComponent.createComponent(pTknGfxContext, textString, font, size, c
         color = {color},
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
-
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
-
-    local component = #textComponent.pool > 0 and table.remove(textComponent.pool) or {
-        type = "text",
-    }
-    component.text = textString
-    component.font = font
-    component.size = size
-    component.color = color
-    component.alignH = alignH
-    component.alignV = alignV
-    component.bold = bold
-    component.pTknMaterial = pTknMaterial
-    component.pTknMesh = pTknMesh
-    component.pTknInstance = pTknInstance
-    component.pTknDrawCall = pTknDrawCall
-    component.node = node
-    return component
+    tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
+    node.text = textString
+    node.font = font
+    node.size = size
+    node.color = color
+    node.alignH = alignH
+    node.alignV = alignV
+    node.bold = bold
+    node.pTknMaterial = pTknMaterial
+    node.pTknMesh = pTknMesh
+    node.pTknInstance = pTknInstance
+    node.pTknDrawCall = pTknDrawCall
+    node.type = "textNode"
 end
 
-function textComponent.destroyComponent(pTknGfxContext, component)
-    tkn.tknDestroyDrawCallPtr(pTknGfxContext, component.pTknDrawCall)
-    tkn.tknDestroyInstancePtr(pTknGfxContext, component.pTknInstance)
-    tkn.tknDestroyMeshPtr(pTknGfxContext, component.pTknMesh)
-
-    component.pTknMaterial = nil
-    component.pTknMesh = nil
-    component.pTknInstance = nil
-    component.pTknDrawCall = nil
-    component.font = nil
-    component.text = ""
-    component.size = 0
-    component.color = 0xFFFFFFFF
-    component.alignH = 0
-    component.alignV = 0
-    component.bold = false
-    component.node = nil
-    table.insert(textComponent.pool, component)
+function textNode.teardownNode(pTknGfxContext, node)
+    tkn.tknDestroyDrawCallPtr(pTknGfxContext, node.pTknDrawCall)
+    tkn.tknDestroyInstancePtr(pTknGfxContext, node.pTknInstance)
+    tkn.tknDestroyMeshPtr(pTknGfxContext, node.pTknMesh)
+    node.pTknMaterial = nil
+    node.pTknMesh = nil
+    node.pTknInstance = nil
+    node.pTknDrawCall = nil
+    node.font = nil
+    node.text = ""
+    node.size = 0
+    node.color = 0xFFFFFFFF
+    node.alignH = 0
+    node.alignV = 0
+    node.bold = false
+    node.type = nil
 end
 
-function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
-    if boundsChanged or screenSizeChanged or component.font.dirty then
+function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
+    if boundsChanged or screenSizeChanged or node.font.dirty then
+        local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local rectWidth = rect.horizontal.max - rect.horizontal.min
         local rectHeight = rect.vertical.max - rect.vertical.min
 
-        local font = component.font
-        local sizeScale = component.size / font.fontSize
+        local font = node.font
+        local sizeScale = node.size / font.fontSize
         local scaleX = sizeScale / screenWidth * 2
         local scaleY = sizeScale / screenHeight * 2
-        local lineHeight = component.size / screenHeight * 2
+        local lineHeight = node.size / screenHeight * 2
         local atlasScale = 1 / font.atlasLength
 
         -- Bold offset in pixels (converted to NDC)
-        local boldOffsetX = component.bold and (1 / screenWidth * 2) or 0
-        local boldOffsetY = component.bold and (1 / screenHeight * 2) or 0
+        local boldOffsetX = node.bold and (1 / screenWidth * 2) or 0
+        local boldOffsetY = node.bold and (1 / screenHeight * 2) or 0
 
         -- Local coordinate bounds (already relative to pivot)
         local left = rect.horizontal.min
@@ -166,8 +155,8 @@ function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexForm
         local currentLine = lines[1]
         local penX = 0
 
-        for i = 1, #component.text do
-            local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadTknChar(font.pTknFont, string.byte(component.text, i))
+        for i = 1, #node.text do
+            local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadTknChar(font.pTknFont, string.byte(node.text, i))
 
             if pTknChar then
                 local widthNDC = width * scaleX
@@ -210,7 +199,7 @@ function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexForm
 
         -- Calculate starting Y position based on vertical alignment
         local totalHeight = #lines * lineHeight
-        local startY = top + (rectHeight - totalHeight) * component.alignV + lineHeight
+        local startY = top + (rectHeight - totalHeight) * node.alignV + lineHeight
 
         -- Second pass: generate vertices with alignment
         local vertices = {
@@ -223,7 +212,7 @@ function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexForm
 
         for lineIdx, line in ipairs(lines) do
             -- Calculate starting X position based on horizontal alignment
-            local startX = left + (rectWidth - line.width) * component.alignH
+            local startX = left + (rectWidth - line.width) * node.alignH
 
             for _, char in ipairs(line.chars) do
                 local charLeft = startX + char.penX + char.bearingXNDC
@@ -264,7 +253,7 @@ function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexForm
                 end
 
                 -- Render character (multiple times if bold)
-                if component.bold then
+                if node.bold then
                     addCharQuad(0, 0)
                     addCharQuad(boldOffsetX, 0)
                     addCharQuad(0, boldOffsetY)
@@ -280,12 +269,13 @@ function textComponent.updateMeshPtr(pTknGfxContext, component, rect, vertexForm
         tkn.tknFlushTknFontPtr(font.pTknFont, pTknGfxContext)
 
         if charIndex > 0 then
-            tkn.tknUpdateMeshPtr(pTknGfxContext, component.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         end
     end
 end
 
-function textComponent.updateInstancePtr(pTknGfxContext, component, rect, instanceFormat)
+function textNode.updateInstancePtr(pTknGfxContext, component, rect, instanceFormat)
 
 end
-return textComponent
+
+return textNode
