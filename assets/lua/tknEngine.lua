@@ -30,7 +30,6 @@ function tknEngine.update(pTknGfxContext, width, height)
     print("Lua updateGfx")
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)
-    print("鼠标位置:", input.mousePositionNDC.x, input.mousePositionNDC.y)
     return shouldQuit
 end
 

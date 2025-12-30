@@ -48,8 +48,8 @@
 
 - (NSPoint)convertToNDC:(NSPoint)viewPoint {
     NSRect bounds = self.bounds;
-    float normalizedX = viewPoint.x / bounds.size.width;
-    float normalizedY = viewPoint.y / bounds.size.height;
+    float normalizedX = 1 - viewPoint.x / bounds.size.width;
+    float normalizedY = 1 - viewPoint.y / bounds.size.height;
     float ndcX = normalizedX * 2.0f - 1.0f;
     float ndcY = normalizedY * 2.0f - 1.0f;
     return NSMakePoint(ndcX, ndcY);
@@ -71,6 +71,27 @@
     [super mouseMoved:event];
 }
 
+- (void)mouseDragged:(NSEvent *)event{
+    NSPoint location = [self convertPoint:event.locationInWindow fromView:nil];
+    NSPoint viewPoint = [self convertPoint:location fromView:nil];
+    self.mousePositionNDC = [self convertToNDC:viewPoint];
+    [super mouseDragged:event];
+}
+
+- (void)rightMouseDragged:(NSEvent *)event{
+    NSPoint location = [self convertPoint:event.locationInWindow fromView:nil];
+    NSPoint viewPoint = [self convertPoint:location fromView:nil];
+    self.mousePositionNDC = [self convertToNDC:viewPoint];
+    [super rightMouseDragged:event];
+}
+
+- (void)otherMouseDragged:(NSEvent *)event{
+    NSPoint location = [self convertPoint:event.locationInWindow fromView:nil];
+    NSPoint viewPoint = [self convertPoint:location fromView:nil];
+    self.mousePositionNDC = [self convertToNDC:viewPoint];
+    [super otherMouseDragged:event];
+}
+
 - (void)mouseDown:(NSEvent *)event {
     self.mouseCodeStates[event.buttonNumber] = INPUT_STATE_DOWN;
     [super mouseDown:event];
@@ -78,7 +99,6 @@
 
 - (void)mouseUp:(NSEvent *)event {
     self.mouseCodeStates[event.buttonNumber] = INPUT_STATE_UP;
-    NSLog(@"!!UP");
     [super mouseUp:event];
 }
 

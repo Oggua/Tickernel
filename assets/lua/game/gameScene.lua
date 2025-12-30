@@ -1,99 +1,149 @@
-local tknMath = require("tknMath")
+local gameScene = {}
+local ui = require("ui.ui")
+local input = require("input")
 
--- Floor types enumeration
-local floor = {
-    snow = 0,
-    ice = 1,
-    sand = 2,
-    grass = 3,
-    water = 4,
-    lava = 5,
-    volcanic = 6,
-}
+function gameScene.start(game, pTknGfxContext, assetsPath)
+    gameScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon1.astc")
+    print("Creating FIT type container node")
+    gameScene.mainSceneRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", {
+        dirty = true,
+        horizontal = {
+            type = ui.layoutType.relative,
+            pivot = 0.5,
+            minOffset = 0,
+            maxOffset = 0,
+            offset = 0,
+            scale = 1.0,
+        },
+        vertical = {
+            type = ui.layoutType.relative,
+            pivot = 0.5,
+            minOffset = 32,
+            maxOffset = -32,
+            offset = 0,
+            scale = 1.0,
+        },
+        rotation = 0,
+    })
+    local fitMode = {
+        type = ui.fitModeType.cover,
+    }
+    local uv = {
+        u0 = 0,
+        v0 = 0,
+        u1 = 1,
+        v1 = 1,
+    }
+    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, gameScene.backgroundImage, uv, gameScene.mainSceneRootNode)
 
-local game = {
-    seed = 0,
-    temperatureSeed = 0,
-    humiditySeed = 0,
-    length = 0,
-    width = 0,
-    floorMap = nil,
-    blockMap = nil,
-    humidityStep = 0.21,
-    temperatureStep = 0.27,
-}
-
-local temperatureNoiseScale = 0.07
-local humidityNoiseScale = 0.07
-
-function game.getFloor(temperature, humidity)
-    local floor
-    if temperature < -game.temperatureStep then
-        if humidity < -game.humidityStep then
-            floor = floor.snow
-        elseif humidity < game.humidityStep then
-            floor = floor.snow
+    gameScene.buttonNode = ui.addNode(pTknGfxContext, gameScene.mainSceneRootNode, 1, "startButton", {
+        dirty = true,
+        horizontal = {
+            type = ui.layoutType.anchored,
+            anchor = 0.5,
+            pivot = 0.5,
+            length = 256,
+            offset = 0,
+            scale = 1,
+        },
+        vertical = {
+            type = ui.layoutType.anchored,
+            anchor = 0.5,
+            pivot = 0.5,
+            length = 64,
+            offset = 0,
+            scale = 1,
+        },
+        rotation = 0,
+    })
+    ui.addButtonComponent(pTknGfxContext, function(component, xNDC, yNDC, inputState)
+        if inputState == input.inputState.down then
+            print("Button pressed!")
+            component.overrideColor = 0xFFAAAAAA
+            component.node.layout.horizontal.scale = 0.95
+            component.node.layout.vertical.scale = 0.95
+        elseif inputState == input.inputState.up then
+            print("Button released!")
+            component.overrideColor = nil
+            component.node.layout.horizontal.scale = 1
+            component.node.layout.vertical.scale = 1
         else
-            floor = floor.ice
+            -- Do nothing
         end
-    elseif temperature < game.temperatureStep then
-        if humidity < -game.humidityStep then
-            floor = floor.sand
-        elseif humidity < game.humidityStep then
-            floor = floor.grass
-        else
-            floor = floor.water
-        end
-    else
-        if humidity < -game.humidityStep then
-            floor = floor.lava
-        elseif humidity < game.humidityStep then
-            floor = floor.volcanic
-        else
-            floor = floor.volcanic
-        end
-    end
+    end, gameScene.buttonNode)
 
-    return floor
+    gameScene.buttonBackgroundNode = ui.addNode(pTknGfxContext, gameScene.buttonNode, 1, "buttonBackground", {
+        dirty = true,
+        horizontal = {
+            type = ui.layoutType.relative,
+            pivot = 0.5,
+            minOffset = 0,
+            maxOffset = 0,
+            offset = 0,
+            scale = 1.0,
+        },
+        vertical = {
+            type = ui.layoutType.relative,
+            pivot = 0.5,
+            minOffset = 0,
+            maxOffset = 0,
+            offset = 0,
+            scale = 1.0,
+        },
+        rotation = 0,
+    })
+    local fitMode = {
+        type = ui.fitModeType.sliced,
+        horizontal = {
+            minPadding = 16,
+            maxPadding = 16,
+        },
+        vertical = {
+            minPadding = 16,
+            maxPadding = 16,
+        },
+    }
+    -- Add background image to visualize the fit container
+    ui.addImageComponent(pTknGfxContext, 0xFFFFFFFF, fitMode, game.uiDefaultImage, require("atlas.uiDefault").circle32x32, gameScene.buttonBackgroundNode)
+
+    gameScene.textNode = ui.addNode(pTknGfxContext, gameScene.buttonBackgroundNode, 1, "buttonText", {
+        dirty = true,
+        horizontal = {
+            type = ui.layoutType.relative,
+            pivot = 0.5,
+            minOffset = 0,
+            maxOffset = 0,
+            offset = 0,
+            scale = 1.0,
+        },
+        vertical = {
+            type = ui.layoutType.relative,
+            pivot = 0.5,
+            minOffset = 0,
+            maxOffset = 0,
+            offset = 0,
+            scale = 1.0,
+        },
+        rotation = 0,
+    })
+    ui.addTextComponent(pTknGfxContext, "Start", game.font, 32, 0xFF323232, 0.5, 0.5, true, gameScene.textNode)
 end
 
-function game.getHumidity(seed, x, y)
-    local level = 2
-    local humidity = 0
-    for i = 1, level do
-        local m = 2 ^ (level - 1)
-        humidity = humidity + tknMath.perlinNoise2D(seed, x * humidityNoiseScale * m, y * humidityNoiseScale * m) / m
-        seed = tknMath.LCGRandom(seed)
-    end
-    return humidity
+function gameScene.stop(game)
 end
 
-function game.getTemperature(seed, x, y)
-    local level = 2
-    local temperature = 0
-    for i = 1, level do
-        local m = 2 ^ (level - 1)
-        temperature = temperature + tknMath.perlinNoise2D(seed, x * temperatureNoiseScale * m, y * temperatureNoiseScale * m) / m
-        seed = tknMath.LCGRandom(seed)
-    end
-    -- temperature = temperature + (x - (game.length - 1) / 2) / game.length
-    return temperature
+function gameScene.stopGfx(game, pTknGfxContext)
+    ui.removeNode(pTknGfxContext, gameScene.mainSceneRootNode)
+    gameScene.mainSceneRootNode = nil
+    ui.unloadImage(pTknGfxContext, gameScene.backgroundImage)
+    gameScene.backgroundImage = nil
 end
 
-function game.generateWorld(seed, length, width)
-    game.seed = seed
-    game.temperatureSeed = seed + 1
-    game.humiditySeed = seed + 2
-    game.length = length
-    game.width = width
-    local floorMap = {}
-    game.blockMap = {}
-    for x = 1, game.length do
-        floorMap[x] = {}
-        for y = 1, game.width do
-            local temperature = game.getTemperature(game.temperatureSeed, x, y)
-            local humidity = game.getHumidity(game.humiditySeed, x, y)
-            floorMap[x][y] = game.getFloor(temperature, humidity)
-        end
-    end
+function gameScene.update(game)
 end
+
+function gameScene.updateGfx(game, pTknGfxContext, width, height)
+    return gameScene
+end
+
+return gameScene

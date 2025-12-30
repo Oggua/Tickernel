@@ -147,7 +147,6 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                 // Dynamically determine binding count based on what we actually have
                 vkVertexInputBindingDescriptionCount = (pTknInstanceVertexInputLayout != NULL) ? 2 : 1;
                 vkVertexInputBindingDescriptions = tknMalloc(sizeof(VkVertexInputBindingDescription) * vkVertexInputBindingDescriptionCount);
-                
                 // Always create vertex binding if mesh layout exists
                 if (pTknMeshVertexInputLayout != NULL)
                 {
@@ -157,7 +156,7 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
                     };
                 }
-                
+
                 // Only create instance binding if instance layout exists
                 if (pTknInstanceVertexInputLayout != NULL)
                 {
@@ -335,7 +334,7 @@ void tknDestroyPipelinePtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipel
         pTknPipeline->tknDrawCallPtrHashSet.nodePtrs[i] = NULL;
     }
     pTknPipeline->tknDrawCallPtrHashSet.count = 0;
-    
+
     VkDevice vkDevice = pTknGfxContext->vkDevice;
     tknRemoveFromHashSet(&pTknPipeline->pTknRenderPass->pTknSubpasses[pTknPipeline->subpassIndex].tknPipelinePtrHashSet, &pTknPipeline);
     if (pTknPipeline->pTknMeshVertexInputLayout != NULL)

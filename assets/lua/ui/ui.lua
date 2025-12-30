@@ -376,41 +376,19 @@ local function getTopNode(node)
     end
 end
 
-local function nodeContainsPoint(node, xNDC, yNDC)
-    if not node or not node.rect then
-        return false
-    end
-    local rx = node.rect.horizontal or {
-        min = 0,
-        max = 0,
-    }
-    local ry = node.rect.vertical or {
-        min = 0,
-        max = 0,
-    }
-    local model = node.rect.model
-    local worldX = model[7]
-    local worldY = model[8]
-    local minX = worldX + rx.min
-    local maxX = worldX + rx.max
-    local minY = worldY + ry.min
-    local maxY = worldY + ry.max
-    return xNDC >= minX and xNDC <= maxX and yNDC >= minY and yNDC <= maxY
-end
-
-local function processInputRecursive(node, xNDC, yNDC, inputState)
+local function getActiveInputNode(node, xNDC, yNDC, inputState)
     for i = #node.children, 1, -1 do
         local child = node.children[i]
-        local result = processInputRecursive(child, xNDC, yNDC, inputState)
-        if result then
-            return result
+        local node = getActiveInputNode(child, xNDC, yNDC, inputState)
+        if node then
+            return node
         end
     end
 
-    if node.component and nodeContainsPoint(node, xNDC, yNDC) then
-        return node.component.processInput and node.component.processInput(node.component, xNDC, yNDC, inputState)
+    if node.component and node.component.processInput and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
+        return node
     else
-        return false
+        return nil
     end
 end
 
@@ -514,8 +492,19 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     ui.screenHeight = screenHeight
     textComponent.update(pTknGfxContext)
 
-    if input.getMouseState(input.mouseCode.left) ~= input.inputState.idle then
-        processInputRecursive(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+    if ui.activeInputNode then
+        local isActive = ui.activeInputNode.component.processInput(ui.activeInputNode.component, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+        if isActive then
+            -- Still active
+        else
+            ui.activeInputNode = nil
+        end
+    else
+        if input.getMouseState(input.mouseCode.left) == input.inputState.down then
+            ui.activeInputNode = getActiveInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+        else
+            -- No active input node
+        end
     end
 end
 
@@ -788,6 +777,25 @@ function ui.removeTextComponent(pTknGfxContext, node)
     print("Removing text component")
     textComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)
+end
+
+function ui.rectContainsPoint(rect, xNDC, yNDC)
+    local rx = rect.horizontal or {
+        min = 0,
+        max = 0,
+    }
+    local ry = rect.vertical or {
+        min = 0,
+        max = 0,
+    }
+    local model = rect.model
+    local worldX = model[7]
+    local worldY = model[8]
+    local minX = worldX + rx.min
+    local maxX = worldX + rx.max
+    local minY = worldY + ry.min
+    local maxY = worldY + ry.max
+    return xNDC >= minX and xNDC <= maxX and yNDC >= minY and yNDC <= maxY
 end
 
 return ui
