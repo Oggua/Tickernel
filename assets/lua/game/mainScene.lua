@@ -5,7 +5,7 @@ local gameScene = require("game.gameScene")
 local function addButton(game, pTknGfxContext, name, text, layout, callback)
     local buttonNode = ui.addNode(pTknGfxContext, mainScene.mainSceneRootNode, 1, name, layout)
     mainScene.nameToButton[name] = buttonNode
-    ui.addButtonComponent(pTknGfxContext, function(component, xNDC, yNDC, inputState)
+    ui.addInteractableComponent(pTknGfxContext, function(component, xNDC, yNDC, inputState)
         print("Button input received: ", name, ui.rectContainsPoint(component.node.rect, xNDC, yNDC))
         if ui.rectContainsPoint(component.node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then

@@ -7,7 +7,7 @@ local tknMath = require("tknMath")
 local tkn = require("tkn")
 local imageComponent = require("ui.imageComponent")
 local textComponent = require("ui.textComponent")
-local buttonComponent = require("ui.buttonComponent")
+local interactableComponent = require("ui.interactableComponent")
 local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
 ui.fitModeType = imageComponent.fitModeType
@@ -462,7 +462,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
     ui.topNode = ui.rootNode
     textComponent.setup(assetsPath)
     imageComponent.setup(assetsPath)
-    buttonComponent.setup()
+    interactableComponent.setup()
 end
 
 function ui.teardown(pTknGfxContext)
@@ -481,7 +481,7 @@ function ui.teardown(pTknGfxContext)
     ui.vertexFormat = nil
     imageComponent.teardown(pTknGfxContext)
     textComponent.teardown(pTknGfxContext)
-    buttonComponent.teardown()
+    interactableComponent.teardown()
 end
 
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
@@ -615,8 +615,8 @@ local function removeNodeRecursive(pTknGfxContext, node)
             ui.removeImageComponent(pTknGfxContext, node)
         elseif node.component.type == "text" then
             ui.removeTextComponent(pTknGfxContext, node)
-        elseif node.component.type == "button" then
-            ui.removeButtonComponent(pTknGfxContext, node)
+        elseif node.component.type == "interactable" then
+            ui.removeInteractableComponent(pTknGfxContext, node)
         else
             error("ui.removeNode: unsupported component type " .. tostring(node.component.type))
         end
@@ -746,14 +746,14 @@ function ui.unloadFont(pTknGfxContext, font)
     textComponent.unloadFont(pTknGfxContext, font)
 end
 
-function ui.addButtonComponent(pTknGfxContext, callback, node)
-    local component = buttonComponent.createComponent(pTknGfxContext, callback, node)
+function ui.addInteractableComponent(pTknGfxContext, callback, node)
+    local component = interactableComponent.createComponent(pTknGfxContext, callback, node)
     addComponent(pTknGfxContext, node, component)
     return component
 end
-function ui.removeButtonComponent(pTknGfxContext, node)
-    assert(node.component and node.component.type == "button", "ui.removeButtonComponent: node has no button component")
-    buttonComponent.destroyComponent(pTknGfxContext, node.component)
+function ui.removeInteractableComponent(pTknGfxContext, node)
+    assert(node.component and node.component.type == "interactable", "ui.removeInteractableComponent: node has no interactable component")
+    interactableComponent.destroyComponent(pTknGfxContext, node.component)
     removeComponent(pTknGfxContext, node)
 end
 

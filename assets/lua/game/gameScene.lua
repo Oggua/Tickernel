@@ -56,7 +56,7 @@ function gameScene.start(game, pTknGfxContext, assetsPath)
         },
         rotation = 0,
     })
-    ui.addButtonComponent(pTknGfxContext, function(component, xNDC, yNDC, inputState)
+    ui.addInteractableComponent(pTknGfxContext, function(component, xNDC, yNDC, inputState)
         if inputState == input.inputState.down then
             print("Button pressed!")
             component.overrideColor = 0xFFAAAAAA
