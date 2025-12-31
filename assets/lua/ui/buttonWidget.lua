@@ -7,7 +7,7 @@ function buttonWidget.addButtonWidget(pTknGfxContext, name, parent, index, layou
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then
-                node.overrideColor = 0xFFAAAAAA
+                node.overrideColor = 0xAAAAAAFF
                 node.layout.horizontal.scale = 0.95
                 node.layout.vertical.scale = 0.95
                 return true
@@ -91,95 +91,3 @@ function buttonWidget.removeButtonWidget(pTknGfxContext, buttonWidget)
 end
 
 return buttonWidget
-
--- local function addButton(game, pTknGfxContext, name, text, layout, callback)
-
---     local callback = function(node, xNDC, yNDC, inputState)
---         print("Button input received: ", name, ui.rectContainsPoint(node.rect, xNDC, yNDC))
---         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
---             if inputState == input.inputState.down then
---                 node.overrideColor = 0xFFAAAAAA
---                 node.layout.horizontal.scale = 0.95
---                 node.layout.vertical.scale = 0.95
---                 return true
---             elseif inputState == input.inputState.up then
---                 node.overrideColor = nil
---                 node.layout.horizontal.scale = 1
---                 node.layout.vertical.scale = 1
---                 if callback then
---                     callback()
---                 end
---                 return false
---             else
---                 return false
---             end
---         else
---             node.overrideColor = nil
---             node.layout.horizontal.scale = 1
---             node.layout.vertical.scale = 1
---             if inputState == input.inputState.down then
---                 return true
---             elseif inputState == input.inputState.up then
---                 return false
---             else
---                 return false
---             end
---         end
---     end
---     local buttonNode = ui.addInteractableNode(pTknGfxContext, callback, mainScene.mainSceneRootNode, 1, name, layout)
---     mainScene.nameToButton[name] = buttonNode
-
---     local backgroundNodeLayout = {
---         dirty = true,
---         horizontal = {
---             type = ui.layoutType.relative,
---             pivot = 0.5,
---             minOffset = 0,
---             maxOffset = 0,
---             offset = 0,
---             scale = 1.0,
---         },
---         vertical = {
---             type = ui.layoutType.relative,
---             pivot = 0.5,
---             minOffset = 0,
---             maxOffset = 0,
---             offset = 0,
---             scale = 1.0,
---         },
---         rotation = 0,
---     }
---     local backgroundNodeFitMode = {
---         type = ui.fitModeType.sliced,
---         horizontal = {
---             minPadding = 16,
---             maxPadding = 16,
---         },
---         vertical = {
---             minPadding = 16,
---             maxPadding = 16,
---         },
---     }
---     local backgroundNode = ui.addImageNode(pTknGfxContext, buttonNode, 1, "buttonBackground", backgroundNodeLayout, 0xFFFFFFFF, backgroundNodeFitMode, game.uiDefaultImage, require("atlas.uiDefault").circle32x32)
---     local textNodeLayout = {
---         dirty = true,
---         horizontal = {
---             type = ui.layoutType.relative,
---             pivot = 0.5,
---             minOffset = 0,
---             maxOffset = 0,
---             offset = 0,
---             scale = 1.0,
---         },
---         vertical = {
---             type = ui.layoutType.relative,
---             pivot = 0.5,
---             minOffset = 0,
---             maxOffset = 0,
---             offset = 0,
---             scale = 1.0,
---         },
---         rotation = 0,
---     }
---     local textNode = ui.addTextNode(pTknGfxContext, backgroundNode, 1, "buttonText", textNodeLayout, text, game.font, 24, 0xFF323232, 0.5, 0.5, true)
--- end

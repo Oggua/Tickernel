@@ -62,6 +62,7 @@ if(ASTCENC)
     )
 
     set(ASTC_TEXTURES)
+message(${ASTCENC}~)
 
     foreach(TEXTURE ${TEXTURE_FILES})
         get_filename_component(TEXTURE_NAME_WE ${TEXTURE} NAME_WE)
@@ -74,6 +75,12 @@ if(ASTCENC)
 
         add_custom_command(
             OUTPUT ${ASTC_OUTPUT}
+            # -fastest      : 2
+            # -fast         : 3
+            # -medium       : 3
+            # -thorough     : 4
+            # -verythorough : 6
+            # -exhaustive   : 8
             COMMAND ${ASTCENC} -cl ${TEXTURE} ${ASTC_OUTPUT} 6x6 -thorough
             MAIN_DEPENDENCY ${TEXTURE}
             COMMENT "Compressing texture: ${TEXTURE_NAME_WE}"

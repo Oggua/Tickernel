@@ -96,7 +96,7 @@ end
 
 function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.nameToButtonWidget = {}
-    mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon1.astc")
+    mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
     print("Creating FIT type container node")
     local mainSceneRootNodeLayout = {
         dirty = true,
