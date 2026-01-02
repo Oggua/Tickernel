@@ -35,11 +35,11 @@ function tknMath.multiplyMat3(m1, m2, result)
     return r
 end
 
-function tknMath.Round(v)
+function tknMath.round(v)
     return math.floor(0.5 + v)
 end
 
-function tknMath.Clamp(v, min, max)
+function tknMath.clamp(v, min, max)
     if v < min then
         return min
     elseif v > max then
@@ -49,20 +49,20 @@ function tknMath.Clamp(v, min, max)
     end
 end
 
-function tknMath.Lerp(a, b, t)
-    t = tknMath.Clamp(t, 0, 1)
+function tknMath.lerp(a, b, t)
+    t = tknMath.clamp(t, 0, 1)
     return a + (b - a) * t
 end
 
-function tknMath.CantorPair(a, b)
+function tknMath.cantorPair(a, b)
     return (a + b) * (a + b + 1) // 2 + b
 end
 
-function tknMath.LCGRandom(v)
+function tknMath.lcgRandom(v)
     return 114067148579 * v + 728201631
 end
 
-function tknMath.PingPong(a, b, t)
+function tknMath.pingPong(a, b, t)
     local floor = math.floor(t)
     local remainder = t - floor
     if floor % 2 == 0 then
@@ -172,7 +172,7 @@ end
 local dotGridGradient2D = function(ix, iy, x, y, seed)
     local dx = x - ix
     local dy = y - iy
-    local hash = tknMath.LCGRandom(tknMath.CantorPair(tknMath.CantorPair(ix, iy), seed))
+    local hash = tknMath.lcgRandom(tknMath.cantorPair(tknMath.cantorPair(ix, iy), seed))
     hash = hash & 0xFF
     return grad2D(hash, dx, dy)
 end

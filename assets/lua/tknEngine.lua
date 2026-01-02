@@ -24,10 +24,10 @@ function tknEngine.stop(pTknGfxContext)
 end
 
 function tknEngine.update(pTknGfxContext, width, height)
-    print("Lua update")
+    -- print("Lua update")
     game.update()
     tkn.tknWaitRenderFence(pTknGfxContext)
-    print("Lua updateGfx")
+    -- print("Lua updateGfx")
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)
     return shouldQuit

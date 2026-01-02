@@ -433,7 +433,7 @@
     self = [super initWithFrame:frameRect device:device];
     self.delegate = self;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-    self.preferredFramesPerSecond = 15;
+    self.preferredFramesPerSecond = 10;
 
     NSTrackingArea *trackingArea = [[NSTrackingArea alloc]
         initWithRect:self.bounds

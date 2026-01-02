@@ -5,7 +5,7 @@ local ui = require("ui.ui")
 function game.start(pTknGfxContext, assetsPath)
     game.assetsPath = assetsPath
     print(ui)
-    game.font = ui.loadFont(pTknGfxContext, "/fonts/Monaco.ttf", 32, 2048)
+    game.font = ui.loadFont(pTknGfxContext, "/fonts/Hiragino Sans GB.ttc", 32, 2048)
     game.uiDefaultImagePath = "/textures/uiDefault.astc"
     game.uiDefaultImage = ui.loadImage(pTknGfxContext, game.uiDefaultImagePath)
     game.currentScene = mainScene

@@ -1,21 +1,17 @@
 local mainScene = {}
 local ui = require("ui.ui")
 local input = require("input")
-local buttonWidget = require("ui.buttonWidget")
+local buttonWidget = require("ui.widgets.buttonWidget")
 
 local function addButton(game, pTknGfxContext, name, text, layout, callback)
     local callback = function(node, xNDC, yNDC, inputState)
         print("Button input received: ", name, ui.rectContainsPoint(node.rect, xNDC, yNDC))
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then
-                node.overrideColor = 0xFFAAAAAA
-                node.layout.horizontal.scale = 0.95
-                node.layout.vertical.scale = 0.95
+                node.transform.color = 0xFFAAAAAA
                 return true
             elseif inputState == input.inputState.up then
-                node.overrideColor = nil
-                node.layout.horizontal.scale = 1
-                node.layout.vertical.scale = 1
+                node.transform.color = nil
                 if callback then
                     callback()
                 end
@@ -24,9 +20,7 @@ local function addButton(game, pTknGfxContext, name, text, layout, callback)
                 return false
             end
         else
-            node.overrideColor = nil
-            node.layout.horizontal.scale = 1
-            node.layout.vertical.scale = 1
+            node.transform.color = nil
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
@@ -36,18 +30,21 @@ local function addButton(game, pTknGfxContext, name, text, layout, callback)
             end
         end
     end
-    local buttonNode = ui.addInteractableNode(pTknGfxContext, callback, mainScene.mainSceneRootNode, 1, name, layout)
+    local buttonTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+    }
+    local buttonNode = ui.addInteractableNode(pTknGfxContext, callback, mainScene.mainSceneRootNode, 1, name, layout, buttonTransform)
     mainScene.nameToButtonWidget[name] = buttonNode
 
     local backgroundNodeLayout = {
-        dirty = true,
         horizontal = {
             type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 0,
             maxOffset = 0,
             offset = 0,
-            scale = 1.0,
         },
         vertical = {
             type = ui.layoutType.relative,
@@ -55,9 +52,7 @@ local function addButton(game, pTknGfxContext, name, text, layout, callback)
             minOffset = 0,
             maxOffset = 0,
             offset = 0,
-            scale = 1.0,
         },
-        rotation = 0,
     }
     local backgroundNodeFitMode = {
         type = ui.fitModeType.sliced,
@@ -70,16 +65,19 @@ local function addButton(game, pTknGfxContext, name, text, layout, callback)
             maxPadding = 16,
         },
     }
-    local backgroundNode = ui.addImageNode(pTknGfxContext, buttonNode, 1, "buttonBackground", backgroundNodeLayout, 0xFFFFFFFF, backgroundNodeFitMode, game.uiDefaultImage, require("atlas.uiDefault").circle16x16)
+    local backgroundTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+    }
+    local backgroundNode = ui.addImageNode(pTknGfxContext, buttonNode, 1, "buttonBackground", backgroundNodeLayout, backgroundTransform, 0xFFFFFFFF, backgroundNodeFitMode, game.uiDefaultImage, require("atlas.uiDefault").circle16x16)
     local textNodeLayout = {
-        dirty = true,
         horizontal = {
             type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 0,
             maxOffset = 0,
             offset = 0,
-            scale = 1.0,
         },
         vertical = {
             type = ui.layoutType.relative,
@@ -87,11 +85,14 @@ local function addButton(game, pTknGfxContext, name, text, layout, callback)
             minOffset = 0,
             maxOffset = 0,
             offset = 0,
-            scale = 1.0,
         },
-        rotation = 0,
     }
-    local textNode = ui.addTextNode(pTknGfxContext, backgroundNode, 1, "buttonText", textNodeLayout, text, game.font, 24, 0xFF323232, 0.5, 0.5, true)
+    local textTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+    }
+    local textNode = ui.addTextNode(pTknGfxContext, backgroundNode, 1, "buttonText", textNodeLayout, textTransform, text, game.font, 24, 0xFF323232, 0.5, 0.5, true)
 end
 
 function mainScene.start(game, pTknGfxContext, assetsPath)
@@ -99,24 +100,18 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
     print("Creating FIT type container node")
     local mainSceneRootNodeLayout = {
-        dirty = true,
         horizontal = {
             type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 0,
             maxOffset = 0,
-            offset = 0,
-            scale = 1.0,
         },
         vertical = {
             type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 32,
             maxOffset = -32,
-            offset = 0,
-            scale = 1.0,
         },
-        rotation = 0,
     }
     local mainSceneRootNodeFitMode = {
         type = ui.fitModeType.cover,
@@ -127,7 +122,12 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         u1 = 1,
         v1 = 1,
     }
-    mainScene.mainSceneRootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", mainSceneRootNodeLayout, 0xFFFFFFFF, mainSceneRootNodeFitMode, mainScene.backgroundImage, mainSceneRootNodeUV)
+    local rootTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+    }
+    mainScene.mainSceneRootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", mainSceneRootNodeLayout, rootTransform, 0xFFFFFFFF, mainSceneRootNodeFitMode, mainScene.backgroundImage, mainSceneRootNodeUV)
 
     local buttonImageFitMode = {
         type = ui.fitModeType.sliced,
@@ -141,15 +141,14 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         },
     }
     local buttonImageUV = require("atlas.uiDefault").circle16x16
-    local startButtonWidget = buttonWidget.addButtonWidget(pTknGfxContext, "startButton", mainScene.mainSceneRootNode, 1, {
-        dirty = true,
+    local startButtonWidget = buttonWidget.addWidget(pTknGfxContext, "startButton", mainScene.mainSceneRootNode, 1, {
+
         horizontal = {
             type = ui.layoutType.anchored,
             anchor = 0.5,
             pivot = 0.5,
             length = 512,
             offset = 0,
-            scale = 1,
         },
         vertical = {
             type = ui.layoutType.anchored,
@@ -157,22 +156,19 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             pivot = 0.5,
             length = 64,
             offset = 0,
-            scale = 1,
         },
-        rotation = 0,
     }, function()
         game.switchScene(gameScene)
     end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0x323232CD, game.font, "Start Game", 24, 0xFFFFFFFF)
 
-    local settingButtonWidget = buttonWidget.addButtonWidget(pTknGfxContext, "settingButton", mainScene.mainSceneRootNode, 2, {
-        dirty = true,
+    local settingButtonWidget = buttonWidget.addWidget(pTknGfxContext, "settingButton", mainScene.mainSceneRootNode, 2, {
+
         horizontal = {
             type = ui.layoutType.anchored,
             anchor = 0.5,
             pivot = 0.5,
             length = 512,
             offset = 0,
-            scale = 1,
         },
         vertical = {
             type = ui.layoutType.anchored,
@@ -180,15 +176,13 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
             pivot = 0.5,
             length = 64,
             offset = 96,
-            scale = 1,
         },
-        rotation = 0,
     }, function()
         game.switchScene(nil)
     end, game.uiDefaultImage, buttonImageUV, buttonImageFitMode, 0x323232CD, game.font, "Settings", 24, 0xFFFFFFFF)
 
-    local quitButtonWidget = buttonWidget.addButtonWidget(pTknGfxContext, "quitButton", mainScene.mainSceneRootNode, 3, {
-        dirty = true,
+    local quitButtonWidget = buttonWidget.addWidget(pTknGfxContext, "quitButton", mainScene.mainSceneRootNode, 3, {
+
         horizontal = {
             type = ui.layoutType.anchored,
             anchor = 0.5,

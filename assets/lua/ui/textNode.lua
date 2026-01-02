@@ -22,7 +22,6 @@ function textNode.update(pTknGfxContext)
 end
 
 function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, pTknSampler, pTknPipeline)
-    print("loadFont")
     local path = textNode.assetsPath .. relativePath
     local font = textNode.pathToFont[path]
     if font then
@@ -70,7 +69,6 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
 end
 
 function textNode.unloadFont(pTknGfxContext, font)
-    print("unloadFont")
     textNode.pathToFont[font.path] = nil
     tkn.tknDestroyPipelineMaterialPtr(pTknGfxContext, font.pTknMaterial)
     tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
@@ -123,8 +121,8 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.type = nil
 end
 
-function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
-    if boundsChanged or screenSizeChanged or node.font.dirty then
+function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeChanged)
+    if verticesDirty or screenSizeChanged or node.font.dirty then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local rectWidth = rect.horizontal.max - rect.horizontal.min
@@ -155,8 +153,8 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         local currentLine = lines[1]
         local penX = 0
 
-        for i = 1, #node.text do
-            local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadTknChar(font.pTknFont, string.byte(node.text, i))
+        for pos, code in utf8.codes(node.text) do
+            local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadTknChar(font.pTknFont, code)
 
             if pTknChar then
                 local widthNDC = width * scaleX
@@ -195,6 +193,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
                 penX = penX + advanceNDC
             end
         end
+
         currentLine.width = penX
 
         -- Calculate starting Y position based on vertical alignment
@@ -274,8 +273,13 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
     end
 end
 
-function textNode.updateInstancePtr(pTknGfxContext, component, rect, instanceFormat)
-
+function textNode.updateInstancePtr(pTknGfxContext, node, instanceFormat)
+    -- Update instance buffer with model matrix and color
+    local instances = {
+        model = node.rect.model,
+        color = {node.rect.color * node.color},
+    }
+    tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, instanceFormat, instances)
 end
 
 return textNode

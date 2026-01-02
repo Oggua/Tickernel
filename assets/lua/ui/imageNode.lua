@@ -12,7 +12,10 @@ function imageNode.setup(assetsPath)
     imageNode.pathToImage = {}
 end
 
-function imageNode.teardown()
+function imageNode.teardown(pTknGfxContext)
+    for name, image in pairs(imageNode.pathToImage) do
+        imageNode.unloadImage(pTknGfxContext, image)
+    end
     imageNode.assetsPath = nil
     imageNode.fitModeType = nil
     imageNode.pathToImage = nil
@@ -62,7 +65,7 @@ function imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, vertexFo
     -- Create instance buffer (mat3 + color)
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
-        color = {tkn.rgbaToAbgr(color)},
+        color = {tkn.rgbaToAbgr(0xFFFFFFFF)},
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, pTknInstance)
@@ -91,9 +94,9 @@ function imageNode.teardownNode(pTknGfxContext, node)
     node.color = 0xFFFFFFFF
 end
 
-function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsChanged, screenSizeChanged)
+function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeChanged)
     assert(node.type == "imageNode", "imageNode.updateMeshPtr: node is not an imageNode")
-    if boundsChanged or (screenSizeChanged and node.fitMode.type ~= imageNode.fitModeType.sliced) then
+    if verticesDirty or (screenSizeChanged and node.fitMode.type ~= imageNode.fitModeType.sliced) then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local left = rect.horizontal.min
@@ -249,7 +252,7 @@ function imageNode.updateInstancePtr(pTknGfxContext, node, instanceFormat)
     -- Update instance buffer with model matrix and color
     local instances = {
         model = node.rect.model,
-        color = {node.rect.color},
+        color = {node.rect.color * node.color},
     }
     tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, instanceFormat, instances)
 end
