@@ -4,6 +4,7 @@ local input = require("input")
 local gameScene = require("game.gameScene")
 local buttonWidget = require("ui.widgets.buttonWidget")
 local sliderWidget = require("ui.widgets.sliderWidget")
+local toggleWidget = require("ui.widgets.toggleWidget")
 
 function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.nameToButtonWidget = {}
@@ -39,85 +40,87 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         horizontalScale = 1,
         verticalScale = 1,
     }
-    mainScene.mainSceneRootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", mainSceneRootNodeLayout, rootTransform, 0xFFFFFFFF, mainSceneRootNodeFitMode, mainScene.backgroundImage, mainSceneRootNodeUV)
+    mainScene.mainSceneRootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", mainSceneRootNodeLayout.horizontal, mainSceneRootNodeLayout.vertical, rootTransform, 0xFFFFFFFF, mainSceneRootNodeFitMode, mainScene.backgroundImage, mainSceneRootNodeUV)
 
     local radiusType = buttonWidget.radiusType.small
     local startButtonWidget = buttonWidget.addWidget(pTknGfxContext, "startButton", mainScene.mainSceneRootNode, 1, {
-        horizontal = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 512,
-            offset = 0,
-        },
-        vertical = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 64,
-            offset = 0,
-        },
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 512,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 64,
+        offset = 0,
     }, function()
         print("Start Game button clicked")
         -- game.switchScene(gameScene)
     end, radiusType, 0x323232CD, game.font, "Start Game", 24, 0xFFFFFFFF)
 
     local settingButtonWidget = buttonWidget.addWidget(pTknGfxContext, "settingButton", mainScene.mainSceneRootNode, 2, {
-        horizontal = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 512,
-            offset = 0,
-        },
-        vertical = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 64,
-            offset = 96,
-        },
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 512,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 64,
+        offset = 96,
     }, function()
         print("Settings button clicked")
         -- game.switchScene(nil)
     end, radiusType, 0x323232CD, game.font, "Settings", 24, 0xFFFFFFFF)
 
     local quitButtonWidget = buttonWidget.addWidget(pTknGfxContext, "quitButton", mainScene.mainSceneRootNode, 3, {
-        horizontal = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 512,
-            offset = 0,
-        },
-        vertical = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 64,
-            offset = 192,
-        },
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 512,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 64,
+        offset = 192,
     }, function()
         -- game.switchScene(nil)
         print("Quit Game button clicked")
     end, radiusType, 0x323232CD, game.font, "Quit Game", 24, 0xFFFFFFFF)
 
     local customSliderWidget = sliderWidget.addWidget(pTknGfxContext, "customSlider", mainScene.mainSceneRootNode, 4, {
-        horizontal = {
-            type = ui.layoutType.anchored,
-            anchor = 0.3,
-            pivot = 0.5,
-            length = 512,
-            offset = 0,
-        },
-        vertical = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 32,
-            offset = 288,
-        },
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 512,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 32,
+        offset = 288,
     }, 0x555555FF, sliderWidget.radiusType.small)
+
+    local customToggleWidget = toggleWidget.addWidget(pTknGfxContext, "customToggle", mainScene.mainSceneRootNode, 5, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 32,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 32,
+        offset = 336,
+    }, 0x555555FF, toggleWidget.radiusType.small, 0.8)
 end
 
 function mainScene.stop(game)

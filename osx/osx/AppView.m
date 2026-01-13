@@ -48,17 +48,8 @@
 
 - (NSPoint)convertToNDC:(NSPoint)viewPoint {
     NSRect bounds = self.bounds;
-    float normalizedX = 1 - viewPoint.x / bounds.size.width;
-    float normalizedY = 1 - viewPoint.y / bounds.size.height;
-    float ndcX = normalizedX * 2.0f - 1.0f;
-    float ndcY = normalizedY * 2.0f - 1.0f;
-    return NSMakePoint(ndcX, ndcY);
-}
-
-- (NSPoint)convertToNDCWithTopOrigin:(NSPoint)viewPoint {
-    NSRect bounds = self.bounds;
     float normalizedX = viewPoint.x / bounds.size.width;
-    float normalizedY = 1.0f - (viewPoint.y / bounds.size.height);
+    float normalizedY = 1 - viewPoint.y / bounds.size.height;
     float ndcX = normalizedX * 2.0f - 1.0f;
     float ndcY = normalizedY * 2.0f - 1.0f;
     return NSMakePoint(ndcX, ndcY);
@@ -433,7 +424,7 @@
     self = [super initWithFrame:frameRect device:device];
     self.delegate = self;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-    self.preferredFramesPerSecond = 10;
+    self.preferredFramesPerSecond = 120;
 
     NSTrackingArea *trackingArea = [[NSTrackingArea alloc]
         initWithRect:self.bounds

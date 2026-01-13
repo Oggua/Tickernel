@@ -1,31 +1,33 @@
 local ui = require("ui.ui")
 local input = require("input")
-local buttonWidget = {}
-buttonWidget.radiusType = {
+local tknMath = require("tknMath")
+local toggleWidget = {}
+toggleWidget.radiusType = {
     none = 4,
     xsmall = 8,
     small = 16,
     medium = 32,
     large = 64,
 }
-function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onClick, radiusType, imageColor, font, text, fontSize, fontColor)
+function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, color, radiusType, handleScale)
     local widget = {}
+    widget.isToggled = false
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then
                 node.transform.color = 0xAAAAAAFF
                 return true
             elseif inputState == input.inputState.up then
-                node.transform.color = nil
-                if onClick then
-                    onClick()
-                end
+                node.transform.color = 0xFFFFFFFF
+                widget.isToggled = not widget.isToggled
+                widget.handleNode.color = widget.isToggled and 0xFFFFFFFF or 0xFFFFFF00
                 return false
             else
+                node.transform.color = 0xFFFFFFFF
                 return false
             end
         else
-            node.transform.color = nil
+            node.transform.color = 0xFFFFFFFF
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
@@ -35,12 +37,13 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
             end
         end
     end
-    local buttonTransform = {
+    local toggleTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
     }
-    widget.buttonNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, buttonTransform)
+    widget.toggleNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, toggleTransform)
+
     -- Directly use horizontal/vertical for background node, no need for extra layout object
     local backgroundHorizontal = {
         type = ui.layoutType.relative,
@@ -56,9 +59,8 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         maxOffset = 0,
         offset = 0,
     }
-    local imageFitMode, imageUV
     local image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
-    imageFitMode = {
+    local imageFitMode = {
         type = ui.fitModeType.sliced,
         horizontal = {
             minPadding = radiusType,
@@ -69,56 +71,57 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
             maxPadding = radiusType,
         },
     }
-    if radiusType == buttonWidget.radiusType.none then
+    local imageUV
+    if radiusType == toggleWidget.radiusType.none then
         imageUV = require("atlas.uiDefault").square8x8
-    elseif radiusType == buttonWidget.radiusType.xsmall then
+    elseif radiusType == toggleWidget.radiusType.xsmall then
         imageUV = require("atlas.uiDefault").circle16x16
-    elseif radiusType == buttonWidget.radiusType.small then
+    elseif radiusType == toggleWidget.radiusType.small then
         imageUV = require("atlas.uiDefault").circle32x32
-    elseif radiusType == buttonWidget.radiusType.medium then
+    elseif radiusType == toggleWidget.radiusType.medium then
         imageUV = require("atlas.uiDefault").circle64x64
-    elseif radiusType == buttonWidget.radiusType.large then
+    elseif radiusType == toggleWidget.radiusType.large then
         imageUV = require("atlas.uiDefault").circle128x128
     else
         error("Unsupported radius type: " .. tostring(radiusType))
     end
+
     local backgroundTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = nil,
     }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.buttonNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, imageColor, imageFitMode, image, imageUV)
+    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, color, imageFitMode, image, imageUV)
 
-    -- Directly use horizontal/vertical for text node, no need for extra layout object
-    local textHorizontal = {
+    -- Directly use horizontal/vertical for handle node, no need for extra layout object
+    local handleHorizontal = {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
         maxOffset = 0,
         offset = 0,
     }
-    local textVertical = {
+    local handleVertical = {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
         maxOffset = 0,
         offset = 0,
     }
-    local textTransform = {
+    local handleTransform = {
         rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
+        horizontalScale = handleScale,
+        verticalScale = handleScale,
     }
-    widget.textNode = ui.addTextNode(pTknGfxContext, widget.backgroundNode, 1, "buttonText", textHorizontal, textVertical, textTransform, text, font, fontSize, fontColor, 0.5, 0.5, true)
+    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, 0xFFFFFF00, imageFitMode, image, imageUV)
     return widget
 end
 
-function buttonWidget.removeWidget(pTknGfxContext, buttonWidget)
-    ui.removeNode(pTknGfxContext, buttonWidget.buttonNode)
-    buttonWidget.buttonNode = nil
-    buttonWidget.backgroundNode = nil
-    buttonWidget.textNode = nil
+function toggleWidget.removeWidget(pTknGfxContext, toggleWidget)
+    ui.removeNode(pTknGfxContext, toggleWidget.toggleNode)
+    toggleWidget.toggleNode = nil
+    toggleWidget.backgroundNode = nil
+    toggleWidget.handleNode = nil
 end
 
-return buttonWidget
+return toggleWidget

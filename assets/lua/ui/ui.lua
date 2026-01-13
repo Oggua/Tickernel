@@ -41,7 +41,7 @@ end
 
 local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
     -- Get orientation properties based on key (horizontal or vertical)
-    local orientation = node.layout[key]
+    local orientation = node[key]
     local orientationType = orientation.type
     local orientationPivot = orientation.pivot
     local orientationDirty = orientation.dirty
@@ -82,7 +82,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
                 effectiveParentLengthNDC = 2
             end
             local lengthNDC, offsetToEffectiveParentNDC
-            local effectiveParentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
+            local effectiveParentPivot = effectiveParent and effectiveParent[key].pivot or 0.5
             -- Calculate length and offset based on layout type
             if orientationType == ui.layoutType.anchored then
                 if math.type(orientationLength) == "integer" then
@@ -147,7 +147,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
         -- Recursively check if any non-fit descendant's orientation is dirty
         local function hasNonFitChildOrientationDirty(checkNode)
             for _, child in ipairs(checkNode.children) do
-                local childOrientationType = child.layout[key].type
+                local childOrientationType = child[key].type
                 if childOrientationType == ui.layoutType.fit and #child.children > 0 then
                     -- Fit node, recursively check its children
                     if hasNonFitChildOrientationDirty(child) then
@@ -155,7 +155,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
                     end
                 else
                     -- Non-fit node, check dirty status
-                    if child.layout[key].dirty then
+                    if child[key].dirty then
                         return true
                     end
                 end
@@ -195,7 +195,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
 
             -- Calculate length and offset relative to effective parent
             local lengthNDC = maxInEffectiveParentNDC - minInEffectiveParentNDC
-            local effectiveParentPivot = effectiveParent and effectiveParent.layout[key].pivot or 0.5
+            local effectiveParentPivot = effectiveParent and effectiveParent[key].pivot or 0.5
             local effectiveParentLengthNDC
             if effectiveParent then
                 effectiveParentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
@@ -225,7 +225,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             end
         end
     end
-    node.layout[key].dirty = false
+    node[key].dirty = false
 
     -- Handle dirty flags
     if node.transform.colorDirty then
@@ -241,7 +241,7 @@ end
 -- Helper function to find effective parent for a given direction (skip fit nodes)
 local function findEffectiveParent(node, key)
     local effectiveParent = node.parent
-    while effectiveParent and effectiveParent.layout[key].type == ui.layoutType.fit do
+    while effectiveParent and effectiveParent[key].type == ui.layoutType.fit do
         effectiveParent = effectiveParent.parent
     end
     return effectiveParent
@@ -427,11 +427,11 @@ end
 local function removeNodeRecursive(pTknGfxContext, node)
     if node.parent then
         local parent = node.parent
-        if parent.layout.horizontal.type == ui.layoutType.fit then
-            parent.layout.horizontal.dirty = true
+        if parent.horizontal.type == ui.layoutType.fit then
+            parent.horizontal.dirty = true
         end
-        if parent.layout.vertical.type == ui.layoutType.fit then
-            parent.layout.vertical.dirty = true
+        if parent.vertical.type == ui.layoutType.fit then
+            parent.vertical.dirty = true
         end
     end
     for i = #node.children, 1, -1 do
@@ -462,6 +462,133 @@ local function removeNodeRecursive(pTknGfxContext, node)
     node.parent = nil
     node.children = {}
     node.rect = nil
+end
+
+local function markParentFitNodeDirty(node, orientation)
+    local currentParent = node.parent
+    if currentParent then
+        while currentParent[orientation].type == ui.layoutType.fit do
+            currentParent[orientation].dirty = true
+            currentParent = currentParent.parent
+        end
+    end
+end
+
+local orientationMetatable = {
+    __index = function(t, k)
+        if k == "data" or k == "node" then
+            error("ui.orientation: cannot access data table or node directly")
+        end
+        return rawget(t, "data")[k]
+    end,
+    __newindex = function(t, k, v)
+        if k == "data" or k == "node" then
+            error("ui.transform: cannot overwrite data table or node")
+        else
+            rawget(t, "data")[k] = v
+            rawget(t, "data").dirty = true
+            local node = rawget(t, "data").node
+            local orientation = rawget(t, "data").orientation
+            markParentFitNodeDirty(node, orientation)
+        end
+    end,
+}
+
+local transformMetatable = {
+    __index = function(t, k)
+        if k == "data" or k == "node" then
+            error("ui.transform: cannot access data table or node directly")
+        end
+        return rawget(t, "data")[k]
+    end,
+    __newindex = function(t, k, v)
+        if k == "data" or k == "node" then
+            error("ui.transform: cannot overwrite data table or node")
+        else
+            rawget(t, "data")[k] = v
+            if k == "color" then
+                rawget(t, "data").colorDirty = true
+            else
+                rawget(t, "data").modelDirty = true
+            end
+        end
+    end,
+}
+
+local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform)
+    local node = {
+        name = name,
+        children = {},
+        parent = parent,
+        horizontal = {
+            data = horizontal,
+        },
+        vertical = {
+            data = vertical,
+        },
+        transform = {
+            data = transform,
+        },
+    }
+
+    node.horizontal.data.orientation = "horizontal"
+    node.vertical.data.orientation = "vertical"
+    node.horizontal.data.node = node
+    node.vertical.data.node = node
+    node.transform.data.node = node
+    setmetatable(node.transform, transformMetatable)
+    setmetatable(node.horizontal, orientationMetatable)
+    setmetatable(node.vertical, orientationMetatable)
+
+    if parent == nil then
+        assert(ui.rootNode == nil, "ui.addNode: rootNode is not nil")
+        ui.rootNode = node
+        ui.topNode = node
+    else
+        assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
+        table.insert(parent.children, index, node)
+        -- Mark fit ancestors as dirty since their bounds depend on children
+        if parent.horizontal.type == ui.layoutType.fit then
+            parent.horizontal.dirty = true
+        end
+        if parent.vertical.type == ui.layoutType.fit then
+            parent.vertical.dirty = true
+        end
+        if isTopNode(node) then
+            ui.topNode = node
+        end
+    end
+
+    return node
+end
+
+local function removeNodeInternal(pTknGfxContext, node)
+    print("Removing node: " .. node.name)
+    local needUpdateTopNode = isTopNode(node)
+    local parent = node.parent
+    if parent and parent.horizontal.type == ui.layoutType.fit then
+        parent.horizontal.dirty = true
+    end
+    if parent and parent.vertical.type == ui.layoutType.fit then
+        parent.vertical.dirty = true
+    end
+
+    markParentFitNodeDirty(node, "horizontal")
+    markParentFitNodeDirty(node, "vertical")
+    removeNodeRecursive(pTknGfxContext, node)
+    if needUpdateTopNode then
+        if parent == nil then
+            ui.topNode = nil
+        else
+            ui.topNode = getTopNode(parent)
+        end
+    end
+    setmetatable(node.transform, nil)
+    setmetatable(node.horizontal, nil)
+    setmetatable(node.vertical, nil)
+    node.horizontal.data.node = nil
+    node.vertical.data.node = nil
+    node.transform.data.node = nil
 end
 
 function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
@@ -498,40 +625,25 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
     ui.fitModeType = imageNode.fitModeType
     textNode.setup(assetsPath)
 
-    ui.rootNode = {
-        name = "root",
-        children = {},
-
-        layout = {
-            horizontal = {
-                type = ui.layoutType.relative,
-                pivot = 0.5,
-                minOffset = 0,
-                maxOffset = 0,
-                offset = 0,
-                dirty = false,
-            },
-
-            vertical = {
-                type = ui.layoutType.relative,
-                pivot = 0.5,
-                minOffset = 0,
-                maxOffset = 0,
-                offset = 0,
-                dirty = false,
-            },
-        },
-
-        transform = {
-            rotation = 0,
-            horizontalScale = 1,
-            verticalScale = 1,
-        },
-
-        type = "node",
-    }
-    ui.rootNode.transform.node = ui.rootNode
-    ui.topNode = ui.rootNode
+    ui.addNode(pTknGfxContext, nil, 1, "root", {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+        dirty = false,
+    }, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+        dirty = false,
+    }, {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+    })
 end
 function ui.teardown(pTknGfxContext)
     ui.removeNode(pTknGfxContext, ui.rootNode)
@@ -582,86 +694,6 @@ function ui.getNodeIndex(node)
     end
 end
 
-local function markParentFitNodeDirty(node, orientationKey)
-    if node.parent then
-        local currentParent = node.parent
-        while currentParent.layout[orientationKey].type == ui.layoutType.fit do
-            currentParent.layout[orientationKey].dirty = true
-            currentParent = currentParent.layout[orientationKey].parent
-        end
-    end
-end
-
-local layoutMetatable = {
-    __newindex = function(t, k, v)
-        rawset(t, k, v)
-        t.dirty = true
-        markParentFitNodeDirty(t.node, k)
-    end,
-}
-local transformMetatable = {
-    __newindex = function(t, k, v)
-        rawset(t, k, v)
-        if k == "color" then
-            t.colorDirty = true
-        else
-            t.modelDirty = true
-        end
-    end,
-}
-
-local function addNodeInternal(pTknGfxContext, parent, index, name, layout, transform)
-    assert(parent ~= nil, "ui.addNode: parent is nil")
-    assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
-
-    setmetatable(layout, layoutMetatable)
-    setmetatable(transform, transformMetatable)
-    local node = {
-        name = name,
-        children = {},
-        parent = parent,
-        layout = layout,
-        transform = transform,
-    }
-    table.insert(parent.children, index, node)
-
-    -- Mark fit ancestors as dirty since their bounds depend on children
-    if parent.layout.horizontal.type == ui.layoutType.fit then
-        parent.layout.horizontal.dirty = true
-    end
-    if parent.layout.vertical.type == ui.layoutType.fit then
-        parent.layout.vertical.dirty = true
-    end
-
-    if isTopNode(node) then
-        ui.topNode = node
-    end
-    return node
-end
-
-local function removeNodeInternal(pTknGfxContext, node)
-    print("Removing node: " .. node.name)
-    local needUpdateTopNode = isTopNode(node)
-    local parent = node.parent
-    if parent and parent.layout.horizontal.type == ui.layoutType.fit then
-        parent.layout.horizontal.dirty = true
-    end
-    if parent and parent.layout.vertical.type == ui.layoutType.fit then
-        parent.layout.vertical.dirty = true
-    end
-
-    markParentFitNodeDirty(node, "horizontal")
-    markParentFitNodeDirty(node, "vertical")
-    removeNodeRecursive(pTknGfxContext, node)
-    if needUpdateTopNode then
-        if parent == nil then
-            ui.topNode = nil
-        else
-            ui.topNode = getTopNode(parent)
-        end
-    end
-end
-
 function ui.moveNode(pTknGfxContext, node, parent, index)
     assert(node, "ui.moveNode: node is nil")
     assert(node ~= ui.rootNode, "ui.moveNode: cannot move root node")
@@ -691,8 +723,8 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
         table.remove(node.parent.children, originalIndex)
         table.insert(parent.children, index, node)
         node.parent = parent
-        node.layout.horizontal.dirty = true
-        node.layout.vertical.dirty = true
+        node.horizontal.dirty = true
+        node.vertical.dirty = true
         if isTopNode(node) then
             ui.topNode = getTopNode(ui.rootNode)
         end
@@ -737,8 +769,8 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
             tkn.tknInsertDrawCallPtr(dc, insertIndex)
         end
         if node.type ~= ui.layoutType.fit then
-            node.layout.horizontal.dirty = true
-            node.layout.vertical.dirty = true
+            node.horizontal.dirty = true
+            node.vertical.dirty = true
             node.transform.modelDirty = true
             node.transform.colorDirty = true
         end
@@ -766,27 +798,27 @@ function ui.unloadFont(pTknGfxContext, font)
     textNode.unloadFont(pTknGfxContext, font)
 end
 
-function ui.addNode(pTknGfxContext, parent, index, name, layout, transform)
-    local node = addNodeInternal(pTknGfxContext, parent, index, name, layout, transform);
+function ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform)
+    local node = addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
     node.type = "node"
     return node
 end
 
-function ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, layout, transform)
-    local node = addNodeInternal(pTknGfxContext, parent, index, name, layout, transform);
+function ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, transform)
+    local node = addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
     interactableNode.setupNode(pTknGfxContext, processInputFunction, node)
     return node
 end
 
-function ui.addImageNode(pTknGfxContext, parent, index, name, layout, transform, color, fitMode, image, uv)
-    local node = addNodeInternal(pTknGfxContext, parent, index, name, layout, transform);
+function ui.addImageNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, color, fitMode, image, uv)
+    local node = addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
     local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
     imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, drawCallIndex, node)
     return node
 end
 
-function ui.addTextNode(pTknGfxContext, parent, index, name, layout, transform, textString, font, size, color, alignH, alignV, bold)
-    local node = ui.addNode(pTknGfxContext, parent, index, name, layout, transform);
+function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alignH, alignV, bold)
+    local node = ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
     local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
     textNode.setupNode(pTknGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, drawCallIndex, node)
     return node
