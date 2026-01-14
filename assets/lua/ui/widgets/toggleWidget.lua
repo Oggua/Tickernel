@@ -9,18 +9,21 @@ toggleWidget.radiusType = {
     medium = 32,
     large = 64,
 }
-function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, color, radiusType, handleScale)
+function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, radiusType, handleScale, handleColor, callback)
     local widget = {}
-    widget.isToggled = false
+    widget.isToggled = true
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then
-                node.transform.color = 0xAAAAAAFF
+                node.transform.color = 0x9E9E9EFF
                 return true
             elseif inputState == input.inputState.up then
                 node.transform.color = 0xFFFFFFFF
                 widget.isToggled = not widget.isToggled
-                widget.handleNode.color = widget.isToggled and 0xFFFFFFFF or 0xFFFFFF00
+                widget.handleNode.transform.active = widget.isToggled
+                if callback then
+                    callback(widget.isToggled)
+                end
                 return false
             else
                 node.transform.color = 0xFFFFFFFF
@@ -41,6 +44,8 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
     widget.toggleNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, toggleTransform)
 
@@ -90,8 +95,10 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, color, imageFitMode, image, imageUV)
+    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, imageFitMode, image, imageUV)
 
     -- Directly use horizontal/vertical for handle node, no need for extra layout object
     local handleHorizontal = {
@@ -112,8 +119,10 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = handleScale,
         verticalScale = handleScale,
+        color = 0xFFFFFFFF,
+        active = true,
     }
-    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, 0xFFFFFF00, imageFitMode, image, imageUV)
+    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, handleColor, imageFitMode, image, imageUV)
     return widget
 end
 

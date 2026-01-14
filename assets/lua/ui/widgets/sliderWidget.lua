@@ -9,12 +9,12 @@ sliderWidget.radiusType = {
     medium = 32,
     large = 64,
 }
-function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, imageColor, radiusType)
+function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, radiusType, handleColor)
     local widget = {}
 
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if inputState == input.inputState.down then
-            widget.handleNode.transform.color = 0xAAAAAAFF
+            widget.handleNode.transform.color = 0x9E9E9EFF
             -- Convert world point to slider's local space
             local m = node.rect.model
             local m00, m01, m10, m11, tx, ty = m[1], m[2], m[4], m[5], m[7], m[8]
@@ -47,6 +47,8 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
     widget.sliderNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, sliderTransform)
 
@@ -95,8 +97,10 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, imageColor, imageFitMode, image, imageUV)
+    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, imageFitMode, image, imageUV)
 
     -- Directly use horizontal/vertical for handle node, no need for extra layout object
     local handleHorizontal = {
@@ -117,8 +121,10 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
-    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 2, "sliderHandle", handleHorizontal, handleVertical, handleTransform, 0xFFFFFFFF, imageFitMode, image, imageUV)
+    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 2, "sliderHandle", handleHorizontal, handleVertical, handleTransform, handleColor, imageFitMode, image, imageUV)
     return widget
 end
 

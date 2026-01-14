@@ -69,7 +69,7 @@ function imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, vertexFo
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, pTknInstance)
-    tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
+
     node.type = "imageNode"
     node.color = color
     node.fitMode = fitMode
@@ -78,6 +78,11 @@ function imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, vertexFo
     node.pTknMesh = pTknMesh
     node.pTknInstance = pTknInstance
     node.pTknDrawCall = pTknDrawCall
+
+    -- if node.transform.active then
+    --     node.transform.finalActive = true
+    --     tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
+    -- end
 end
 
 function imageNode.teardownNode(pTknGfxContext, node)

@@ -13,10 +13,10 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then
-                node.transform.color = 0xAAAAAAFF
+                node.transform.color = 0x9E9E9EFF
                 return true
             elseif inputState == input.inputState.up then
-                node.transform.color = nil
+                node.transform.color = 0xFFFFFFFF
                 if onClick then
                     onClick()
                 end
@@ -25,7 +25,7 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                 return false
             end
         else
-            node.transform.color = nil
+            node.transform.color = 0xFFFFFFFF
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
@@ -39,6 +39,8 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
     widget.buttonNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, buttonTransform)
     -- Directly use horizontal/vertical for background node, no need for extra layout object
@@ -86,7 +88,8 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = nil,
+        color = 0xFFFFFFFF,
+        active = true,
     }
     widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.buttonNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, imageColor, imageFitMode, image, imageUV)
 
@@ -109,6 +112,8 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     }
     widget.textNode = ui.addTextNode(pTknGfxContext, widget.backgroundNode, 1, "buttonText", textHorizontal, textVertical, textTransform, text, font, fontSize, fontColor, 0.5, 0.5, true)
     return widget

@@ -88,7 +88,6 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, align
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
-    tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
     node.text = textString
     node.font = font
     node.size = size
@@ -101,6 +100,10 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, align
     node.pTknInstance = pTknInstance
     node.pTknDrawCall = pTknDrawCall
     node.type = "textNode"
+
+    -- if node.transform.active then
+    --     tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
+    -- end
 end
 
 function textNode.teardownNode(pTknGfxContext, node)

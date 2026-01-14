@@ -81,19 +81,13 @@ void tknRemoveDrawCallPtr(TknDrawCall *pTknDrawCall)
     TknRenderPass *pTknRenderPass = pTknDrawCall->pTknPipeline->pTknRenderPass;
     struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[pTknDrawCall->pTknPipeline->subpassIndex];
     tknRemoveFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, &pTknDrawCall);
-    // Keep pipeline reference for hashset relationship tracking
 }
 
 void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index)
 {
-    tknAssert(subpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", subpassIndex);
+    tknAssert(index > 0 && subpassIndex < pTknRenderPass->tknSubpassCount, "Subpass index %u out of bounds", subpassIndex);
     struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[subpassIndex];
-    if (index >= pTknSubpass->tknDrawCallPtrDynamicArray.count)
-    {
-        return;
-    }
-    TknDrawCall *pTknDrawCall = *(TknDrawCall **)tknGetFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, index);
-    tknDestroyDrawCallPtr(NULL, pTknDrawCall);
+    tknRemoveAtIndexFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, index);
 }
 
 TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index)

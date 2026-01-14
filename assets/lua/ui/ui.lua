@@ -275,10 +275,25 @@ local function transformOffsetToWorld(localOffsetX, localOffsetY, effectiveParen
     return localOffsetX, localOffsetY
 end
 
-local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelChanged, parentColorChanged, parentColor)
+local function getDrawCallIndex(pTknGfxContext, node)
+    local drawCallIndex = 0
+    traverseNode(ui.rootNode, function(child)
+        if child == node then
+            return true
+        else
+            if child and child.pTknDrawCall then
+                drawCallIndex = drawCallIndex + 1
+            end
+            return false
+        end
+    end)
+    return drawCallIndex
+end
+
+local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, drawCallIndex)
     local rect = node.rect
     local modelChanged = false
-    if rect.modelDirty or parentModelChanged then
+    if rect.modelDirty or parentModelDirty then
         -- Calculate offset relative to direct parent
         local offsetToParentX = calculateOffsetToParent(node, "horizontal")
         local offsetToParentY = calculateOffsetToParent(node, "vertical")
@@ -336,7 +351,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     end
 
     local colorChanged = false
-    if rect.colorDirty or parentColorChanged then
+    if rect.colorDirty or parentColorDirty then
         local newColor = tknMath.multiplyColors(parentColor, node.transform.color or 0xFFFFFFFF)
         if rect.color ~= newColor then
             colorChanged = true
@@ -367,24 +382,39 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, instances)
     end
 
+    local activeChanged = false
+    if node.transform.activeDirty or parentActiveDirty then
+        local finalActive = parentActive and node.transform.active
+        if finalActive == node.finalActive then
+            -- No change
+        else
+            activeChanged = true
+            if node.pTknDrawCall then
+                if finalActive then
+                    tkn.tknInsertDrawCallPtr(node.pTknDrawCall, drawCallIndex)
+                    print("Inserted draw call for node " .. tostring(node.name) .. " at index " .. tostring(drawCallIndex))
+                else
+                    -- Keep drawCallIndex the same, as this draw call is being removed
+                    tkn.tknRemoveDrawCallAtIndex(uiRenderPass.pTknRenderPass, node.pTknDrawCall, drawCallIndex)
+                    print("Removed draw call for node " .. tostring(node.name) .. " at index " .. tostring(drawCallIndex))
+                end
+            else
+                -- No draw call to update
+            end
+            node.transform.finalActive = finalActive
+        end
+        node.transform.activeDirty = false
+    end
+
+    if node.pTknDrawCall and node.transform.finalActive then
+        drawCallIndex = drawCallIndex + 1
+    end
+
     -- Recursively update children
     for _, child in ipairs(node.children) do
-        updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, modelChanged or parentModelChanged, colorChanged or colorChanged, rect.color)
+        drawCallIndex = updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, modelChanged or parentModelDirty, colorChanged or colorChanged, rect.color, parentActiveDirty or activeChanged, node.transform.finalActive, drawCallIndex)
     end
-end
 
-local function getDrawCallIndex(pTknGfxContext, node)
-    local drawCallIndex = 0
-    traverseNode(ui.rootNode, function(child)
-        if child == node then
-            return true
-        else
-            if child and child.pTknDrawCall then
-                drawCallIndex = drawCallIndex + 1
-            end
-            return false
-        end
-    end)
     return drawCallIndex
 end
 
@@ -408,20 +438,25 @@ local function getTopNode(node)
     end
 end
 
-local function getActiveInputNode(node, xNDC, yNDC, inputState)
-    for i = #node.children, 1, -1 do
-        local child = node.children[i]
-        local node = getActiveInputNode(child, xNDC, yNDC, inputState)
-        if node then
-            return node
+local function getActiveInteractableInputNode(node, xNDC, yNDC, inputState)
+    if node.transform.active then
+        for i = #node.children, 1, -1 do
+            local child = node.children[i]
+            local node = getActiveInteractableInputNode(child, xNDC, yNDC, inputState)
+            if node then
+                return node
+            end
         end
-    end
-
-    if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
-        return node
+        if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
+            return node
+        else
+            return nil
+        end
     else
+        -- Skip inactive nodes
         return nil
     end
+
 end
 
 local function removeNodeRecursive(pTknGfxContext, node)
@@ -508,8 +543,10 @@ local transformMetatable = {
             rawget(t, "data")[k] = v
             if k == "color" then
                 rawget(t, "data").colorDirty = true
-            else
+            elseif k == "model" then
                 rawget(t, "data").modelDirty = true
+            elseif k == "active" then
+                rawget(t, "data").activeDirty = true
             end
         end
     end,
@@ -531,11 +568,18 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
         },
     }
 
-    node.horizontal.data.orientation = "horizontal"
-    node.vertical.data.orientation = "vertical"
-    node.horizontal.data.node = node
-    node.vertical.data.node = node
-    node.transform.data.node = node
+    horizontal.orientation = "horizontal"
+    vertical.orientation = "vertical"
+    horizontal.node = node
+    vertical.node = node
+    transform.node = node
+    horizontal.dirty = true
+    vertical.dirty = true
+    transform.colorDirty = true
+    transform.modelDirty = true
+    transform.activeDirty = true
+    transform.finalActive = transform.active
+
     setmetatable(node.transform, transformMetatable)
     setmetatable(node.horizontal, orientationMetatable)
     setmetatable(node.vertical, orientationMetatable)
@@ -586,9 +630,18 @@ local function removeNodeInternal(pTknGfxContext, node)
     setmetatable(node.transform, nil)
     setmetatable(node.horizontal, nil)
     setmetatable(node.vertical, nil)
-    node.horizontal.data.node = nil
-    node.vertical.data.node = nil
-    node.transform.data.node = nil
+
+    node.horizontal.orientation = nil
+    node.vertical.orientation = nil
+    node.horizontal.node = nil
+    node.vertical.node = nil
+    node.transform.node = nil
+    node.horizontal.dirty = nil
+    node.vertical.dirty = nil
+    node.transform.colorDirty = nil
+    node.transform.modelDirty = nil
+    node.transform.activeDirty = nil
+    node.transform.finalActive = nil
 end
 
 function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
@@ -643,6 +696,8 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
+        color = 0xFFFFFFFF,
+        active = true,
     })
 end
 function ui.teardown(pTknGfxContext)
@@ -665,23 +720,23 @@ end
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
-    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, 0xFFFFFFFF)
+    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, 0xFFFFFFFF, false, ui.rootNode.transform.activeDirty, 0)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
     textNode.update(pTknGfxContext)
 
-    if ui.activeInteractableNode then
-        local isActive = ui.activeInteractableNode.processInputFunction(ui.activeInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
-        if isActive then
-            -- Still active
+    if ui.currentInteractableNode then
+        local canInteract = ui.currentInteractableNode.processInputFunction(ui.currentInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+        if canInteract then
+            -- Keep current interactable node
         else
-            ui.activeInteractableNode = nil
+            ui.currentInteractableNode = nil
         end
     else
         if input.getMouseState(input.mouseCode.left) == input.inputState.down then
-            ui.activeInteractableNode = getActiveInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+            ui.currentInteractableNode = getActiveInteractableInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
         else
-            -- No active input node
+            -- No current interactable node
         end
     end
 end
