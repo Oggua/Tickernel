@@ -1,14 +1,8 @@
 local ui = require("ui.ui")
 local input = require("input")
+local uiDefault = require("atlas.uiDefault")
 local buttonWidget = {}
-buttonWidget.radiusType = {
-    none = 4,
-    xsmall = 8,
-    small = 16,
-    medium = 32,
-    large = 64,
-}
-function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onClick, radiusType, imageColor, font, text, fontSize, fontColor)
+function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onClick, uiDefaultCornerRadiusPreset, imageColor, font, text, fontSize, fontColor)
     local widget = {}
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
@@ -49,7 +43,7 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         pivot = 0.5,
         minOffset = 0,
         maxOffset = 0,
-        offset = 0,
+        offset = 0, 
     }
     local backgroundVertical = {
         type = ui.layoutType.relative,
@@ -58,32 +52,7 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         maxOffset = 0,
         offset = 0,
     }
-    local imageFitMode, imageUV
-    local image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
-    imageFitMode = {
-        type = ui.fitModeType.sliced,
-        horizontal = {
-            minPadding = radiusType,
-            maxPadding = radiusType,
-        },
-        vertical = {
-            minPadding = radiusType,
-            maxPadding = radiusType,
-        },
-    }
-    if radiusType == buttonWidget.radiusType.none then
-        imageUV = require("atlas.uiDefault").square8x8
-    elseif radiusType == buttonWidget.radiusType.xsmall then
-        imageUV = require("atlas.uiDefault").circle16x16
-    elseif radiusType == buttonWidget.radiusType.small then
-        imageUV = require("atlas.uiDefault").circle32x32
-    elseif radiusType == buttonWidget.radiusType.medium then
-        imageUV = require("atlas.uiDefault").circle64x64
-    elseif radiusType == buttonWidget.radiusType.large then
-        imageUV = require("atlas.uiDefault").circle128x128
-    else
-        error("Unsupported radius type: " .. tostring(radiusType))
-    end
+    local image, imageFitMode, imageUV = uiDefault.getSprite(uiDefaultCornerRadiusPreset)
     local backgroundTransform = {
         rotation = 0,
         horizontalScale = 1,

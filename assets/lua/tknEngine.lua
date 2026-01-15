@@ -3,6 +3,7 @@ local deferredRenderPass = require("deferredRenderer/deferredRenderPass")
 local ui = require("ui.ui")
 local game = require("game.game")
 local input = require("input")
+local uiDefault = require("atlas.uiDefault")
 local tknEngine = {}
 
 function tknEngine.start(pTknGfxContext, assetsPath)
@@ -12,13 +13,16 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     renderPassIndex = renderPassIndex + 1
     ui.setup(pTknGfxContext, deferredRenderPass.pSwapchainAttachment, assetsPath, renderPassIndex)
+    uiDefault.setup(pTknGfxContext, assetsPath)
     game.start(pTknGfxContext, assetsPath)
+
 end
 
 function tknEngine.stop(pTknGfxContext)
     game.stop()
     tkn.tknWaitRenderFence(pTknGfxContext)
     game.stopGfx(pTknGfxContext)
+    uiDefault.teardown(pTknGfxContext)
     ui.teardown(pTknGfxContext)
     deferredRenderPass.teardown(pTknGfxContext)
 end

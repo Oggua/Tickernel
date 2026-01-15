@@ -1,32 +1,74 @@
-return {
-    circle128x128 = {
-        u0 = 0.0,
-        v0 = 0.0,
-        u1 = 0.5,
-        v1 = 1.0,
-    },
-    circle64x64 = {
-        u0 = 0.5,
-        v0 = 0.0,
-        u1 = 0.75,
-        v1 = 0.5,
-    },
-    circle32x32 = {
-        u0 = 0.75,
-        v0 = 0.0,
-        u1 = 0.875,
-        v1 = 0.25,
-    },
-    circle16x16 = {
-        u0 = 0.875,
-        v0 = 0.0,
-        u1 = 0.9375,
-        v1 = 0.125,
-    },
-    square8x8 = {
-        u0 = 0.96875,
-        v0 = 0.0,
-        u1 = 1.0,
-        v1 = 0.0625,
-    },
-}
+local ui = require("ui.ui")
+local uiDefault = {}
+
+function uiDefault.setup(pTknGfxContext)
+    uiDefault.image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
+    uiDefault.cornerRadiusPreset = {
+        none = 4,
+        xsmall = 8,
+        small = 16,
+        medium = 32,
+        large = 64,
+    }
+    uiDefault.cornerRadiusPresetToFitMode = {}
+    for cornerRadiusPreset, padding in pairs(uiDefault.cornerRadiusPreset) do
+        uiDefault.cornerRadiusPresetToFitMode[cornerRadiusPreset] = {
+            type = ui.fitModeType.sliced,
+            horizontal = {
+                minPadding = padding,
+                maxPadding = padding,
+            },
+            vertical = {
+                minPadding = padding,
+                maxPadding = padding,
+            },
+        }
+    end
+    uiDefault.cornerRadiusPresetToUV = {
+        none = {
+            u0 = 0.96875,
+            v0 = 0.0,
+            u1 = 1.0,
+            v1 = 0.0625,
+        },
+        xsmall = {
+            u0 = 0.875,
+            v0 = 0.0,
+            u1 = 0.9375,
+            v1 = 0.125,
+        },
+        small = {
+            u0 = 0.75,
+            v0 = 0.0,
+            u1 = 0.875,
+            v1 = 0.25,
+        },
+        medium = {
+            u0 = 0.5,
+            v0 = 0.0,
+            u1 = 0.75,
+            v1 = 0.5,
+        },
+        large = {
+            u0 = 0.0,
+            v0 = 0.0,
+            u1 = 0.5,
+            v1 = 1.0,
+        },
+    }
+
+end
+
+function uiDefault.teardown(pTknGfxContext)
+    ui.unloadImage(pTknGfxContext, uiDefault.image)
+    uiDefault.image = nil
+    uiDefault.cornerRadiusPreset = nil
+    uiDefault.cornerRadiusPresetToFitMode = nil
+    uiDefault.cornerRadiusPresetToUV = nil
+end
+
+function uiDefault.getSprite(cornerRadiusPreset)
+    return uiDefault.image, uiDefault.cornerRadiusPresetToFitMode[cornerRadiusPreset], uiDefault.cornerRadiusPresetToUV[cornerRadiusPreset]
+end
+
+return uiDefault

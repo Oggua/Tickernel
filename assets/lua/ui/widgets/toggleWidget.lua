@@ -1,15 +1,10 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
+local uiDefault = require("atlas.uiDefault")
 local toggleWidget = {}
-toggleWidget.radiusType = {
-    none = 4,
-    xsmall = 8,
-    small = 16,
-    medium = 32,
-    large = 64,
-}
-function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, radiusType, handleScale, handleColor, callback)
+
+function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, uiDefaultCornerRadiusPreset, handleScale, handleColor, callback)
     local widget = {}
     widget.isToggled = true
     local processInputFunction = function(node, xNDC, yNDC, inputState)
@@ -64,32 +59,7 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         maxOffset = 0,
         offset = 0,
     }
-    local image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
-    local imageFitMode = {
-        type = ui.fitModeType.sliced,
-        horizontal = {
-            minPadding = radiusType,
-            maxPadding = radiusType,
-        },
-        vertical = {
-            minPadding = radiusType,
-            maxPadding = radiusType,
-        },
-    }
-    local imageUV
-    if radiusType == toggleWidget.radiusType.none then
-        imageUV = require("atlas.uiDefault").square8x8
-    elseif radiusType == toggleWidget.radiusType.xsmall then
-        imageUV = require("atlas.uiDefault").circle16x16
-    elseif radiusType == toggleWidget.radiusType.small then
-        imageUV = require("atlas.uiDefault").circle32x32
-    elseif radiusType == toggleWidget.radiusType.medium then
-        imageUV = require("atlas.uiDefault").circle64x64
-    elseif radiusType == toggleWidget.radiusType.large then
-        imageUV = require("atlas.uiDefault").circle128x128
-    else
-        error("Unsupported radius type: " .. tostring(radiusType))
-    end
+    local image, imageFitMode, imageUV = uiDefault.getSprite(uiDefaultCornerRadiusPreset)
 
     local backgroundTransform = {
         rotation = 0,

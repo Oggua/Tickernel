@@ -1,15 +1,10 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
+local uiDefault = require("atlas.uiDefault")
 local sliderWidget = {}
-sliderWidget.radiusType = {
-    none = 4,
-    xsmall = 8,
-    small = 16,
-    medium = 32,
-    large = 64,
-}
-function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, radiusType, handleColor)
+
+function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, uiDefaultCornerRadiusPreset, handleColor)
     local widget = {}
 
     local processInputFunction = function(node, xNDC, yNDC, inputState)
@@ -67,32 +62,9 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         maxOffset = 0,
         offset = 0,
     }
-    local imageFitMode, imageUV
-    local image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
-    imageFitMode = {
-        type = ui.fitModeType.sliced,
-        horizontal = {
-            minPadding = radiusType,
-            maxPadding = radiusType,
-        },
-        vertical = {
-            minPadding = radiusType,
-            maxPadding = radiusType,
-        },
-    }
-    if radiusType == sliderWidget.radiusType.none then
-        imageUV = require("atlas.uiDefault").square8x8
-    elseif radiusType == sliderWidget.radiusType.xsmall then
-        imageUV = require("atlas.uiDefault").circle16x16
-    elseif radiusType == sliderWidget.radiusType.small then
-        imageUV = require("atlas.uiDefault").circle32x32
-    elseif radiusType == sliderWidget.radiusType.medium then
-        imageUV = require("atlas.uiDefault").circle64x64
-    elseif radiusType == sliderWidget.radiusType.large then
-        imageUV = require("atlas.uiDefault").circle128x128
-    else
-        error("Unsupported radius type: " .. tostring(radiusType))
-    end
+
+    local image, imageFitMode, imageUV = uiDefault.getSprite(uiDefaultCornerRadiusPreset)
+
     local backgroundTransform = {
         rotation = 0,
         horizontalScale = 1,
