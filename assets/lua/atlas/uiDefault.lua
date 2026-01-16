@@ -4,6 +4,13 @@ local uiDefault = {}
 function uiDefault.setup(pTknGfxContext)
     uiDefault.image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
     uiDefault.cornerRadiusPreset = {
+        none = "none",
+        xsmall = "xsmall",
+        small = "small",
+        medium = "medium",
+        large = "large",
+    }
+    uiDefault.cornerRadiusPresetToRadius = {
         none = 4,
         xsmall = 8,
         small = 16,
@@ -11,7 +18,7 @@ function uiDefault.setup(pTknGfxContext)
         large = 64,
     }
     uiDefault.cornerRadiusPresetToFitMode = {}
-    for cornerRadiusPreset, padding in pairs(uiDefault.cornerRadiusPreset) do
+    for cornerRadiusPreset, padding in pairs(uiDefault.cornerRadiusPresetToRadius) do
         uiDefault.cornerRadiusPresetToFitMode[cornerRadiusPreset] = {
             type = ui.fitModeType.sliced,
             horizontal = {
@@ -62,7 +69,7 @@ end
 function uiDefault.teardown(pTknGfxContext)
     ui.unloadImage(pTknGfxContext, uiDefault.image)
     uiDefault.image = nil
-    uiDefault.cornerRadiusPreset = nil
+    uiDefault.cornerRadiusPresetToRadius = nil
     uiDefault.cornerRadiusPresetToFitMode = nil
     uiDefault.cornerRadiusPresetToUV = nil
 end

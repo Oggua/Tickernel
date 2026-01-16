@@ -4,7 +4,6 @@ local ui = require("ui.ui")
 
 function game.start(pTknGfxContext, assetsPath)
     game.assetsPath = assetsPath
-    print(ui)
     game.font = ui.loadFont(pTknGfxContext, "/fonts/Hiragino Sans GB.ttc", 32, 2048)
     game.currentScene = mainScene
     game.nextScene = mainScene

@@ -39,7 +39,7 @@ local function traverseNodeReverse(node, callback)
     return false
 end
 
-local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
+local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthDirty, parentOrientationDirty)
     -- Get orientation properties based on key (horizontal or vertical)
     local orientation = node[key]
     local orientationType = orientation.type
@@ -74,7 +74,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
         }
     end
     if orientationType ~= ui.layoutType.fit then
-        if orientationDirty or screenLengthChanged or parentOrientationChanged or not initialized then
+        if orientationDirty or screenLengthDirty or parentOrientationDirty or not initialized then
             local effectiveParentLengthNDC
             if effectiveParent then
                 effectiveParentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
@@ -137,9 +137,9 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
     end
 
     -- Update children
-    parentOrientationChanged = parentOrientationChanged or orientationDirty or screenLengthChanged
+    parentOrientationDirty = parentOrientationDirty or orientationDirty or screenLengthDirty
     for i, child in ipairs(node.children) do
-        updateOrientationRecursive(pTknGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthChanged, parentOrientationChanged)
+        updateOrientationRecursive(pTknGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthDirty, parentOrientationDirty)
     end
     if orientationType ~= ui.layoutType.fit then
         -- Do nothing
@@ -163,7 +163,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             return false
         end
 
-        if orientationDirty or screenLengthChanged or parentOrientationChanged or not initialized or hasNonFitChildOrientationDirty(node) then
+        if orientationDirty or screenLengthDirty or parentOrientationDirty or not initialized or hasNonFitChildOrientationDirty(node) then
             -- Calculate fit node's bounds based on children's bounds
             local minInEffectiveParentNDC = math.huge
             local maxInEffectiveParentNDC = -math.huge
@@ -207,6 +207,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             local pivot = orientationPivot
             local rectMin = -lengthNDC * pivot
             local rectMax = lengthNDC * (1 - pivot)
+
             if node.rect[key].min ~= rectMin or node.rect[key].max ~= rectMax then
                 node.rect[key].min = rectMin
                 node.rect[key].max = rectMax
@@ -292,7 +293,7 @@ end
 
 local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, drawCallIndex)
     local rect = node.rect
-    local modelChanged = false
+    local modelDirty = false
     if rect.modelDirty or parentModelDirty then
         -- Calculate offset relative to direct parent
         local offsetToParentX = calculateOffsetToParent(node, "horizontal")
@@ -321,7 +322,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
             local worldOffsetX = pm[1] * offsetToParentX + pm[4] * offsetToParentY + pm[7]
             local worldOffsetY = pm[2] * offsetToParentX + pm[5] * offsetToParentY + pm[8]
             if rect.model[1] ~= rotScaleMatrix00 or rect.model[2] ~= rotScaleMatrix01 or rect.model[3] ~= 0 or rect.model[4] ~= rotScaleMatrix10 or rect.model[5] ~= rotScaleMatrix11 or rect.model[6] ~= 0 or rect.model[7] ~= worldOffsetX or rect.model[8] ~= worldOffsetY or rect.model[9] ~= 1 then
-                modelChanged = true
+                modelDirty = true
             end
             rect.model[1] = rotScaleMatrix00
             rect.model[2] = rotScaleMatrix01
@@ -334,7 +335,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
             rect.model[9] = 1
         else
             if rect.model[1] ~= local00 or rect.model[2] ~= local01 or rect.model[3] ~= 0 or rect.model[4] ~= local10 or rect.model[5] ~= local11 or rect.model[6] ~= 0 or rect.model[7] ~= offsetToParentX or rect.model[8] ~= offsetToParentY or rect.model[9] ~= 1 then
-                modelChanged = true
+                modelDirty = true
             end
             -- No parent, use local transform directly
             rect.model[1] = local00
@@ -350,31 +351,29 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         rect.modelDirty = false
     end
 
-    local colorChanged = false
+    local colorDirty = false
     if rect.colorDirty or parentColorDirty then
         local newColor = tknMath.multiplyColors(parentColor, node.transform.color or colorPreset.white)
         if rect.color ~= newColor then
-            colorChanged = true
+            colorDirty = true
             rect.color = newColor
         end
         rect.colorDirty = false
     end
 
-    if rect.verticesDirty then
+    local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
+    if rect.verticesDirty or screenSizeDirty then
         -- Update mesh if bounds changed
-        if node.pTknMesh then
-            local screenSizeChanged = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
-            if node.type == "imageNode" then
-                imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, rect.verticesDirty, screenSizeChanged)
-            elseif node.type == "textNode" then
-                textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, rect.verticesDirty, screenSizeChanged)
-            end
+        if node.type == "imageNode" then
+            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, rect.verticesDirty, screenSizeDirty)
+        elseif node.type == "textNode" then
+            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, rect.verticesDirty, screenSizeDirty)
         end
-        rect.verticesDirty = false
     end
+    rect.verticesDirty = false
 
     -- Update instance if model or color changed
-    if node.pTknInstance and (modelChanged or colorChanged) then
+    if node.pTknInstance and (modelDirty or colorDirty) then
         local instances = {
             model = rect.model,
             color = {tkn.rgbaToAbgr(tknMath.multiplyColors(rect.color, node.color))},
@@ -382,13 +381,13 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, instances)
     end
 
-    local activeChanged = false
+    local activeDirty = false
     if node.transform.activeDirty or parentActiveDirty then
         local finalActive = parentActive and node.transform.active
         if finalActive == node.finalActive then
             -- No change
         else
-            activeChanged = true
+            activeDirty = true
             if node.pTknDrawCall then
                 if finalActive then
                     tkn.tknInsertDrawCallPtr(node.pTknDrawCall, drawCallIndex)
@@ -412,7 +411,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
 
     -- Recursively update children
     for _, child in ipairs(node.children) do
-        drawCallIndex = updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, modelChanged or parentModelDirty, colorChanged or colorChanged, rect.color, parentActiveDirty or activeChanged, node.transform.finalActive, drawCallIndex)
+        drawCallIndex = updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, modelDirty or parentModelDirty, colorDirty or colorDirty, rect.color, parentActiveDirty or activeDirty, node.transform.finalActive, drawCallIndex)
     end
 
     return drawCallIndex

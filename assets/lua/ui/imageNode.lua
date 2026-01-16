@@ -99,9 +99,9 @@ function imageNode.teardownNode(pTknGfxContext, node)
     node.color = colorPreset.white
 end
 
-function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeChanged)
+function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeDirty)
     assert(node.type == "imageNode", "imageNode.updateMeshPtr: node is not an imageNode")
-    if verticesDirty or (screenSizeChanged and node.fitMode.type ~= imageNode.fitModeType.sliced) then
+    if verticesDirty or (screenSizeDirty and node.fitMode.type ~= imageNode.fitModeType.sliced) then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local left = rect.horizontal.min

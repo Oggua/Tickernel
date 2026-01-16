@@ -125,8 +125,8 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.type = nil
 end
 
-function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeChanged)
-    if verticesDirty or screenSizeChanged or node.font.dirty then
+function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeDirty)
+    if verticesDirty or screenSizeDirty or node.font.dirty then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local rectWidth = rect.horizontal.max - rect.horizontal.min
