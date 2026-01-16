@@ -4,7 +4,7 @@ local input = require("input")
 local buttonWidget = require("ui.widgets.buttonWidget")
 local sliderWidget = require("ui.widgets.sliderWidget")
 local toggleWidget = require("ui.widgets.toggleWidget")
-
+local colorPreset = require("ui.colorPreset")
 function mainScene.start(game, pTknGfxContext, assetsPath)
     mainScene.nameToButtonWidget = {}
     mainScene.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
@@ -38,10 +38,10 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
-    mainScene.mainSceneRootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", mainSceneRootNodeLayout.horizontal, mainSceneRootNodeLayout.vertical, rootTransform, 0xFFFFFFFF, mainSceneRootNodeFitMode, mainScene.backgroundImage, mainSceneRootNodeUV)
+    mainScene.mainSceneRootNode = ui.addImageNode(pTknGfxContext, ui.rootNode, 1, "mainSceneRoot", mainSceneRootNodeLayout.horizontal, mainSceneRootNodeLayout.vertical, rootTransform, colorPreset.white, mainSceneRootNodeFitMode, mainScene.backgroundImage, mainSceneRootNodeUV)
 
     local cornerRadiusPreset = "small"
     local startButtonWidget = buttonWidget.addWidget(pTknGfxContext, "startButton", mainScene.mainSceneRootNode, 1, {
@@ -58,7 +58,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         offset = 0,
     }, function()
         print("Start Game button clicked")
-    end, cornerRadiusPreset, 0x363636FF, game.font, "Start Game", 24, 0xFFFFFFFF)
+    end, cornerRadiusPreset, colorPreset.darker, game.font, "Start Game", 24, colorPreset.white)
 
     local settingButtonWidget = buttonWidget.addWidget(pTknGfxContext, "settingButton", mainScene.mainSceneRootNode, 2, {
         type = ui.layoutType.anchored,
@@ -75,7 +75,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
     }, function()
         print("Settings button clicked")
         -- game.switchScene(nil)
-    end, cornerRadiusPreset, 0x363636FF, game.font, "Settings", 24, 0xFFFFFFFF)
+    end, cornerRadiusPreset, colorPreset.darker, game.font, "Settings", 24, colorPreset.white)
 
     local quitButtonWidget = buttonWidget.addWidget(pTknGfxContext, "quitButton", mainScene.mainSceneRootNode, 3, {
         type = ui.layoutType.anchored,
@@ -92,7 +92,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
     }, function()
         game.switchScene(nil)
         print("Quit Game button clicked")
-    end, cornerRadiusPreset, 0x363636FF, game.font, "Quit Game", 24, 0xFFFFFFFF)
+    end, cornerRadiusPreset, colorPreset.darker, game.font, "Quit Game", 24, colorPreset.white)
 
     local customSliderWidget = sliderWidget.addWidget(pTknGfxContext, "customSlider", mainScene.mainSceneRootNode, 4, {
         type = ui.layoutType.anchored,
@@ -106,7 +106,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         pivot = 0.5,
         length = 32,
         offset = 288,
-    }, 0x555555FF, cornerRadiusPreset, 0xFFFFFFFF)
+    }, colorPreset.darker, cornerRadiusPreset, colorPreset.white)
 
     local customToggleWidget = toggleWidget.addWidget(pTknGfxContext, "customToggle", mainScene.mainSceneRootNode, 5, {
         type = ui.layoutType.anchored,
@@ -120,7 +120,7 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         pivot = 0.5,
         length = 32,
         offset = 336,
-    }, 0x555555FF, cornerRadiusPreset, 1.0, 0xFFFFFFFF, function(toggled)
+    }, colorPreset.darker, cornerRadiusPreset, 1.0, colorPreset.white, function(toggled)
         startButtonWidget.buttonNode.transform.active = toggled
     end)
 end

@@ -1,4 +1,5 @@
 local tkn = require("tkn")
+local colorPreset = require("ui.colorPreset")
 local textNode = {}
 function textNode.setup(assetsPath)
     textNode.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
@@ -117,7 +118,7 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.font = nil
     node.text = ""
     node.size = 0
-    node.color = 0xFFFFFFFF
+    node.color = colorPreset.white
     node.alignH = 0
     node.alignV = 0
     node.bold = false

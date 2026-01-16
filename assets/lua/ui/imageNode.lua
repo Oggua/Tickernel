@@ -1,6 +1,6 @@
 local tkn = require("tkn")
+local colorPreset = require("ui.colorPreset")
 local imageNode = {}
-
 function imageNode.setup(assetsPath)
     imageNode.assetsPath = assetsPath
     imageNode.fitModeType = {
@@ -65,7 +65,7 @@ function imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, vertexFo
     -- Create instance buffer (mat3 + color)
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
-        color = {tkn.rgbaToAbgr(0xFFFFFFFF)},
+        color = {tkn.rgbaToAbgr(colorPreset.white)},
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, pTknInstance)
@@ -96,7 +96,7 @@ function imageNode.teardownNode(pTknGfxContext, node)
     node.pTknInstance = nil
     node.pTknDrawCall = nil
     node.fitMode = nil
-    node.color = 0xFFFFFFFF
+    node.color = colorPreset.white
 end
 
 function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeChanged)

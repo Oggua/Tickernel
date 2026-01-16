@@ -2,6 +2,7 @@ local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
 local uiDefault = require("atlas.uiDefault")
+local colorPreset = require("ui.colorPreset")
 local sliderWidget = {}
 
 function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, uiDefaultCornerRadiusPreset, handleColor)
@@ -9,7 +10,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
 
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if inputState == input.inputState.down then
-            widget.handleNode.transform.color = 0x9E9E9EFF
+            node.transform.color = colorPreset.light
             -- Convert world point to slider's local space
             local m = node.rect.model
             local m00, m01, m10, m11, tx, ty = m[1], m[2], m[4], m[5], m[7], m[8]
@@ -31,9 +32,10 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
             widget.handleNode.horizontal.anchor = anchor
             return true
         elseif inputState == input.inputState.up then
-            widget.handleNode.transform.color = 0xFFFFFFFF
+            node.transform.color = colorPreset.white
             return false
         else
+            node.transform.color = colorPreset.white
             return false
         end
 
@@ -42,7 +44,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
     widget.sliderNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, sliderTransform)
@@ -69,7 +71,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
     widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, imageFitMode, image, imageUV)
@@ -93,7 +95,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
     widget.handleNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 2, "sliderHandle", handleHorizontal, handleVertical, handleTransform, handleColor, imageFitMode, image, imageUV)

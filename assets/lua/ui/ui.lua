@@ -6,7 +6,7 @@ local textNode = require("ui.textNode")
 local interactableNode = require("ui.interactableNode")
 local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
-
+local colorPreset = require("ui.colorPreset")
 ui.layoutType = {
     anchored = "anchored",
     relative = "relative",
@@ -352,7 +352,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
 
     local colorChanged = false
     if rect.colorDirty or parentColorDirty then
-        local newColor = tknMath.multiplyColors(parentColor, node.transform.color or 0xFFFFFFFF)
+        local newColor = tknMath.multiplyColors(parentColor, node.transform.color or colorPreset.white)
         if rect.color ~= newColor then
             colorChanged = true
             rect.color = newColor
@@ -696,7 +696,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     })
 end
@@ -720,7 +720,7 @@ end
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
-    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, 0xFFFFFFFF, false, ui.rootNode.transform.activeDirty, 0)
+    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, colorPreset.white, false, ui.rootNode.transform.activeDirty, 0)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
     textNode.update(pTknGfxContext)
@@ -735,8 +735,6 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     else
         if input.getMouseState(input.mouseCode.left) == input.inputState.down then
             ui.currentInteractableNode = getActiveInteractableInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
-        else
-            -- No current interactable node
         end
     end
 end

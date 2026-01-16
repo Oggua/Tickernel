@@ -2,6 +2,7 @@ local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
 local uiDefault = require("atlas.uiDefault")
+local colorPreset = require("ui.colorPreset")
 local toggleWidget = {}
 
 function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, uiDefaultCornerRadiusPreset, handleScale, handleColor, callback)
@@ -10,10 +11,10 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
             if inputState == input.inputState.down then
-                node.transform.color = 0x9E9E9EFF
+                node.transform.color = colorPreset.light
                 return true
             elseif inputState == input.inputState.up then
-                node.transform.color = 0xFFFFFFFF
+                node.transform.color = colorPreset.white
                 widget.isToggled = not widget.isToggled
                 widget.handleNode.transform.active = widget.isToggled
                 if callback then
@@ -21,11 +22,11 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                 end
                 return false
             else
-                node.transform.color = 0xFFFFFFFF
+                node.transform.color = colorPreset.white
                 return false
             end
         else
-            node.transform.color = 0xFFFFFFFF
+            node.transform.color = colorPreset.white
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
@@ -39,7 +40,7 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
     widget.toggleNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, toggleTransform)
@@ -65,7 +66,7 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
     widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, imageFitMode, image, imageUV)
@@ -89,7 +90,7 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = handleScale,
         verticalScale = handleScale,
-        color = 0xFFFFFFFF,
+        color = colorPreset.white,
         active = true,
     }
     widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, handleColor, imageFitMode, image, imageUV)
