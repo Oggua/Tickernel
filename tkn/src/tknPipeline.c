@@ -140,7 +140,7 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
         spvReflectShaderModules[spvPathIndex] = tknCreateSpvReflectShaderModule(spvPaths[spvPathIndex]);
         SpvReflectShaderModule spvReflectShaderModule = spvReflectShaderModules[spvPathIndex];
 
-        if (VK_SHADER_STAGE_VERTEX_BIT == spvReflectShaderModule.shader_stage)
+        if (VK_SHADER_STAGE_VERTEX_BIT == (VkShaderStageFlagBits)spvReflectShaderModule.shader_stage)
         {
             if (pTknMeshVertexInputLayout != NULL || pTknInstanceVertexInputLayout != NULL)
             {

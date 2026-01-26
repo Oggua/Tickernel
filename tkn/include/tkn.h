@@ -62,7 +62,7 @@ typedef struct
     uint32_t width;    // TknImage width
     uint32_t height;   // TknImage height
     VkFormat vkFormat; // Corresponding Vulkan ASTC format
-    uint32_t size; // Compressed data size
+    uint32_t size;     // Compressed data size
     char *data;        // Compressed ASTC data
 } TknASTCImage;
 
@@ -103,7 +103,6 @@ uint32_t tknGetDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t subpassInde
 TknImage *tknCreateImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize);
 void tknDestroyImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage);
 void tknUpdateImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage, uint32_t count, void **datas, VkOffset3D *imageOffsets, VkExtent3D *imageExtents, VkDeviceSize *dataSizes);
-
 
 TknSampler *tknCreateSamplerPtr(TknGfxContext *pTknGfxContext, VkFilter magFilter, VkFilter minFilter, VkSamplerMipmapMode mipmapMode, VkSamplerAddressMode addressModeU, VkSamplerAddressMode addressModeV, VkSamplerAddressMode addressModeW, float mipLodBias, VkBool32 anisotropyEnable, float maxAnisotropy, float minLod, float maxLod, VkBorderColor borderColor);
 void tknDestroySamplerPtr(TknGfxContext *pTknGfxContext, TknSampler *pTknSampler);

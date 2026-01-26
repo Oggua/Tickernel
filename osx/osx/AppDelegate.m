@@ -4,7 +4,7 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     self.window =
-        [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 600, 400)
+        [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 1920, 1080)
                                     styleMask:(NSWindowStyleMaskTitled |
                                                NSWindowStyleMaskResizable |
                                                NSWindowStyleMaskClosable)

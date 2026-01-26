@@ -8,7 +8,6 @@ function mainScene.start(game, pTknGfxContext, assetsPath)
         print("Start Game button clicked")
     end, function()
         print("Settings button clicked")
-        
     end, function()
         game.switchScene(nil)
         print("Quit Game button clicked")

@@ -60,10 +60,8 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             colorDirty = true,
         }
     end
-
     if orientation.type ~= ui.layoutType.fit then
         if orientation.dirty or screenLengthDirty or parentOrientationDirty or not initialized then
-            node.rect.modelDirty = true
             local effectiveParentLengthNDC
             if effectiveParent then
                 effectiveParentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
@@ -127,7 +125,6 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
     for i, child in ipairs(node.children) do
         updateOrientationRecursive(pTknGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthDirty, parentOrientationDirty)
     end
-
     if orientation.type ~= ui.layoutType.fit then
         -- Do nothing
     else
@@ -150,8 +147,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             return false
         end
 
-        if orientation.dirty or screenLengthDirty or parentOrientationDirty or hasNonFitChildOrientationDirty(node) then
-            node.rect.modelDirty = true
+        if orientation.dirty or screenLengthDirty or parentOrientationDirty or not initialized or hasNonFitChildOrientationDirty(node) then
             -- Calculate fit node's bounds based on children's bounds
             local minInEffectiveParentNDC = math.huge
             local maxInEffectiveParentNDC = -math.huge
@@ -208,7 +204,6 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             else
                 offsetToEffectiveParentNDC = offsetToEffectiveParentNDC + orientation.offset
             end
-
             node.rect.offsetToEffectiveParentNDC[key] = offsetToEffectiveParentNDC
         end
     end
@@ -267,12 +262,10 @@ local function getDrawCallIndex(pTknGfxContext, node)
     return drawCallIndex
 end
 
-local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, parentMaskDirty, parentMaskBit, drawCallIndex)
+local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, drawCallIndex)
     local rect = node.rect
     local instanceDirty = false
-    print("Updating model for node " .. tostring(node.name) .. tostring(node.transform.modelDirty or node.rect.modelDirty or parentModelDirty))
-    if node.transform.modelDirty or node.rect.modelDirty or parentModelDirty then
-        parentModelDirty = node.rect.modelDirty or parentModelDirty
+    if node.transform.modelDirty or parentModelDirty then
         -- Calculate offset relative to direct parent
         local offsetToParentX = calculateOffsetToParent(node, "horizontal")
         local offsetToParentY = calculateOffsetToParent(node, "vertical")
@@ -326,13 +319,10 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
             rect.model[8] = offsetToParentY
             rect.model[9] = 1
         end
-        node.rect.modelDirty = false
-        node.transform.modelDirty = false
     end
+    node.transform.modelDirty = false
 
     if node.transform.colorDirty or node.colorDirty or parentColorDirty then
-        parentColorDirty = node.transform.colorDirty or parentColorDirty
-
         local newColor = tknMath.multiplyColors(parentColor, node.transform.color or colorPreset.white)
         if rect.color ~= newColor then
             instanceDirty = true
@@ -341,6 +331,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         node.transform.colorDirty = false
         node.colorDirty = false
     end
+    parentColorDirty = node.transform.colorDirty or parentColorDirty
 
     local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
     if rect.boundsDirty or screenSizeDirty then
@@ -354,21 +345,21 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     rect.boundsDirty = false
 
     -- Update instance if model or color changed
-    if node.pTknInstance and instanceDirty then
+    if node.pTknInstance and (instanceDirty or instanceDirty) then
         local instances = {
             model = rect.model,
             color = {tkn.rgbaToAbgr(tknMath.multiplyColors(rect.color, node.color))},
-            alphaThreshold = node.alphaThreshold,
         }
         tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, instances)
     end
 
+    local activeDirty = false
     if node.transform.activeDirty or parentActiveDirty then
-        parentActiveDirty = node.transform.activeDirty or parentActiveDirty
         local finalActive = parentActive and node.transform.active
         if finalActive == node.finalActive then
             -- No change
         else
+            activeDirty = true
             if node.pTknDrawCall then
                 if finalActive then
                     tkn.tknInsertDrawCallPtr(node.pTknDrawCall, drawCallIndex)
@@ -392,7 +383,7 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
 
     -- Recursively update children
     for _, child in ipairs(node.children) do
-        drawCallIndex = updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, parentModelDirty, parentColorDirty, rect.color, parentActiveDirty, node.transform.finalActive, parentMaskDirty, parentMaskBit, drawCallIndex)
+        drawCallIndex = updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, instanceDirty or parentModelDirty, instanceDirty or instanceDirty, rect.color, parentActiveDirty or activeDirty, node.transform.finalActive, drawCallIndex)
     end
 
     return drawCallIndex
@@ -422,9 +413,9 @@ local function getActiveInteractableInputNode(node, xNDC, yNDC, inputState)
     if node.transform.active then
         for i = #node.children, 1, -1 do
             local child = node.children[i]
-            local foundNode = getActiveInteractableInputNode(child, xNDC, yNDC, inputState)
-            if foundNode then
-                return foundNode
+            local node = getActiveInteractableInputNode(child, xNDC, yNDC, inputState)
+            if node then
+                return node
             end
         end
         if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
@@ -480,74 +471,89 @@ local function removeNodeRecursive(pTknGfxContext, node)
 end
 
 local function markParentFitNodeDirty(node, orientation)
-    local parent = node.parent
-    while parent do
-        if parent[orientation].type == ui.layoutType.fit then
-            parent[orientation].dirty = true
-            parent = parent.parent
-        else
-            break
+    local currentParent = node.parent
+    if currentParent then
+        while currentParent[orientation].type == ui.layoutType.fit do
+            currentParent[orientation].dirty = true
+            currentParent = currentParent.parent
         end
     end
 end
 
-function ui.setNodeOrienation(node, orientationKey, orientation)
-    if orientation.type == ui.layoutType.anchored then
-        node[orientationKey].type = ui.layoutType.anchored
-        node[orientationKey].anchor = orientation.anchor
-        node[orientationKey].pivot = orientation.pivot
-        node[orientationKey].length = orientation.length
-        node[orientationKey].offset = orientation.offset
-    elseif orientation.type == ui.layoutType.fit then
-        node[orientationKey].type = ui.layoutType.fit
-        node[orientationKey].pivot = orientation.pivot
-        node[orientationKey].minOffset = orientation.minOffset
-        node[orientationKey].maxOffset = orientation.maxOffset
-        node[orientationKey].offset = orientation.offset
-    elseif orientation.type == ui.layoutType.relative then
-        node[orientationKey].type = ui.layoutType.relative
-        node[orientationKey].pivot = orientation.pivot
-        node[orientationKey].minOffset = orientation.minOffset
-        node[orientationKey].maxOffset = orientation.maxOffset
-        node[orientationKey].offset = orientation.offset
-    else
-        error("ui.copyOrientation: unknown layout type " .. tostring(orientation.type))
-    end
-    node[orientationKey].dirty = true
-end
+local orientationMetatable = {
+    __index = function(t, k)
+        if k == "data" or k == "node" then
+            error("ui.orientation: cannot access data table or node directly")
+        end
+        return rawget(t, "data")[k]
+    end,
+    __newindex = function(t, k, v)
+        if k == "data" or k == "node" then
+            error("ui.transform: cannot overwrite data table or node")
+        else
+            rawget(t, "data")[k] = v
+            rawget(t, "data").dirty = true
+            local node = rawget(t, "data").node
+            local orientation = rawget(t, "data").orientation
+            markParentFitNodeDirty(node, orientation)
+        end
+    end,
+}
 
-function ui.setNodeTransformModel(node, rotation, horizontalScale, verticalScale)
-    node.transform.modelDirty = node.transform.rotation ~= rotation or node.transform.horizontalScale ~= horizontalScale or node.transform.verticalScale ~= verticalScale
-    node.transform.rotation = rotation
-    node.transform.horizontalScale = horizontalScale
-    node.transform.verticalScale = verticalScale
-end
-
-function ui.setNodeTransformColor(node, color)
-    node.transform.colorDirty = node.transform.color ~= color
-    node.transform.color = color
-end
-
-function ui.setNodeTransformActive(node, active)
-    node.transform.activeDirty = node.transform.active ~= active
-    node.transform.active = active
-end
+local transformMetatable = {
+    __index = function(t, k)
+        if k == "data" or k == "node" then
+            error("ui.transform: cannot access data table or node directly")
+        end
+        return rawget(t, "data")[k]
+    end,
+    __newindex = function(t, k, v)
+        if k == "data" or k == "node" then
+            error("ui.transform: cannot overwrite data table or node")
+        else
+            rawget(t, "data")[k] = v
+            if k == "color" then
+                rawget(t, "data").colorDirty = true
+            elseif k == "rotation" or k == "horizontalScale" or k == "verticalScale" then
+                rawget(t, "data").modelDirty = true
+            elseif k == "active" then
+                rawget(t, "data").activeDirty = true
+            end
+        end
+    end,
+}
 
 local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform)
     local node = {
         name = name,
         children = {},
         parent = parent,
-        horizontal = {},
-        vertical = {},
-        transform = {},
+        horizontal = {
+            data = horizontal,
+        },
+        vertical = {
+            data = vertical,
+        },
+        transform = {
+            data = transform,
+        },
     }
-    ui.setNodeOrienation(node, "horizontal", horizontal)
-    ui.setNodeOrienation(node, "vertical", vertical)
-    ui.setNodeTransformModel(node, transform.rotation, transform.horizontalScale, transform.verticalScale)
-    ui.setNodeTransformColor(node, transform.color)
-    ui.setNodeTransformActive(node, transform.active)
-    node.transform.finalActive = transform.active
+
+    horizontal.orientation = "horizontal"
+    vertical.orientation = "vertical"
+    horizontal.node = node
+    vertical.node = node
+    transform.node = node
+    horizontal.dirty = true
+    vertical.dirty = true
+    transform.colorDirty = true
+    transform.modelDirty = true
+    transform.activeDirty = true
+    transform.finalActive = transform.active
+
+    setmetatable(node.transform, transformMetatable)
+    setmetatable(node.horizontal, orientationMetatable)
+    setmetatable(node.vertical, orientationMetatable)
 
     if parent == nil then
         assert(ui.rootNode == nil, "ui.addNode: rootNode is not nil")
@@ -556,8 +562,13 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
     else
         assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
         table.insert(parent.children, index, node)
-        markParentFitNodeDirty(node, "horizontal")
-        markParentFitNodeDirty(node, "vertical")
+        -- Mark fit ancestors as dirty since their bounds depend on children
+        if parent.horizontal.type == ui.layoutType.fit then
+            parent.horizontal.dirty = true
+        end
+        if parent.vertical.type == ui.layoutType.fit then
+            parent.vertical.dirty = true
+        end
         if isTopNode(node) then
             ui.topNode = node
         end
@@ -587,13 +598,21 @@ local function removeNodeInternal(pTknGfxContext, node)
             ui.topNode = getTopNode(parent)
         end
     end
+    setmetatable(node.transform, nil)
+    setmetatable(node.horizontal, nil)
+    setmetatable(node.vertical, nil)
 
-    node.name = nil
-    node.children = nil
-    node.parent = nil
-    node.horizontal = nil
-    node.vertical = nil
-    node.transform = nil
+    node.horizontal.orientation = nil
+    node.vertical.orientation = nil
+    node.horizontal.node = nil
+    node.vertical.node = nil
+    node.transform.node = nil
+    node.horizontal.dirty = nil
+    node.vertical.dirty = nil
+    node.transform.colorDirty = nil
+    node.transform.modelDirty = nil
+    node.transform.activeDirty = nil
+    node.transform.finalActive = nil
 end
 
 function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
@@ -622,10 +641,6 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
     }, {
         name = "color",
         type = tkn.type.uint32,
-        count = 1,
-    }, {
-        name = "alphaThreshold",
-        type = tkn.type.float,
         count = 1,
     }}
     ui.instanceFormat.pTknVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, ui.instanceFormat)
@@ -682,7 +697,7 @@ end
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
     updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
-    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, colorPreset.white, false, true, false, 0x0, 0)
+    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, colorPreset.white, false, ui.rootNode.transform.activeDirty, 0)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
     textNode.update(pTknGfxContext)
@@ -727,8 +742,8 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
 
     local drawCalls = {}
     traverseNode(node, function(child)
-        if child.pTknDrawCall then
-            table.insert(drawCalls, child.pTknDrawCall)
+        if child.component and child.component.pTknDrawCall then
+            table.insert(drawCalls, child.component.pTknDrawCall)
         end
     end)
     markParentFitNodeDirty(node, "horizontal")
@@ -743,8 +758,6 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
         if isTopNode(node) then
             ui.topNode = getTopNode(ui.rootNode)
         end
-        markParentFitNodeDirty(node, "horizontal")
-        markParentFitNodeDirty(node, "vertical")
         return true
     else
         local drawCallStartIndex = 0
@@ -752,7 +765,7 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
             if child == node then
                 return true
             else
-                if child.pTknDrawCall then
+                if child.component and child.component.pTknDrawCall then
                     drawCallStartIndex = drawCallStartIndex + 1
                 end
                 return false
@@ -774,7 +787,7 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
             if child == node then
                 return true
             else
-                if child.pTknDrawCall then
+                if child.component and child.component.pTknDrawCall then
                     drawCallStartIndex = drawCallStartIndex + 1
                 end
                 return false
@@ -827,23 +840,17 @@ function ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, in
     return node
 end
 
-function ui.addImageNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, color, alphaThreshold, fitMode, image, uv, mask)
+function ui.addImageNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, color, fitMode, image, uv, mask)
     local node = addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
     local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
-    imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, mask, drawCallIndex, node)
+    imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, mask, drawCallIndex, node)
     return node
 end
 
-function ui.setImageOrTextNodeColor(node, color)
-    assert(node.type == "imageNode" or node.type == "textNode", "ui.setImageOrTextNodeColor: node is not an imageNode or textNode")
-    node.color = color
-    node.colorDirty = true
-end
-
-function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alphaThreshold, alignH, alignV, bold)
+function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alignH, alignV, bold)
     local node = ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
     local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
-    textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, drawCallIndex, node)
+    textNode.setupNode(pTknGfxContext, textString, font, size, color, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, drawCallIndex, node)
     return node
 end
 
@@ -869,6 +876,5 @@ function ui.rectContainsPoint(rect, xNDC, yNDC)
     local maxY = worldY + ry.max
     return xNDC >= minX and xNDC <= maxX and yNDC >= minY and yNDC <= maxY
 end
-
 
 return ui

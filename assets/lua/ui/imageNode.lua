@@ -60,14 +60,16 @@ function imageNode.unloadImage(pTknGfxContext, image)
     image.path = nil
 end
 
-function imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, drawCallIndex, node)
+function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, mask, drawCallIndex, node)
     local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
     -- Create instance buffer (mat3 + color)
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {tkn.rgbaToAbgr(colorPreset.white)},
+        alphaThreshold = alphaThreshold,
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
+    print(image.pTknMaterial)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, pTknInstance)
 
     node.type = "imageNode"
@@ -75,14 +77,11 @@ function imageNode.setupNode(pTknGfxContext, color, fitMode, image, uv, vertexFo
     node.fitMode = fitMode
     node.image = image
     node.uv = uv
+    node.alphaThreshold = alphaThreshold
     node.pTknMesh = pTknMesh
+    node.mask = mask
     node.pTknInstance = pTknInstance
     node.pTknDrawCall = pTknDrawCall
-
-    -- if node.transform.active then
-    --     node.transform.finalActive = true
-    --     tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
-    -- end
 end
 
 function imageNode.teardownNode(pTknGfxContext, node)
@@ -97,11 +96,12 @@ function imageNode.teardownNode(pTknGfxContext, node)
     node.pTknDrawCall = nil
     node.fitMode = nil
     node.color = colorPreset.white
+    node.alphaThreshold = nil
 end
 
-function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeDirty)
+function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     assert(node.type == "imageNode", "imageNode.updateMeshPtr: node is not an imageNode")
-    if verticesDirty or (screenSizeDirty and node.fitMode.type ~= imageNode.fitModeType.sliced) then
+    if boundsDirty or (screenSizeDirty and node.fitMode.type ~= imageNode.fitModeType.sliced) then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local left = rect.horizontal.min
@@ -251,15 +251,6 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
             end
         end
     end
-end
-
-function imageNode.updateInstancePtr(pTknGfxContext, node, instanceFormat)
-    -- Update instance buffer with model matrix and color
-    local instances = {
-        model = node.rect.model,
-        color = {node.rect.color * node.color},
-    }
-    tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, instanceFormat, instances)
 end
 
 return imageNode

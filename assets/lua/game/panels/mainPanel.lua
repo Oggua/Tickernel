@@ -39,7 +39,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         color = colorPreset.white,
         active = true,
     }
-    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.white, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUV)
+    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.white, 0, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUV, nil)
 
     local cornerRadiusPreset = uiDefault.cornerRadiusPreset.small
     local startButtonWidget = buttonWidget.addWidget(pTknGfxContext, "startButton", mainPanel.rootNode, 1, {

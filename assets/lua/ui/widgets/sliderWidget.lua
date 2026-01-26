@@ -13,9 +13,23 @@ local sliderWidget = {
 function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, uiDefaultCornerRadiusPreset, handleColor, handleLength, direction, callback)
     local widget = {}
     widget.direction = direction
+    local handleHorizontal = {
+        type = "anchored",
+        anchor = 0.5,
+        pivot = 0.5,
+        length = handleLength,
+        offset = 0,
+    }
+    local handleVertical = {
+        type = "anchored",
+        anchor = 0.5,
+        pivot = 0.5,
+        length = handleLength,
+        offset = 0,
+    }
     local processInputFunction = function(node, xNDC, yNDC, inputState)
         if inputState == input.inputState.down then
-            node.transform.color = colorPreset.light
+            ui.setNodeTransformColor(node, colorPreset.light)
             -- Convert world point to slider's local space
             local m = widget.handleParent.rect.model
             local m00, m01, m10, m11, tx, ty = m[1], m[2], m[4], m[5], m[7], m[8]
@@ -36,8 +50,8 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                 elseif anchor > 1 then
                     anchor = 1
                 end
-                widget.handleNode.horizontal.anchor = anchor
-                widget.handleNode.vertical.anchor = 0.5
+                handleHorizontal.anchor = anchor
+                ui.setNodeOrienation(widget.handleNode, "horizontal", handleHorizontal)
             else
                 assert(widget.direction == sliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
                 local ly = inv10 * (xNDC - tx) + inv11 * (yNDC - ty)
@@ -50,8 +64,8 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                 elseif anchor > 1 then
                     anchor = 1
                 end
-                widget.handleNode.vertical.anchor = anchor
-                print("ly: " .. tostring(ly) .. ", length: " .. tostring(length) .. ", anchor: " .. tostring(anchor))
+                handleVertical.anchor = anchor
+                ui.setNodeOrienation(widget.handleNode, "vertical", handleVertical)
             end
 
             if callback then
@@ -60,10 +74,10 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
             end
             return true
         elseif inputState == input.inputState.up then
-            node.transform.color = colorPreset.white
+            ui.setNodeTransformColor(node, colorPreset.white)
             return false
         else
-            node.transform.color = colorPreset.white
+            ui.setNodeTransformColor(node, colorPreset.white)
             return false
         end
 
@@ -102,7 +116,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         color = colorPreset.white,
         active = true,
     }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, imageFitMode, image, imageUV)
+    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, 0, imageFitMode, image, imageUV, nil)
 
     local handleParentHorizontal, handleParentVertical
     -- Directly use horizontal/vertical for background node, no need for extra layout object
@@ -148,21 +162,6 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     }
     widget.handleParent = ui.addNode(pTknGfxContext, widget.backgroundNode, 1, "handleParent", handleParentHorizontal, handleParentVertical, handleParentTransform)
 
-    local handleHorizontal = {
-        type = "anchored",
-        anchor = 0.5,
-        pivot = 0.5,
-        length = handleLength,
-        offset = 0,
-    }
-    local handleVertical = {
-        type = "anchored",
-        anchor = 0.5,
-        pivot = 0.5,
-        length = handleLength,
-        offset = 0,
-    }
-
     local handleTransform = {
         rotation = 0,
         horizontalScale = 1,
@@ -170,7 +169,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         color = colorPreset.white,
         active = true,
     }
-    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.handleParent, 1, "sliderHandle", handleHorizontal, handleVertical, handleTransform, handleColor, imageFitMode, image, imageUV)
+    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.handleParent, 1, "sliderHandle", handleHorizontal, handleVertical, handleTransform, handleColor, 0, imageFitMode, image, imageUV, nil)
     return widget
 end
 

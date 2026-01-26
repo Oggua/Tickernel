@@ -75,7 +75,7 @@ function textNode.unloadFont(pTknGfxContext, font)
     tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
 end
 
-function textNode.setupNode(pTknGfxContext, textString, font, size, color, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, drawCallIndex, node)
+function textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, drawCallIndex, node)
     local maxChars = #textString
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
@@ -86,6 +86,7 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, align
     local instances = {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {tkn.rgbaToAbgr(color)},
+        alphaThreshold = alphaThreshold,
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
@@ -93,6 +94,7 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, align
     node.font = font
     node.size = size
     node.color = color
+    node.alphaThreshold = alphaThreshold
     node.alignH = alignH
     node.alignV = alignV
     node.bold = bold
@@ -125,8 +127,8 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.type = nil
 end
 
-function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, verticesDirty, screenSizeDirty)
-    if verticesDirty or screenSizeDirty or node.font.dirty then
+function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
+    if boundsDirty or screenSizeDirty or node.font.dirty then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local rectWidth = rect.horizontal.max - rect.horizontal.min
@@ -275,15 +277,6 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
             tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         end
     end
-end
-
-function textNode.updateInstancePtr(pTknGfxContext, node, instanceFormat)
-    -- Update instance buffer with model matrix and color
-    local instances = {
-        model = node.rect.model,
-        color = {node.rect.color * node.color},
-    }
-    tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, instanceFormat, instances)
 end
 
 return textNode
