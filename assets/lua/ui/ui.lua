@@ -701,6 +701,12 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     end
 end
 
+function ui.recordFrame(pTknGfxContext, pTknFrame)
+    tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
+    
+    tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
+end
+
 function ui.getNodeIndex(node)
     for i, child in ipairs(node.parent.children) do
         if child == node then
@@ -869,6 +875,5 @@ function ui.rectContainsPoint(rect, xNDC, yNDC)
     local maxY = worldY + ry.max
     return xNDC >= minX and xNDC <= maxX and yNDC >= minY and yNDC <= maxY
 end
-
 
 return ui

@@ -585,4 +585,42 @@ if not tkn.tknWaitRenderFence then
     end
 end
 
+if not tkn.tknBeginRenderPassPtr then
+    ---Begin a render pass
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    ---@param pTknRenderPass lightuserdata RenderPass pointer
+    function tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, pTknRenderPass)
+        error("tkn.tknBeginRenderPassPtr: C binding not loaded")
+    end
+end
+
+if not tkn.tknEndRenderPassPtr then
+    ---End current render pass
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    function tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
+        error("tkn.tknEndRenderPassPtr: C binding not loaded")
+    end
+end
+
+if not tkn.tknNextSubpassPtr then
+    ---Move to next subpass in current render pass
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    function tkn.tknNextSubpassPtr(pTknGfxContext, pTknFrame)
+        error("tkn.tknNextSubpassPtr: C binding not loaded")
+    end
+end
+
+if not tkn.tknRecordDrawCallPtr then
+    ---Record a draw call with pipeline binding and draw commands
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    ---@param pTknDrawCall lightuserdata DrawCall pointer
+    function tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, pTknDrawCall)
+        error("tkn.tknRecordDrawCallPtr: C binding not loaded")
+    end
+end
+
 return tkn

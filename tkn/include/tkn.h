@@ -5,6 +5,8 @@
 #define TKN_ARRAY_COUNT(array) (NULL == array) ? 0 : (sizeof(array) / sizeof(array[0]))
 
 typedef struct TknGfxContext TknGfxContext;
+typedef struct TknFrame TknFrame;
+
 typedef struct TknRenderPass TknRenderPass;
 typedef struct TknVertexInputLayout TknVertexInputLayout;
 typedef struct TknPipeline TknPipeline;
@@ -74,8 +76,13 @@ VkFormat tknGetSupportedFormat(TknGfxContext *pTknGfxContext, uint32_t candidate
 TknGfxContext *tknCreateGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode, VkInstance vkInstance, VkSurfaceKHR vkSurface, VkExtent2D tknSwapchainExtent, uint32_t spvPathCount, const char **spvPaths);
 void tknWaitGfxRenderFence(TknGfxContext *pTknGfxContext);
 void tknWaitGfxDeviceIdle(TknGfxContext *pTknGfxContext);
-void tknUpdateGfxContextPtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent);
+TknFrame *tknAcquireFramePtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent);
+void tknSubmitAndPresentFramePtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);
 void tknDestroyGfxContextPtr(TknGfxContext *pTknGfxContext);
+void tknBeginRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, TknRenderPass *pTknRenderPass);
+void tknEndRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);
+void tknNextSubpassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);
+void tknRecordDrawCallPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, TknDrawCall *pTknDrawCall);
 
 TknAttachment *tknCreateDynamicAttachmentPtr(TknGfxContext *pTknGfxContext, VkFormat vkFormat, VkImageUsageFlags vkImageUsageFlags, VkImageAspectFlags vkImageAspectFlags, float scaler);
 void tknDestroyDynamicAttachmentPtr(TknGfxContext *pTknGfxContext, TknAttachment *pTknAttachment);

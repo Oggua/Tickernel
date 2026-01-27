@@ -544,182 +544,8 @@ static void cleanupVkCommandBuffers(TknGfxContext *pTknGfxContext)
     vkFreeCommandBuffers(pTknGfxContext->vkDevice, pTknGfxContext->vkGfxCommandPool, pTknSwapchainAttachment->tknSwapchainImageCount, pTknGfxContext->vkGfxCommandBuffers);
     tknFree(pTknGfxContext->vkGfxCommandBuffers);
 }
-static void recordCommandBuffer(TknGfxContext *pTknGfxContext, uint32_t swapchainIndex)
-{
-    VkCommandBuffer vkCommandBuffer = pTknGfxContext->vkGfxCommandBuffers[swapchainIndex];
-    VkCommandBufferBeginInfo vkCommandBufferBeginInfo =
-        {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .pNext = NULL,
-            .flags = 0,
-            .pInheritanceInfo = NULL,
-        };
-    tknAssertVkResult(vkBeginCommandBuffer(vkCommandBuffer, &vkCommandBufferBeginInfo));
-    TknMaterial *pGlobalMaterial = tknGetGlobalMaterialPtr(pTknGfxContext);
-    for (uint32_t renderPassIndex = 0; renderPassIndex < pTknGfxContext->tknRenderPassPtrDynamicArray.count; renderPassIndex++)
-    {
-        TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray, renderPassIndex);
-        VkRenderPassBeginInfo renderPassBeginInfo = {
-            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .pNext = NULL,
-            .renderPass = pTknRenderPass->vkRenderPass,
-            .framebuffer = pTknRenderPass->vkFramebuffers[swapchainIndex],
-            .renderArea = pTknRenderPass->tknRenderArea,
-            .clearValueCount = pTknRenderPass->tknAttachmentCount,
-            .pClearValues = pTknRenderPass->vkClearValues,
-        };
-        vkCmdBeginRenderPass(vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-        VkViewport vkViewport = {
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = pTknRenderPass->tknRenderArea.extent.width,
-            .height = pTknRenderPass->tknRenderArea.extent.height,
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f,
-        };
-        vkCmdSetViewport(vkCommandBuffer, 0, 1, &vkViewport);
 
-        VkRect2D scissor = {
-            .offset = {0, 0},
-            .extent = pTknRenderPass->tknRenderArea.extent,
-        };
-        vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
-        for (uint32_t subpassIndex = 0; subpassIndex < pTknRenderPass->tknSubpassCount; subpassIndex++)
-        {
-            if (subpassIndex > 0)
-            {
-                vkCmdNextSubpass(vkCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
-            }
-            struct TknSubpass *pTknSubpass = &pTknRenderPass->pTknSubpasses[subpassIndex];
-            TknMaterial *pSubpassMaterial = tknGetSubpassMaterialPtr(pTknGfxContext, pTknRenderPass, subpassIndex);
-            TknPipeline *pCurrentPipeline = NULL;
-            // Iterate all drawcalls in subpass order, switching pipelines as needed
-            for (uint32_t drawCallIndex = 0; drawCallIndex < pTknSubpass->tknDrawCallPtrDynamicArray.count; drawCallIndex++)
-            {
-                TknDrawCall *pTknDrawCall = *(TknDrawCall **)tknGetFromDynamicArray(&pTknSubpass->tknDrawCallPtrDynamicArray, drawCallIndex);
-                TknPipeline *pTknPipeline = pTknDrawCall->pTknPipeline;
-                // Switch pipeline if different from previous drawcall
-                if (pTknPipeline != pCurrentPipeline)
-                {
-                    vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipeline);
-                    pCurrentPipeline = pTknPipeline;
-                }
-                VkDescriptorSet *vkDescriptorSets = tknMalloc(sizeof(VkDescriptorSet) * TKN_MAX_DESCRIPTOR_SET);
-                vkDescriptorSets[TKN_GLOBAL_DESCRIPTOR_SET] = pGlobalMaterial->vkDescriptorSet;
-                vkDescriptorSets[TKN_SUBPASS_DESCRIPTOR_SET] = pSubpassMaterial->vkDescriptorSet;
-                if (pTknDrawCall->pTknMaterial != NULL)
-                {
-                    vkDescriptorSets[TKN_PIPELINE_DESCRIPTOR_SET] = pTknDrawCall->pTknMaterial->vkDescriptorSet;
-                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET, vkDescriptorSets, 0, NULL);
-                }
-                else
-                {
-                    vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET - 1, vkDescriptorSets, 0, NULL);
-                }
-                tknFree(vkDescriptorSets);
-                TknMesh *pTknMesh = pTknDrawCall->pTknMesh;
-                if (pTknMesh != NULL)
-                {
-                    if (pTknDrawCall->pTknInstance != NULL && pTknDrawCall->pTknInstance->tknInstanceCount > 0)
-                    {
-                        tknAssert(pTknDrawCall->pTknMesh->tknVertexCount > 0, "TknMesh has no vertices");
-                        VkBuffer vertexBuffers[] = {pTknMesh->tknVertexVkBuffer, pTknDrawCall->pTknInstance->tknInstanceVkBuffer};
-                        VkDeviceSize offsets[] = {0, 0};
-                        vkCmdBindVertexBuffers(vkCommandBuffer, 0, 2, vertexBuffers, offsets);
-                        if (pTknMesh->tknIndexCount > 0)
-                        {
-                            vkCmdBindIndexBuffer(vkCommandBuffer, pTknMesh->tknIndexVkBuffer, 0, pTknMesh->vkIndexType);
-                            vkCmdDrawIndexed(vkCommandBuffer, pTknMesh->tknIndexCount, pTknDrawCall->pTknInstance->tknInstanceCount, 0, 0, 0);
-                        }
-                        else
-                        {
-                            vkCmdDraw(vkCommandBuffer, pTknMesh->tknVertexCount, pTknDrawCall->pTknInstance->tknInstanceCount, 0, 0);
-                        }
-                    }
-                    else
-                    {
-                        // Simple case: only bind vertex buffer (no instancing)
-                        VkBuffer vertexBuffers[] = {pTknMesh->tknVertexVkBuffer};
-                        VkDeviceSize offsets[] = {0};
-                        vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
-
-                        if (pTknMesh->tknIndexCount > 0)
-                        {
-                            vkCmdBindIndexBuffer(vkCommandBuffer, pTknMesh->tknIndexVkBuffer, 0, pTknMesh->vkIndexType);
-                            vkCmdDrawIndexed(vkCommandBuffer, pTknMesh->tknIndexCount, 1, 0, 0, 0);
-                        }
-                        else
-                        {
-                            vkCmdDraw(vkCommandBuffer, pTknMesh->tknVertexCount, 1, 0, 0);
-                        }
-                    }
-                }
-                else
-                {
-                    vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
-                }
-            }
-        }
-        vkCmdEndRenderPass(vkCommandBuffer);
-    }
-
-    tknAssertVkResult(vkEndCommandBuffer(vkCommandBuffer));
-}
-static void submitCommandBuffer(TknGfxContext *pTknGfxContext, uint32_t swapchainIndex)
-{
-    // Submit workflow...
-    VkSubmitInfo submitInfo = {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext = NULL,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = (VkSemaphore[]){pTknGfxContext->vkImageAvailableSemaphore},
-        .pWaitDstStageMask = (VkPipelineStageFlags[]){VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
-        .commandBufferCount = 1,
-        .pCommandBuffers = &pTknGfxContext->vkGfxCommandBuffers[swapchainIndex],
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores = (VkSemaphore[]){pTknGfxContext->vkRenderFinishedSemaphore},
-    };
-
-    tknAssertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, pTknGfxContext->vkRenderFinishedFence));
-}
-static void present(TknGfxContext *pTknGfxContext, uint32_t swapchainIndex)
-{
-    TknSwapchainAttachment *pTknSwapchainAttachment = &pTknGfxContext->pTknSwapchainAttachment->tknAttachmentUnion.tknSwapchainAttachment;
-    VkPresentInfoKHR presentInfo = {
-        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .pNext = NULL,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = (VkSemaphore[]){pTknGfxContext->vkRenderFinishedSemaphore},
-        .swapchainCount = 1,
-        .pSwapchains = (VkSwapchainKHR[]){pTknSwapchainAttachment->vkSwapchain},
-        .pImageIndices = &swapchainIndex,
-        .pResults = NULL,
-    };
-    VkResult result = vkQueuePresentKHR(pTknGfxContext->vkPresentQueue, &presentInfo);
-    if (VK_ERROR_OUT_OF_DATE_KHR == result || VK_SUBOPTIMAL_KHR == result)
-    {
-        printf("Recreate swapchain because of the result: %d when presenting.\n", result);
-        updateSwapchainAttachmentPtr(pTknGfxContext, pTknSwapchainAttachment->tknSwapchainExtent);
-        for (uint32_t renderPassIndex = 0; renderPassIndex < pTknGfxContext->tknRenderPassPtrDynamicArray.count; renderPassIndex++)
-        {
-            TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray, renderPassIndex);
-            TknAttachment *pTknSwapchainAttachment = tknGetSwapchainAttachmentPtr(pTknGfxContext);
-            if (tknContainsInHashSet(&pTknSwapchainAttachment->tknRenderPassPtrHashSet, &pTknRenderPass))
-            {
-                tknRepopulateFramebuffers(pTknGfxContext, pTknRenderPass);
-            }
-            else
-            {
-                // Don't need to recreate framebuffers
-            }
-        }
-    }
-    else
-    {
-        tknAssertVkResult(result);
-    }
-}
-static void setupRenderPipelineAndResources(TknGfxContext *pTknGfxContext, uint32_t spvPathCount, const char **spvPaths)
+static void setupGfxResources(TknGfxContext *pTknGfxContext, uint32_t spvPathCount, const char **spvPaths)
 {
     // Create empty resources for empty bindings
     uint32_t emptyData = 0;
@@ -764,7 +590,7 @@ static void setupRenderPipelineAndResources(TknGfxContext *pTknGfxContext, uint3
 
     pTknGfxContext->tknDynamicAttachmentPtrHashSet = tknCreateHashSet(sizeof(TknAttachment *));
     pTknGfxContext->tknFixedAttachmentPtrHashSet = tknCreateHashSet(sizeof(TknAttachment *));
-    pTknGfxContext->tknRenderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(TknRenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
+    pTknGfxContext->tknRenderPassPtrHashSet = tknCreateHashSet(sizeof(TknRenderPass *));
     SpvReflectShaderModule *spvReflectShaderModules = tknMalloc(sizeof(SpvReflectShaderModule) * spvPathCount);
     for (uint32_t spvPathIndex = 0; spvPathIndex < spvPathCount; spvPathIndex++)
     {
@@ -779,17 +605,25 @@ static void setupRenderPipelineAndResources(TknGfxContext *pTknGfxContext, uint3
     tknCreateMaterialPtr(pTknGfxContext, pTknGfxContext->pTknGlobalDescriptorSet);
 
     pTknGfxContext->tknVertexInputLayoutPtrHashSet = tknCreateHashSet(sizeof(TknVertexInputLayout *));
+
+    pTknGfxContext->pTknFrame = tknMalloc(sizeof(TknFrame));
 }
-static void teardownRenderPipelineAndResources(TknGfxContext *pTknGfxContext)
+static void teardownGfxResources(TknGfxContext *pTknGfxContext)
 {
-    for (uint32_t i = 0; i < pTknGfxContext->tknRenderPassPtrDynamicArray.count; i++)
+    tknFree(pTknGfxContext->pTknFrame);
+
+    for (uint32_t i = 0; i < pTknGfxContext->tknRenderPassPtrHashSet.capacity; i++)
     {
-        TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray, i);
-        tknDestroyRenderPassPtr(pTknGfxContext, pTknRenderPass);
+        TknListNode *node = pTknGfxContext->tknRenderPassPtrHashSet.nodePtrs[i];
+        while (node)
+        {
+            TknRenderPass *pTknRenderPass = *(TknRenderPass **)node->data;
+            tknDestroyRenderPassPtr(pTknGfxContext, pTknRenderPass);
+            node = node->pNextNode;
+        }
     }
-    tknClearDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray);
-    tknAssert(pTknGfxContext->tknRenderPassPtrDynamicArray.count == 0, "Render pass dynamic array should be empty before destroying TknGfxContext.");
-    tknDestroyDynamicArray(pTknGfxContext->tknRenderPassPtrDynamicArray);
+    tknAssert(pTknGfxContext->tknRenderPassPtrHashSet.count == 0, "Render pass dynamic array should be empty before destroying TknGfxContext.");
+    tknDestroyHashSet(pTknGfxContext->tknRenderPassPtrHashSet);
 
     tknDestroyDescriptorSetPtr(pTknGfxContext, pTknGfxContext->pTknGlobalDescriptorSet);
     tknAssert(pTknGfxContext->tknVertexInputLayoutPtrHashSet.count == 0, "Vertex input layout hash set should be empty before destroying TknGfxContext.");
@@ -881,7 +715,7 @@ TknGfxContext *tknCreateGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFo
         .vkGfxCommandBuffers = NULL,
 
         .tknDynamicAttachmentPtrHashSet = {},
-        .tknRenderPassPtrDynamicArray = {},
+        .tknRenderPassPtrHashSet = {},
         .pTknGlobalDescriptorSet = NULL,
     };
     pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode);
@@ -890,14 +724,14 @@ TknGfxContext *tknCreateGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFo
     populateSignals(pTknGfxContext);
     populateCommandPools(pTknGfxContext);
     populateVkCommandBuffers(pTknGfxContext);
-    setupRenderPipelineAndResources(pTknGfxContext, spvPathCount, spvPaths);
+    setupGfxResources(pTknGfxContext, spvPathCount, spvPaths);
     return pTknGfxContext;
 }
 void tknDestroyGfxContextPtr(TknGfxContext *pTknGfxContext)
 {
     tknAssertVkResult(vkDeviceWaitIdle(pTknGfxContext->vkDevice));
 
-    teardownRenderPipelineAndResources(pTknGfxContext);
+    teardownGfxResources(pTknGfxContext);
     cleanupVkCommandBuffers(pTknGfxContext);
     cleanupCommandPools(pTknGfxContext);
     cleanupSignals(pTknGfxContext);
@@ -905,82 +739,91 @@ void tknDestroyGfxContextPtr(TknGfxContext *pTknGfxContext)
     cleanupLogicalDevice(pTknGfxContext);
     tknFree(pTknGfxContext);
 }
-void tknUpdateGfxContextPtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent)
+TknFrame *tknAcquireFramePtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent)
 {
     TknSwapchainAttachment *pTknSwapchainAttachment = &pTknGfxContext->pTknSwapchainAttachment->tknAttachmentUnion.tknSwapchainAttachment;
-    if (pTknGfxContext->tknRenderPassPtrDynamicArray.count > 0)
+
+    pTknGfxContext->tknFrameCount++;
+    uint32_t swapchainIndex = pTknGfxContext->tknFrameCount % pTknSwapchainAttachment->tknSwapchainImageCount;
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
+
+    if (tknSwapchainExtent.width != pTknSwapchainAttachment->tknSwapchainExtent.width || tknSwapchainExtent.height != pTknSwapchainAttachment->tknSwapchainExtent.height)
     {
-        pTknGfxContext->tknFrameCount++;
-        uint32_t swapchainIndex = pTknGfxContext->tknFrameCount % pTknSwapchainAttachment->tknSwapchainImageCount;
-        VkDevice vkDevice = pTknGfxContext->vkDevice;
+        printf("Recreate swapchain because of a size change: (%d, %d) to (%d, %d) \n",
+               pTknSwapchainAttachment->tknSwapchainExtent.width,
+               pTknSwapchainAttachment->tknSwapchainExtent.height,
+               tknSwapchainExtent.width,
+               tknSwapchainExtent.height);
+        updateSwapchainAttachmentPtr(pTknGfxContext, tknSwapchainExtent);
 
-        if (tknSwapchainExtent.width != pTknSwapchainAttachment->tknSwapchainExtent.width || tknSwapchainExtent.height != pTknSwapchainAttachment->tknSwapchainExtent.height)
+        TknDynamicArray dirtyRenderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(TknRenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
+
+        for (uint32_t i = 0; i < pTknGfxContext->tknDynamicAttachmentPtrHashSet.capacity; i++)
         {
-            printf("Recreate swapchain because of a size change: (%d, %d) to (%d, %d) \n",
-                   pTknSwapchainAttachment->tknSwapchainExtent.width,
-                   pTknSwapchainAttachment->tknSwapchainExtent.height,
-                   tknSwapchainExtent.width,
-                   tknSwapchainExtent.height);
-            updateSwapchainAttachmentPtr(pTknGfxContext, tknSwapchainExtent);
-
-            TknDynamicArray dirtyRenderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(TknRenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
-
-            for (uint32_t i = 0; i < pTknGfxContext->tknDynamicAttachmentPtrHashSet.capacity; i++)
+            TknListNode *pDynamicAttachmentPtrNode = pTknGfxContext->tknDynamicAttachmentPtrHashSet.nodePtrs[i];
+            while (pDynamicAttachmentPtrNode)
             {
-                TknListNode *pDynamicAttachmentPtrNode = pTknGfxContext->tknDynamicAttachmentPtrHashSet.nodePtrs[i];
-                while (pDynamicAttachmentPtrNode)
+                TknAttachment *pDynamicAttachment = *(TknAttachment **)pDynamicAttachmentPtrNode->data;
+                tknResizeDynamicAttachmentPtr(pTknGfxContext, pDynamicAttachment);
+                for (uint32_t i = 0; i < pDynamicAttachment->tknRenderPassPtrHashSet.capacity; i++)
                 {
-                    TknAttachment *pDynamicAttachment = *(TknAttachment **)pDynamicAttachmentPtrNode->data;
-                    tknResizeDynamicAttachmentPtr(pTknGfxContext, pDynamicAttachment);
-                    for (uint32_t i = 0; i < pDynamicAttachment->tknRenderPassPtrHashSet.capacity; i++)
+                    TknListNode *renderPassPtrNode = pDynamicAttachment->tknRenderPassPtrHashSet.nodePtrs[i];
+                    while (renderPassPtrNode)
                     {
-                        TknListNode *renderPassPtrNode = pDynamicAttachment->tknRenderPassPtrHashSet.nodePtrs[i];
-                        while (renderPassPtrNode)
+                        TknRenderPass *pTknRenderPass = *(TknRenderPass **)renderPassPtrNode->data;
+                        if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass))
                         {
-                            TknRenderPass *pTknRenderPass = *(TknRenderPass **)renderPassPtrNode->data;
-                            if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass))
-                            {
-                                tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass);
-                            }
-                            renderPassPtrNode = renderPassPtrNode->pNextNode;
+                            tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass);
                         }
+                        renderPassPtrNode = renderPassPtrNode->pNextNode;
                     }
-                    pDynamicAttachmentPtrNode = pDynamicAttachmentPtrNode->pNextNode;
                 }
+                pDynamicAttachmentPtrNode = pDynamicAttachmentPtrNode->pNextNode;
             }
-
-            for (uint32_t i = 0; i < pTknGfxContext->pTknSwapchainAttachment->tknRenderPassPtrHashSet.capacity; i++)
-            {
-                TknListNode *renderPassPtrNode = pTknGfxContext->pTknSwapchainAttachment->tknRenderPassPtrHashSet.nodePtrs[i];
-                while (renderPassPtrNode)
-                {
-                    TknRenderPass *pTknRenderPass = *(TknRenderPass **)renderPassPtrNode->data;
-                    if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass))
-                    {
-                        tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass);
-                    }
-                    renderPassPtrNode = renderPassPtrNode->pNextNode;
-                }
-            }
-            for (uint32_t renderPassIndex = 0; renderPassIndex < dirtyRenderPassPtrDynamicArray.count; renderPassIndex++)
-            {
-                TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&dirtyRenderPassPtrDynamicArray, renderPassIndex);
-                tknRepopulateFramebuffers(pTknGfxContext, pTknRenderPass);
-            }
-            tknDestroyDynamicArray(dirtyRenderPassPtrDynamicArray);
         }
-        else
+
+        for (uint32_t i = 0; i < pTknGfxContext->pTknSwapchainAttachment->tknRenderPassPtrHashSet.capacity; i++)
         {
-            VkResult result = vkAcquireNextImageKHR(vkDevice, pTknSwapchainAttachment->vkSwapchain, UINT64_MAX, pTknGfxContext->vkImageAvailableSemaphore, VK_NULL_HANDLE, &swapchainIndex);
-            if (result != VK_SUCCESS)
+            TknListNode *renderPassPtrNode = pTknGfxContext->pTknSwapchainAttachment->tknRenderPassPtrHashSet.nodePtrs[i];
+            while (renderPassPtrNode)
             {
-                if (VK_ERROR_OUT_OF_DATE_KHR == result)
+                TknRenderPass *pTknRenderPass = *(TknRenderPass **)renderPassPtrNode->data;
+                if (!tknContainsInDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass))
                 {
-                    printf("Recreate swapchain because of result: %d\n", result);
-                    updateSwapchainAttachmentPtr(pTknGfxContext, pTknSwapchainAttachment->tknSwapchainExtent);
-                    for (uint32_t renderPassIndex = 0; renderPassIndex < pTknGfxContext->tknRenderPassPtrDynamicArray.count; renderPassIndex++)
+                    tknAddToDynamicArray(&dirtyRenderPassPtrDynamicArray, &pTknRenderPass);
+                }
+                renderPassPtrNode = renderPassPtrNode->pNextNode;
+            }
+        }
+        for (uint32_t renderPassIndex = 0; renderPassIndex < dirtyRenderPassPtrDynamicArray.count; renderPassIndex++)
+        {
+            TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&dirtyRenderPassPtrDynamicArray, renderPassIndex);
+            tknRepopulateFramebuffers(pTknGfxContext, pTknRenderPass);
+        }
+        tknDestroyDynamicArray(dirtyRenderPassPtrDynamicArray);
+        pTknGfxContext->pTknFrame->vkCommandBuffer = NULL;
+        pTknGfxContext->pTknFrame->swapchainIndex = -1;
+        pTknGfxContext->pTknFrame->pTknRenderPass = NULL;
+        pTknGfxContext->pTknFrame->subpassIndex = -1;
+        pTknGfxContext->pTknFrame->pTknPipeline = NULL;
+        return NULL;
+    }
+    else
+    {
+        VkResult result = vkAcquireNextImageKHR(vkDevice, pTknSwapchainAttachment->vkSwapchain, UINT64_MAX, pTknGfxContext->vkImageAvailableSemaphore, VK_NULL_HANDLE, &swapchainIndex);
+        if (result != VK_SUCCESS)
+        {
+            if (VK_ERROR_OUT_OF_DATE_KHR == result || VK_SUBOPTIMAL_KHR == result)
+            {
+                printf("Recreate swapchain because of result: %d\n", result);
+                updateSwapchainAttachmentPtr(pTknGfxContext, pTknSwapchainAttachment->tknSwapchainExtent);
+
+                for (uint32_t i = 0; i < pTknGfxContext->tknRenderPassPtrHashSet.capacity; i++)
+                {
+                    TknListNode *node = pTknGfxContext->tknRenderPassPtrHashSet.nodePtrs[i];
+                    while (node)
                     {
-                        TknRenderPass *pTknRenderPass = *(TknRenderPass **)tknGetFromDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray, renderPassIndex);
+                        TknRenderPass *pTknRenderPass = *(TknRenderPass **)node->data;
                         TknAttachment *pTknSwapchainAttachment = tknGetSwapchainAttachmentPtr(pTknGfxContext);
                         if (tknContainsInHashSet(&pTknSwapchainAttachment->tknRenderPassPtrHashSet, &pTknRenderPass))
                         {
@@ -990,34 +833,86 @@ void tknUpdateGfxContextPtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapcha
                         {
                             // Don't need to recreate framebuffers
                         }
+                        node = node->pNextNode;
                     }
-                }
-                else if (VK_SUBOPTIMAL_KHR == result)
-                {
-                    tknAssertVkResult(vkResetFences(vkDevice, 1, &pTknGfxContext->vkRenderFinishedFence));
-                    recordCommandBuffer(pTknGfxContext, swapchainIndex);
-                    submitCommandBuffer(pTknGfxContext, swapchainIndex);
-                    present(pTknGfxContext, swapchainIndex);
-                }
-                else
-                {
-                    tknAssertVkResult(result);
                 }
             }
             else
             {
-                tknAssertVkResult(vkResetFences(vkDevice, 1, &pTknGfxContext->vkRenderFinishedFence));
-                recordCommandBuffer(pTknGfxContext, swapchainIndex);
-                submitCommandBuffer(pTknGfxContext, swapchainIndex);
-                present(pTknGfxContext, swapchainIndex);
+                tknAssertVkResult(result);
             }
+            pTknGfxContext->pTknFrame->vkCommandBuffer = NULL;
+            pTknGfxContext->pTknFrame->swapchainIndex = -1;
+            pTknGfxContext->pTknFrame->pTknRenderPass = NULL;
+            pTknGfxContext->pTknFrame->subpassIndex = -1;
+            pTknGfxContext->pTknFrame->pTknPipeline = NULL;
+            return NULL;
         }
+        else
+        {
+            // Acquired image successfully, proceed with rendering
+            tknAssertVkResult(vkResetFences(vkDevice, 1, &pTknGfxContext->vkRenderFinishedFence));
+            VkCommandBuffer vkCommandBuffer = pTknGfxContext->vkGfxCommandBuffers[swapchainIndex];
+            VkCommandBufferBeginInfo vkCommandBufferBeginInfo =
+                {
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                    .pNext = NULL,
+                    .flags = 0,
+                    .pInheritanceInfo = NULL,
+                };
+            tknAssertVkResult(vkBeginCommandBuffer(vkCommandBuffer, &vkCommandBufferBeginInfo));
+
+            pTknGfxContext->pTknFrame->vkCommandBuffer = vkCommandBuffer;
+            pTknGfxContext->pTknFrame->swapchainIndex = swapchainIndex;
+            pTknGfxContext->pTknFrame->pTknRenderPass = NULL;
+            pTknGfxContext->pTknFrame->subpassIndex = -1;
+            pTknGfxContext->pTknFrame->pTknPipeline = NULL;
+            return pTknGfxContext->pTknFrame;
+        }
+    }
+}
+void tknSubmitAndPresentFramePtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame)
+{
+    TknSwapchainAttachment *pTknSwapchainAttachment = &pTknGfxContext->pTknSwapchainAttachment->tknAttachmentUnion.tknSwapchainAttachment;
+
+    tknAssertVkResult(vkEndCommandBuffer(pTknFrame->vkCommandBuffer));
+    // Submit
+    VkSubmitInfo submitInfo = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = NULL,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = (VkSemaphore[]){pTknGfxContext->vkImageAvailableSemaphore},
+        .pWaitDstStageMask = (VkPipelineStageFlags[]){VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
+        .commandBufferCount = 1,
+        .pCommandBuffers = &pTknFrame->vkCommandBuffer,
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = (VkSemaphore[]){pTknGfxContext->vkRenderFinishedSemaphore},
+    };
+
+    tknAssertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, pTknGfxContext->vkRenderFinishedFence));
+
+    // Present
+    VkPresentInfoKHR presentInfo = {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = NULL,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = (VkSemaphore[]){pTknGfxContext->vkRenderFinishedSemaphore},
+        .swapchainCount = 1,
+        .pSwapchains = (VkSwapchainKHR[]){pTknSwapchainAttachment->vkSwapchain},
+        .pImageIndices = &pTknFrame->swapchainIndex,
+        .pResults = NULL,
+    };
+    VkResult result = vkQueuePresentKHR(pTknGfxContext->vkPresentQueue, &presentInfo);
+    if (VK_ERROR_OUT_OF_DATE_KHR == result || VK_SUBOPTIMAL_KHR == result)
+    {
+        tknWarning("Swapchain out of date or suboptimal, result: %d\n", result);
     }
     else
     {
-        printf("No render passes available, skipping tknUpdateGfxContextPtr.\n");
+        tknAssertVkResult(result);
     }
 }
+
 void tknWaitGfxRenderFence(TknGfxContext *pTknGfxContext)
 {
     tknAssertVkResult(vkWaitForFences(pTknGfxContext->vkDevice, 1, &pTknGfxContext->vkRenderFinishedFence, VK_TRUE, UINT64_MAX));
@@ -1025,4 +920,127 @@ void tknWaitGfxRenderFence(TknGfxContext *pTknGfxContext)
 void tknWaitGfxDeviceIdle(TknGfxContext *pTknGfxContext)
 {
     tknAssertVkResult(vkDeviceWaitIdle(pTknGfxContext->vkDevice));
+}
+
+void tknBeginRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, TknRenderPass *pTknRenderPass)
+{
+    VkRenderPassBeginInfo renderPassBeginInfo = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = NULL,
+        .renderPass = pTknRenderPass->vkRenderPass,
+        .framebuffer = pTknRenderPass->vkFramebuffers[pTknFrame->swapchainIndex],
+        .renderArea = pTknRenderPass->tknRenderArea,
+        .clearValueCount = pTknRenderPass->tknAttachmentCount,
+        .pClearValues = pTknRenderPass->vkClearValues,
+    };
+    vkCmdBeginRenderPass(pTknFrame->vkCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    VkViewport vkViewport = {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = pTknRenderPass->tknRenderArea.extent.width,
+        .height = pTknRenderPass->tknRenderArea.extent.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+    vkCmdSetViewport(pTknFrame->vkCommandBuffer, 0, 1, &vkViewport);
+
+    VkRect2D scissor = {
+        .offset = {0, 0},
+        .extent = pTknRenderPass->tknRenderArea.extent,
+    };
+    vkCmdSetScissor(pTknFrame->vkCommandBuffer, 0, 1, &scissor);
+
+    pTknFrame->pTknRenderPass = pTknRenderPass;
+    pTknFrame->subpassIndex = 0;
+    pTknFrame->pTknPipeline = NULL;
+}
+
+void tknEndRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame)
+{
+    vkCmdEndRenderPass(pTknFrame->vkCommandBuffer);
+    pTknFrame->pTknRenderPass = NULL;
+    pTknFrame->subpassIndex = 0;
+    pTknFrame->pTknPipeline = NULL;
+}
+
+void tknNextSubpassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame)
+{
+    tknAssert(pTknFrame->pTknRenderPass != NULL, "Cannot go to next subpass when no render pass is active.");
+    tknAssert(pTknFrame->subpassIndex + 1 < pTknFrame->pTknRenderPass->tknSubpassCount, "Cannot go to next subpass, already at last subpass.");
+
+    vkCmdNextSubpass(pTknFrame->vkCommandBuffer, VK_SUBPASS_CONTENTS_INLINE);
+    pTknFrame->subpassIndex += 1;
+    pTknFrame->pTknPipeline = NULL;
+}
+
+void tknRecordDrawCallPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, TknDrawCall *pTknDrawCall)
+{
+    tknAssert(pTknFrame->pTknRenderPass != NULL, "Cannot record draw call when no render pass is active.");
+    tknAssert(pTknFrame->subpassIndex < pTknFrame->pTknRenderPass->tknSubpassCount, "Invalid subpass index in current render pass.");
+    tknAssert(pTknDrawCall->pTknPipeline->pTknRenderPass == pTknFrame->pTknRenderPass, "Draw call's pipeline render pass does not match current frame render pass.");
+    tknAssert(pTknDrawCall->pTknPipeline->subpassIndex == pTknFrame->subpassIndex, "Draw call's pipeline subpass index does not match current frame subpass index.");
+    TknMaterial *pGlobalMaterial = tknGetGlobalMaterialPtr(pTknGfxContext);
+    TknMaterial *pSubpassMaterial = tknGetSubpassMaterialPtr(pTknGfxContext, pTknFrame->pTknRenderPass, pTknFrame->subpassIndex);
+    TknPipeline *pTknPipeline = pTknDrawCall->pTknPipeline;
+    VkCommandBuffer vkCommandBuffer = pTknFrame->vkCommandBuffer;
+    // Switch pipeline if different from previous drawcall
+    if (pTknPipeline != pTknFrame->pTknPipeline)
+    {
+        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipeline);
+        pTknFrame->pTknPipeline = pTknPipeline;
+    }
+    VkDescriptorSet *vkDescriptorSets = tknMalloc(sizeof(VkDescriptorSet) * TKN_MAX_DESCRIPTOR_SET);
+    vkDescriptorSets[TKN_GLOBAL_DESCRIPTOR_SET] = pGlobalMaterial->vkDescriptorSet;
+    vkDescriptorSets[TKN_SUBPASS_DESCRIPTOR_SET] = pSubpassMaterial->vkDescriptorSet;
+    if (pTknDrawCall->pTknMaterial != NULL)
+    {
+        vkDescriptorSets[TKN_PIPELINE_DESCRIPTOR_SET] = pTknDrawCall->pTknMaterial->vkDescriptorSet;
+        vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET, vkDescriptorSets, 0, NULL);
+    }
+    else
+    {
+        vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pTknPipeline->vkPipelineLayout, 0, TKN_MAX_DESCRIPTOR_SET - 1, vkDescriptorSets, 0, NULL);
+    }
+    tknFree(vkDescriptorSets);
+    TknMesh *pTknMesh = pTknDrawCall->pTknMesh;
+    if (pTknMesh != NULL)
+    {
+        if (pTknDrawCall->pTknInstance != NULL && pTknDrawCall->pTknInstance->tknInstanceCount > 0)
+        {
+            tknAssert(pTknDrawCall->pTknMesh->tknVertexCount > 0, "TknMesh has no vertices");
+            VkBuffer vertexBuffers[] = {pTknMesh->tknVertexVkBuffer, pTknDrawCall->pTknInstance->tknInstanceVkBuffer};
+            VkDeviceSize offsets[] = {0, 0};
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 2, vertexBuffers, offsets);
+            if (pTknMesh->tknIndexCount > 0)
+            {
+                vkCmdBindIndexBuffer(vkCommandBuffer, pTknMesh->tknIndexVkBuffer, 0, pTknMesh->vkIndexType);
+                vkCmdDrawIndexed(vkCommandBuffer, pTknMesh->tknIndexCount, pTknDrawCall->pTknInstance->tknInstanceCount, 0, 0, 0);
+            }
+            else
+            {
+                vkCmdDraw(vkCommandBuffer, pTknMesh->tknVertexCount, pTknDrawCall->pTknInstance->tknInstanceCount, 0, 0);
+            }
+        }
+        else
+        {
+            // Simple case: only bind vertex buffer (no instancing)
+            VkBuffer vertexBuffers[] = {pTknMesh->tknVertexVkBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
+
+            if (pTknMesh->tknIndexCount > 0)
+            {
+                vkCmdBindIndexBuffer(vkCommandBuffer, pTknMesh->tknIndexVkBuffer, 0, pTknMesh->vkIndexType);
+                vkCmdDrawIndexed(vkCommandBuffer, pTknMesh->tknIndexCount, 1, 0, 0, 0);
+            }
+            else
+            {
+                vkCmdDraw(vkCommandBuffer, pTknMesh->tknVertexCount, 1, 0, 0);
+            }
+        }
+    }
+    else
+    {
+        vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
+    }
 }

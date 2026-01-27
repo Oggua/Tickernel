@@ -283,7 +283,7 @@ struct TknGfxContext
 
     TknHashSet tknDynamicAttachmentPtrHashSet;
     TknHashSet tknFixedAttachmentPtrHashSet;
-    TknDynamicArray tknRenderPassPtrDynamicArray;
+    TknHashSet tknRenderPassPtrHashSet;
 
     TknDescriptorSet *pTknGlobalDescriptorSet;
     TknHashSet tknVertexInputLayoutPtrHashSet;
@@ -292,7 +292,19 @@ struct TknGfxContext
     TknUniformBuffer *pTknEmptyUniformBuffer;
     TknSampler *pTknEmptySampler;
     TknImage *pTknEmptyImage;
+
+    TknFrame *pTknFrame;
 };
+
+struct TknFrame
+{
+    VkCommandBuffer vkCommandBuffer;
+    uint32_t swapchainIndex;
+    TknRenderPass *pTknRenderPass;
+    uint32_t subpassIndex;
+    TknPipeline *pTknPipeline;
+};
+
 
 void tknAssertVkResult(VkResult vkResult);
 

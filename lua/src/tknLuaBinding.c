@@ -1770,6 +1770,40 @@ static int luaWaitRenderFence(lua_State *pLuaState)
     return 0;
 }
 
+static int luaBeginRenderPassPtr(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -3);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -2);
+    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -1);
+    tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, pTknRenderPass);
+    return 0;
+}
+
+static int luaEndRenderPassPtr(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -1);
+    tknEndRenderPassPtr(pTknGfxContext, pTknFrame);
+    return 0;
+}
+
+static int luaNextSubpassPtr(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -1);
+    tknNextSubpassPtr(pTknGfxContext, pTknFrame);
+    return 0;
+}
+
+static int luaRecordDrawCallPtr(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -3);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -2);
+    TknDrawCall *pTknDrawCall = (TknDrawCall *)lua_touserdata(pLuaState, -1);
+    tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, pTknDrawCall);
+    return 0;
+}
+
 void bindFunctions(lua_State *pLuaState)
 {
     luaL_Reg regs[] = {
@@ -1820,6 +1854,10 @@ void bindFunctions(lua_State *pLuaState)
         {"tknFlushTknFontPtr", luaFlushTknFontPtr},
         {"tknLoadTknChar", luaLoadTknChar},
         {"tknWaitRenderFence", luaWaitRenderFence},
+        {"tknBeginRenderPassPtr", luaBeginRenderPassPtr},
+        {"tknEndRenderPassPtr", luaEndRenderPassPtr},
+        {"tknNextSubpassPtr", luaNextSubpassPtr},
+        {"tknRecordDrawCallPtr", luaRecordDrawCallPtr},
         {NULL, NULL},
     };
     luaL_newlib(pLuaState, regs);

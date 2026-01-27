@@ -33,7 +33,7 @@ static struct TknSubpass createSubpass(TknGfxContext *pTknGfxContext, uint32_t s
                         uint32_t binding = pSpvReflectDescriptorBinding->binding;
                         uint32_t inputAttachmentIndex = pSpvReflectDescriptorBinding->input_attachment_index;
                         tknAssert(inputAttachmentIndex < inputVkAttachmentReferenceCount, "Input attachment index %u out of bounds (max %u)", inputAttachmentIndex, inputVkAttachmentReferenceCount);
-                        
+
                         uint32_t realAttachmentIndex = inputVkAttachmentReferences[inputAttachmentIndex].attachment;
                         TknAttachment *pInputAttachment = tknAttachmentPtrs[realAttachmentIndex];
                         if (NULL == pTknMaterial->pTknBindings[binding].tknBindingUnion.tknInputAttachmentBinding.pTknAttachment)
@@ -151,12 +151,12 @@ TknRenderPass *tknCreateRenderPassPtr(TknGfxContext *pTknGfxContext, uint32_t tk
     {
         pTknRenderPass->pTknSubpasses[subpassIndex] = createSubpass(pTknGfxContext, subpassIndex, tknAttachmentCount, tknAttachmentPtrs, vkSubpassDescriptions[subpassIndex].inputAttachmentCount, vkSubpassDescriptions[subpassIndex].pInputAttachments, spvPathCounts[subpassIndex], spvPathsArray[subpassIndex]);
     }
-    tknInsertIntoDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray, &pTknRenderPass, renderPassIndex);
+    tknAddToHashSet(&pTknGfxContext->tknRenderPassPtrHashSet, &pTknRenderPass);
     return pTknRenderPass;
 }
 void tknDestroyRenderPassPtr(TknGfxContext *pTknGfxContext, TknRenderPass *pTknRenderPass)
 {
-    tknRemoveFromDynamicArray(&pTknGfxContext->tknRenderPassPtrDynamicArray, &pTknRenderPass);
+    tknRemoveFromHashSet(&pTknGfxContext->tknRenderPassPtrHashSet, &pTknRenderPass);
     tknCleanupFramebuffers(pTknGfxContext, pTknRenderPass);
     vkDestroyRenderPass(pTknGfxContext->vkDevice, pTknRenderPass->vkRenderPass, NULL);
     for (uint32_t i = 0; i < pTknRenderPass->tknSubpassCount; i++)

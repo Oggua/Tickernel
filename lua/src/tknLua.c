@@ -168,8 +168,23 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
     {
         shouldQuit = lua_toboolean(pLuaState, -1);
     }
-    lua_pop(pLuaState, 3); // Pop return value, errorHandler and tknEngine table
-    tknUpdateGfxContextPtr(pTknGfxContext, swapchainExtent);
+    lua_pop(pLuaState, 1); // Pop return value, errorHandler and tknEngine table
+    TknFrame *pTknFrame = tknAcquireFramePtr(pTknGfxContext, swapchainExtent);
+    if (pTknFrame)
+    {
+        lua_getfield(pLuaState, -1, "recordFrame");
+        lua_pushlightuserdata(pLuaState, pTknGfxContext);
+        lua_pushlightuserdata(pLuaState, pTknFrame);
+        assertLuaResult(pLuaState, lua_pcall(pLuaState, 2, 0, -5));
+        // Submit and present
+        tknSubmitAndPresentFramePtr(pTknGfxContext, pTknFrame);
+        lua_pop(pLuaState, 2);
+    }
+    else
+    {
+        printf("Failed to acquire frame!\n");
+        lua_pop(pLuaState, 2);
+    }
 
     return shouldQuit;
 }

@@ -37,5 +37,10 @@ function tknEngine.update(pTknGfxContext, width, height)
     return shouldQuit
 end
 
+function tknEngine.recordFrame(pTknGfxContext, pTknFrame)
+    game.recordFrame(pTknGfxContext, pTknFrame)
+    ui.recordFrame(pTknGfxContext, pTknFrame)
+end
+
 _G.tknEngine = tknEngine
 return tknEngine
