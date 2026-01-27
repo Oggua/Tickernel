@@ -51,4 +51,9 @@ function game.switchScene(nextScene)
     game.nextScene = nextScene
 end
 
+function game.recordFrame(pTknGfxContext, pTknFrame)
+    -- Game rendering logic here
+    game.currentScene.recordFrame(game, pTknGfxContext, pTknFrame)
+end
+
 return game

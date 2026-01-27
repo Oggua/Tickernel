@@ -60,7 +60,7 @@ function imageNode.unloadImage(pTknGfxContext, image)
     image.path = nil
 end
 
-function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, mask, drawCallIndex, node)
+function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, mask, node)
     local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
     -- Create instance buffer (mat3 + color)
     local instances = {
@@ -69,7 +69,6 @@ function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, ima
         alphaThreshold = alphaThreshold,
     }
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
-    print(image.pTknMaterial)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, pTknInstance)
 
     node.type = "imageNode"

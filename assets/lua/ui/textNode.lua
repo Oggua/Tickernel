@@ -75,7 +75,7 @@ function textNode.unloadFont(pTknGfxContext, font)
     tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
 end
 
-function textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, drawCallIndex, node)
+function textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, node)
     local maxChars = #textString
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
@@ -103,10 +103,6 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, alpha
     node.pTknInstance = pTknInstance
     node.pTknDrawCall = pTknDrawCall
     node.type = "textNode"
-
-    -- if node.transform.active then
-    --     tkn.tknInsertDrawCallPtr(pTknDrawCall, drawCallIndex)
-    -- end
 end
 
 function textNode.teardownNode(pTknGfxContext, node)

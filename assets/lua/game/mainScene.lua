@@ -28,4 +28,8 @@ function mainScene.updateGfx(game, pTknGfxContext, width, height)
 
 end
 
+function mainScene.recordFrame(game, pTknGfxContext, pTknFrame)
+    -- Main scene rendering logic here
+end
+
 return mainScene

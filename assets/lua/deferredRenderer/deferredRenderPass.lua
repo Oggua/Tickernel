@@ -259,7 +259,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     deferredRenderPass.pLightingMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline)
 
     local pLightingDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline, deferredRenderPass.pLightingMaterial, nil, nil)
-    tkn.tknInsertDrawCallPtr(pLightingDrawCall, 0)
+
     return renderPassIndex
 end
 

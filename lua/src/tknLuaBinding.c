@@ -1029,21 +1029,6 @@ static int luaDestroyDrawCallPtr(lua_State *pLuaState)
     return 0;
 }
 
-static int luaInsertDrawCallPtr(lua_State *pLuaState)
-{
-    TknDrawCall *pTknDrawCall = (TknDrawCall *)lua_touserdata(pLuaState, -2);
-    uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    tknInsertDrawCallPtr(pTknDrawCall, index);
-    return 0;
-}
-
-static int luaRemoveDrawCallPtr(lua_State *pLuaState)
-{
-    TknDrawCall *pTknDrawCall = (TknDrawCall *)lua_touserdata(pLuaState, -1);
-    tknRemoveDrawCallPtr(pTknDrawCall);
-    return 0;
-}
-
 static int luaCreateVertexInputLayoutPtr(lua_State *pLuaState)
 {
     TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
@@ -1117,34 +1102,6 @@ static int luaDestroyVertexInputLayoutPtr(lua_State *pLuaState)
     TknVertexInputLayout *pTknVertexInputLayout = (TknVertexInputLayout *)lua_touserdata(pLuaState, -1);
     tknDestroyVertexInputLayoutPtr(pTknGfxContext, pTknVertexInputLayout);
     return 0;
-}
-
-static int luaRemoveDrawCallAtIndex(lua_State *pLuaState)
-{
-    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -3);
-    uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -2);
-    uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    tknRemoveDrawCallAtIndex(pTknRenderPass, subpassIndex, index);
-    return 0;
-}
-
-static int luaGetDrawCallAtIndex(lua_State *pLuaState)
-{
-    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -3);
-    uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -2);
-    uint32_t index = (uint32_t)lua_tointeger(pLuaState, -1);
-    TknDrawCall *pTknDrawCall = tknGetDrawCallAtIndex(pTknRenderPass, subpassIndex, index);
-    lua_pushlightuserdata(pLuaState, pTknDrawCall);
-    return 1;
-}
-
-static int luaGetDrawCallCount(lua_State *pLuaState)
-{
-    TknRenderPass *pTknRenderPass = (TknRenderPass *)lua_touserdata(pLuaState, -2);
-    uint32_t subpassIndex = (uint32_t)lua_tointeger(pLuaState, -1);
-    uint32_t count = tknGetDrawCallCount(pTknRenderPass, subpassIndex);
-    lua_pushinteger(pLuaState, (lua_Integer)count);
-    return 1;
 }
 
 static int luaCreateUniformBufferPtr(lua_State *pLuaState)
@@ -1821,11 +1778,6 @@ void bindFunctions(lua_State *pLuaState)
         {"tknDestroyPipelinePtr", luaDestroyPipelinePtr},
         {"tknCreateDrawCallPtr", luaCreateDrawCallPtr},
         {"tknDestroyDrawCallPtr", luaDestroyDrawCallPtr},
-        {"tknInsertDrawCallPtr", luaInsertDrawCallPtr},
-        {"tknRemoveDrawCallPtr", luaRemoveDrawCallPtr},
-        {"tknRemoveDrawCallAtIndex", luaRemoveDrawCallAtIndex},
-        {"tknGetDrawCallAtIndex", luaGetDrawCallAtIndex},
-        {"tknGetDrawCallCount", luaGetDrawCallCount},
         {"tknCreateImagePtr", luaCreateImagePtr},
         {"tknDestroyImagePtr", luaDestroyImagePtr},
         {"tknCreateSamplerPtr", luaCreateSamplerPtr},

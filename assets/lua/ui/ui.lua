@@ -8,32 +8,6 @@ local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
 local colorPreset = require("ui.colorPreset")
 
-local function traverseNode(node, callback)
-    local result = callback(node)
-    if result then
-        return result
-    end
-    for _, child in ipairs(node.children) do
-        if traverseNode(child, callback) then
-            return true
-        end
-    end
-    return false
-end
-
-local function traverseNodeReverse(node, callback)
-    local result = callback(node)
-    if result then
-        return result
-    end
-    for i = #node.children, 1, -1 do
-        if traverseNodeReverse(node.children[i], callback) then
-            return true
-        end
-    end
-    return false
-end
-
 local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthDirty, parentOrientationDirty)
     -- Get orientation properties based on key (horizontal or vertical)
     local orientation = node[key]
@@ -58,6 +32,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             boundsDirty = true,
             modelDirty = true,
             colorDirty = true,
+            active = false,
         }
     end
 
@@ -252,22 +227,7 @@ local function transformOffsetToWorld(localOffsetX, localOffsetY, effectiveParen
     return localOffsetX, localOffsetY
 end
 
-local function getDrawCallIndex(pTknGfxContext, node)
-    local drawCallIndex = 0
-    traverseNode(ui.rootNode, function(child)
-        if child == node then
-            return true
-        else
-            if child and child.pTknDrawCall then
-                drawCallIndex = drawCallIndex + 1
-            end
-            return false
-        end
-    end)
-    return drawCallIndex
-end
-
-local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, parentMaskDirty, parentMaskBit, drawCallIndex)
+local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, parentMaskDirty, parentMaskBit)
     local rect = node.rect
     local instanceDirty = false
     print("Updating model for node " .. tostring(node.name) .. tostring(node.transform.modelDirty or node.rect.modelDirty or parentModelDirty))
@@ -366,36 +326,15 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     if node.transform.activeDirty or parentActiveDirty then
         parentActiveDirty = node.transform.activeDirty or parentActiveDirty
         local finalActive = parentActive and node.transform.active
-        if finalActive == node.finalActive then
-            -- No change
-        else
-            if node.pTknDrawCall then
-                if finalActive then
-                    tkn.tknInsertDrawCallPtr(node.pTknDrawCall, drawCallIndex)
-                    print("Inserted draw call for node " .. tostring(node.name) .. " at index " .. tostring(drawCallIndex))
-                else
-                    -- Keep drawCallIndex the same, as this draw call is being removed
-                    tkn.tknRemoveDrawCallAtIndex(uiRenderPass.pTknRenderPass, node.pTknDrawCall, drawCallIndex)
-                    print("Removed draw call for node " .. tostring(node.name) .. " at index " .. tostring(drawCallIndex))
-                end
-            else
-                -- No draw call to update
-            end
-            node.transform.finalActive = finalActive
-        end
+        node.rect.active = finalActive
         node.transform.activeDirty = false
-    end
-
-    if node.pTknDrawCall and node.transform.finalActive then
-        drawCallIndex = drawCallIndex + 1
     end
 
     -- Recursively update children
     for _, child in ipairs(node.children) do
-        drawCallIndex = updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, parentModelDirty, parentColorDirty, rect.color, parentActiveDirty, node.transform.finalActive, parentMaskDirty, parentMaskBit, drawCallIndex)
+        updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, parentModelDirty, parentColorDirty, rect.color, parentActiveDirty, node.rect.active, parentMaskDirty, parentMaskBit)
     end
 
-    return drawCallIndex
 end
 
 local function isTopNode(node)
@@ -419,7 +358,7 @@ local function getTopNode(node)
 end
 
 local function getActiveInteractableInputNode(node, xNDC, yNDC, inputState)
-    if node.transform.active then
+    if node.rect.active then
         for i = #node.children, 1, -1 do
             local child = node.children[i]
             local foundNode = getActiveInteractableInputNode(child, xNDC, yNDC, inputState)
@@ -547,7 +486,6 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
     ui.setNodeTransformModel(node, transform.rotation, transform.horizontalScale, transform.verticalScale)
     ui.setNodeTransformColor(node, transform.color)
     ui.setNodeTransformActive(node, transform.active)
-    node.transform.finalActive = transform.active
 
     if parent == nil then
         assert(ui.rootNode == nil, "ui.addNode: rootNode is not nil")
@@ -567,7 +505,6 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
 end
 
 local function removeNodeInternal(pTknGfxContext, node)
-    print("Removing node: " .. node.name)
     local needUpdateTopNode = isTopNode(node)
     local parent = node.parent
     if parent and parent.horizontal.type == ui.layoutType.fit then
@@ -701,10 +638,20 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     end
 end
 
+function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame)
+    if node.pTknDrawCall and node.rect.active then
+        tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
+    end
+
+    for _, child in ipairs(node.children) do
+        ui.recordDrawCalls(child, pTknGfxContext, pTknFrame)
+    end
+end
+
 function ui.recordFrame(pTknGfxContext, pTknFrame)
     tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
-    
-    tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
+    ui.recordDrawCalls(ui.rootNode, pTknGfxContext, pTknFrame)
+    tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
 end
 
 function ui.getNodeIndex(node)
@@ -731,80 +678,28 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
         end
     end
 
-    local drawCalls = {}
-    traverseNode(node, function(child)
-        if child.pTknDrawCall then
-            table.insert(drawCalls, child.pTknDrawCall)
-        end
-    end)
     markParentFitNodeDirty(node, "horizontal")
     markParentFitNodeDirty(node, "vertical")
-    if #drawCalls == 0 then
-        local originalIndex = ui.getNodeIndex(node)
-        table.remove(node.parent.children, originalIndex)
-        table.insert(parent.children, index, node)
-        node.parent = parent
+
+    local originalIndex = ui.getNodeIndex(node)
+    table.remove(node.parent.children, originalIndex)
+    table.insert(parent.children, index, node)
+    node.parent = parent
+
+    if node.type ~= ui.layoutType.fit then
         node.horizontal.dirty = true
         node.vertical.dirty = true
-        if isTopNode(node) then
-            ui.topNode = getTopNode(ui.rootNode)
-        end
-        markParentFitNodeDirty(node, "horizontal")
-        markParentFitNodeDirty(node, "vertical")
-        return true
-    else
-        local drawCallStartIndex = 0
-        traverseNode(ui.rootNode, function(child)
-            if child == node then
-                return true
-            else
-                if child.pTknDrawCall then
-                    drawCallStartIndex = drawCallStartIndex + 1
-                end
-                return false
-            end
-        end)
-
-        for i = #drawCalls, 1, -1 do
-            local removeIndex = drawCallStartIndex + i - 1
-            tkn.tknRemoveDrawCallAt(removeIndex)
-        end
-
-        local originalIndex = ui.getNodeIndex(node)
-        table.remove(node.parent.children, originalIndex)
-        table.insert(parent.children, index, node)
-        node.parent = parent
-
-        drawCallStartIndex = 0
-        traverseNode(ui.rootNode, function(child)
-            if child == node then
-                return true
-            else
-                if child.pTknDrawCall then
-                    drawCallStartIndex = drawCallStartIndex + 1
-                end
-                return false
-            end
-        end)
-
-        for i, dc in ipairs(drawCalls) do
-            local insertIndex = drawCallStartIndex + i - 1
-            tkn.tknInsertDrawCallPtr(dc, insertIndex)
-        end
-        if node.type ~= ui.layoutType.fit then
-            node.horizontal.dirty = true
-            node.vertical.dirty = true
-            node.transform.modelDirty = true
-            node.transform.colorDirty = true
-        end
-        markParentFitNodeDirty(node, "horizontal")
-        markParentFitNodeDirty(node, "vertical")
-
-        if isTopNode(node) then
-            ui.topNode = getTopNode(ui.rootNode)
-        end
-        return true
+        node.transform.modelDirty = true
+        node.transform.colorDirty = true
     end
+
+    markParentFitNodeDirty(node, "horizontal")
+    markParentFitNodeDirty(node, "vertical")
+
+    if isTopNode(node) then
+        ui.topNode = getTopNode(ui.rootNode)
+    end
+    return true
 end
 
 function ui.loadImage(pTknGfxContext, path)
@@ -835,8 +730,7 @@ end
 
 function ui.addImageNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, color, alphaThreshold, fitMode, image, uv, mask)
     local node = addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
-    local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
-    imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, mask, drawCallIndex, node)
+    imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pImagePipeline, mask, node)
     return node
 end
 
@@ -848,8 +742,7 @@ end
 
 function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alphaThreshold, alignH, alignV, bold)
     local node = ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
-    local drawCallIndex = getDrawCallIndex(pTknGfxContext, node)
-    textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, drawCallIndex, node)
+    textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
     return node
 end
 

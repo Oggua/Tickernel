@@ -238,7 +238,6 @@ struct TknSubpass
 {
     TknDescriptorSet *pTknSubpassDescriptorSet;
     TknHashSet tknPipelinePtrHashSet;
-    TknDynamicArray tknDrawCallPtrDynamicArray;  // Shared drawcall queue for all pipelines in this subpass
 };
 
 struct TknRenderPass

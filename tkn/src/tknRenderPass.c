@@ -62,11 +62,9 @@ static struct TknSubpass createSubpass(TknGfxContext *pTknGfxContext, uint32_t s
     tknBindAttachmentsToMaterialPtr(pTknGfxContext, pTknMaterial);
 
     TknHashSet tknPipelinePtrHashSet = tknCreateHashSet(sizeof(TknPipeline *));
-    TknDynamicArray tknDrawCallPtrDynamicArray = tknCreateDynamicArray(sizeof(TknDrawCall *), TKN_DEFAULT_COLLECTION_SIZE);
     struct TknSubpass subpass = {
         .pTknSubpassDescriptorSet = pTknSubpassDescriptorSet,
         .tknPipelinePtrHashSet = tknPipelinePtrHashSet,
-        .tknDrawCallPtrDynamicArray = tknDrawCallPtrDynamicArray,
     };
     return subpass;
 }
@@ -100,7 +98,6 @@ static void destroySubpass(TknGfxContext *pTknGfxContext, struct TknSubpass tknS
     }
     tknDestroyDescriptorSetPtr(pTknGfxContext, tknSubpass.pTknSubpassDescriptorSet);
     tknDestroyHashSet(tknSubpass.tknPipelinePtrHashSet);
-    tknDestroyDynamicArray(tknSubpass.tknDrawCallPtrDynamicArray);
 }
 
 TknRenderPass *tknCreateRenderPassPtr(TknGfxContext *pTknGfxContext, uint32_t tknAttachmentCount, VkAttachmentDescription *vkAttachmentDescriptions, TknAttachment **inputAttachmentPtrs, VkClearValue *vkClearValues, uint32_t tknSubpassCount, VkSubpassDescription *vkSubpassDescriptions, uint32_t *spvPathCounts, const char ***spvPathsArray, uint32_t vkSubpassDependencyCount, VkSubpassDependency *vkSubpassDependencies, uint32_t renderPassIndex)

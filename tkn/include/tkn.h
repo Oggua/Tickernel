@@ -101,11 +101,6 @@ void tknDestroyPipelinePtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipel
 
 TknDrawCall *tknCreateDrawCallPtr(TknGfxContext *pTknGfxContext, TknPipeline *pTknPipeline, TknMaterial *pTknMaterial, TknMesh *pTknMesh, TknInstance *pTknInstance);
 void tknDestroyDrawCallPtr(TknGfxContext *pTknGfxContext, TknDrawCall *pTknDrawCall);
-void tknInsertDrawCallPtr(TknDrawCall *pTknDrawCall, uint32_t index);
-void tknRemoveDrawCallPtr(TknDrawCall *pTknDrawCall);
-void tknRemoveDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index);
-TknDrawCall *tknGetDrawCallAtIndex(TknRenderPass *pTknRenderPass, uint32_t subpassIndex, uint32_t index);
-uint32_t tknGetDrawCallCount(TknRenderPass *pTknRenderPass, uint32_t subpassIndex);
 
 TknImage *tknCreateImagePtr(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFormat vkFormat, VkImageTiling vkImageTiling, VkImageUsageFlags vkImageUsageFlags, VkMemoryPropertyFlags vkMemoryPropertyFlags, VkImageAspectFlags vkImageAspectFlags, void *data, VkDeviceSize dataSize);
 void tknDestroyImagePtr(TknGfxContext *pTknGfxContext, TknImage *pTknImage);
