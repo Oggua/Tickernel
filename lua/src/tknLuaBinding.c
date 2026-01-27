@@ -1761,6 +1761,36 @@ static int luaRecordDrawCallPtr(lua_State *pLuaState)
     return 0;
 }
 
+static int luaSetStencilCompareMask(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -3);
+    VkStencilFaceFlags faceMask = (VkStencilFaceFlags)lua_tointeger(pLuaState, -2);
+    uint32_t compareMask = (uint32_t)lua_tointeger(pLuaState, -1);
+    tknSetStencilCompareMask(pTknGfxContext, pTknFrame, faceMask, compareMask);
+    return 0;
+}
+
+static int luaSetStencilWriteMask(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -3);
+    VkStencilFaceFlags faceMask = (VkStencilFaceFlags)lua_tointeger(pLuaState, -2);
+    uint32_t writeMask = (uint32_t)lua_tointeger(pLuaState, -1);
+    tknSetStencilWriteMask(pTknGfxContext, pTknFrame, faceMask, writeMask);
+    return 0;
+}
+
+static int luaSetStencilReference(lua_State *pLuaState)
+{
+    TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
+    TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -3);
+    VkStencilFaceFlags faceMask = (VkStencilFaceFlags)lua_tointeger(pLuaState, -2);
+    uint32_t reference = (uint32_t)lua_tointeger(pLuaState, -1);
+    tknSetStencilReference(pTknGfxContext, pTknFrame, faceMask, reference);
+    return 0;
+}
+
 void bindFunctions(lua_State *pLuaState)
 {
     luaL_Reg regs[] = {
@@ -1810,6 +1840,9 @@ void bindFunctions(lua_State *pLuaState)
         {"tknEndRenderPassPtr", luaEndRenderPassPtr},
         {"tknNextSubpassPtr", luaNextSubpassPtr},
         {"tknRecordDrawCallPtr", luaRecordDrawCallPtr},
+        {"tknSetStencilCompareMask", luaSetStencilCompareMask},
+        {"tknSetStencilWriteMask", luaSetStencilWriteMask},
+        {"tknSetStencilReference", luaSetStencilReference},
         {NULL, NULL},
     };
     luaL_newlib(pLuaState, regs);

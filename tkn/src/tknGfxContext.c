@@ -888,7 +888,7 @@ void tknSubmitAndPresentFramePtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFr
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = (VkSemaphore[]){pTknGfxContext->vkRenderFinishedSemaphore},
     };
-
+    
     tknAssertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, pTknGfxContext->vkRenderFinishedFence));
 
     // Present
@@ -1043,4 +1043,19 @@ void tknRecordDrawCallPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, Tk
     {
         vkCmdDraw(vkCommandBuffer, 3, 1, 0, 0);
     }
+}
+
+void tknSetStencilCompareMask(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, VkStencilFaceFlags faceMask, uint32_t compareMask)
+{
+    vkCmdSetStencilCompareMask(pTknFrame->vkCommandBuffer, faceMask, compareMask);
+}
+
+void tknSetStencilWriteMask(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, VkStencilFaceFlags faceMask, uint32_t writeMask)
+{
+    vkCmdSetStencilWriteMask(pTknFrame->vkCommandBuffer, faceMask, writeMask);
+}
+
+void tknSetStencilReference(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, VkStencilFaceFlags faceMask, uint32_t reference)
+{
+    vkCmdSetStencilReference(pTknFrame->vkCommandBuffer, faceMask, reference);
 }

@@ -230,7 +230,6 @@ end
 local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, parentMaskDirty, parentMaskBit)
     local rect = node.rect
     local instanceDirty = false
-    print("Updating model for node " .. tostring(node.name) .. tostring(node.transform.modelDirty or node.rect.modelDirty or parentModelDirty))
     if node.transform.modelDirty or node.rect.modelDirty or parentModelDirty then
         parentModelDirty = node.rect.modelDirty or parentModelDirty
         -- Calculate offset relative to direct parent
@@ -638,19 +637,52 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     end
 end
 
-function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame)
-    if node.pTknDrawCall and node.rect.active then
-        tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
+function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
+    if node.pTknDrawCall then
+        if node.rect.active then
+            if node.mask then
+                -- Mask-creating node: enable stencil write, create new mask layer
+                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+                maskIndex = maskIndex + 1
+                assert(maskIndex <= 7, "ui.recordDrawCalls: exceeded maximum mask count of 7")
+                local maskBit = bit.lshift(1, maskIndex) - 1
+                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
+                tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
+                -- Disable stencil write for children (they read, not write)
+                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+            elseif maskIndex > 0 then
+                -- Masked node: read from current mask, don't write
+                local maskBit = bit.lshift(1, maskIndex) - 1
+                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
+                tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
+            else
+                -- Unmasked root node: render normally, can write if needed
+                tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
+            end
+        end
     end
 
     for _, child in ipairs(node.children) do
-        ui.recordDrawCalls(child, pTknGfxContext, pTknFrame)
+        ui.recordDrawCalls(child, pTknGfxContext, pTknFrame, maskIndex)
+    end
+
+    -- Cleanup: restore stencil state after processing children
+    if node.pTknDrawCall and node.rect.active and node.mask then
+        -- Exiting a mask-creating node: restore write mask state
+        -- If parent exists and is masked, keep write disabled; otherwise enable
+        if maskIndex > 1 then
+            -- Still inside a parent mask, keep write disabled
+            tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+        else
+            -- Exiting root mask layer, restore to write-enabled
+            tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+        end
     end
 end
 
 function ui.recordFrame(pTknGfxContext, pTknFrame)
     tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
-    ui.recordDrawCalls(ui.rootNode, pTknGfxContext, pTknFrame)
+    ui.recordDrawCalls(ui.rootNode, pTknGfxContext, pTknFrame, 0)
     tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
 end
 

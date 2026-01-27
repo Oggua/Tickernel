@@ -575,4 +575,37 @@ if not tkn.tknRecordDrawCallPtr then
     end
 end
 
+if not tkn.tknSetStencilCompareMask then
+    ---Set stencil compare mask for a frame
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    ---@param faceMask integer VkStencilFaceFlags (e.g., VK_STENCIL_FACE_FRONT_AND_BACK)
+    ---@param compareMask integer Compare mask value
+    function tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, faceMask, compareMask)
+        error("tkn.tknSetStencilCompareMask: C binding not loaded")
+    end
+end
+
+if not tkn.tknSetStencilWriteMask then
+    ---Set stencil write mask for a frame
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    ---@param faceMask integer VkStencilFaceFlags (e.g., VK_STENCIL_FACE_FRONT_AND_BACK)
+    ---@param writeMask integer Write mask value
+    function tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, faceMask, writeMask)
+        error("tkn.tknSetStencilWriteMask: C binding not loaded")
+    end
+end
+
+if not tkn.tknSetStencilReference then
+    ---Set stencil reference value for a frame
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    ---@param faceMask integer VkStencilFaceFlags (e.g., VK_STENCIL_FACE_FRONT_AND_BACK)
+    ---@param reference integer Reference value
+    function tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, faceMask, reference)
+        error("tkn.tknSetStencilReference: C binding not loaded")
+    end
+end
+
 return tkn

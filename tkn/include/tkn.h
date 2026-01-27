@@ -83,6 +83,9 @@ void tknBeginRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, T
 void tknEndRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);
 void tknNextSubpassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);
 void tknRecordDrawCallPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, TknDrawCall *pTknDrawCall);
+void tknSetStencilCompareMask(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, VkStencilFaceFlags faceMask, uint32_t compareMask);
+void tknSetStencilWriteMask(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, VkStencilFaceFlags faceMask, uint32_t writeMask);
+void tknSetStencilReference(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, VkStencilFaceFlags faceMask, uint32_t reference);
 
 TknAttachment *tknCreateDynamicAttachmentPtr(TknGfxContext *pTknGfxContext, VkFormat vkFormat, VkImageUsageFlags vkImageUsageFlags, VkImageAspectFlags vkImageAspectFlags, float scaler);
 void tknDestroyDynamicAttachmentPtr(TknGfxContext *pTknGfxContext, TknAttachment *pTknAttachment);
