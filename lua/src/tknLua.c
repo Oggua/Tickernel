@@ -171,7 +171,7 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
     lua_pop(pLuaState, 1); // Pop return value, errorHandler and tknEngine table
     TknFrame *pTknFrame = tknAcquireFramePtr(pTknGfxContext, swapchainExtent);
     if (pTknFrame)
-    {
+    {   
         lua_getfield(pLuaState, -1, "recordFrame");
         lua_pushlightuserdata(pLuaState, pTknGfxContext);
         lua_pushlightuserdata(pLuaState, pTknFrame);

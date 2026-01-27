@@ -681,6 +681,7 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
 end
 
 function ui.recordFrame(pTknGfxContext, pTknFrame)
+
     tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
     ui.recordDrawCalls(ui.rootNode, pTknGfxContext, pTknFrame, 0)
     tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)

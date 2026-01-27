@@ -489,7 +489,6 @@ void tknEndSingleTimeCommands(TknGfxContext *pTknGfxContext, VkCommandBuffer vkC
         .commandBufferCount = 1,
         .pCommandBuffers = &vkCommandBuffer};
     
-    printf("Submitting single time command buffer...\n");
     tknAssertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, VK_NULL_HANDLE));
     tknAssertVkResult(vkQueueWaitIdle(pTknGfxContext->vkGfxQueue));
 
