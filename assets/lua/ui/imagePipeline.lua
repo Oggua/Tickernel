@@ -14,7 +14,25 @@ function imagePipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subpass
         depthWriteEnable = false,
         depthCompareOp = VK_COMPARE_OP_ALWAYS,
         depthBoundsTestEnable = false,
-        stencilTestEnable = false,
+        stencilTestEnable = true,
+        front = {
+            failOp = VK_STENCIL_OP_KEEP,
+            passOp = VK_STENCIL_OP_REPLACE,
+            depthFailOp = VK_STENCIL_OP_KEEP,
+            compareOp = VK_COMPARE_OP_EQUAL,
+            compareMask = 0xFF,
+            writeMask = 0x00,
+            reference = 0,
+        },
+        back = {
+            failOp = VK_STENCIL_OP_KEEP,
+            passOp = VK_STENCIL_OP_REPLACE,
+            depthFailOp = VK_STENCIL_OP_KEEP,
+            compareOp = VK_COMPARE_OP_EQUAL,
+            compareMask = 0xFF,
+            writeMask = 0x00,
+            reference = 0,
+        },
         minDepthBounds = 0.0,
         maxDepthBounds = 1.0,
     }
@@ -33,8 +51,10 @@ function imagePipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subpass
         }},
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }
-
-    return tkn.tknCreatePipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, imagePipelineSpvPaths, pUIVertexInputLayout, pUIInstanceInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, tkn.defaultVkPipelineDynamicStateCreateInfo)
+    local vkPipelineDynamicStateCreateInfo = {
+        pDynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_STENCIL_WRITE_MASK, VK_DYNAMIC_STATE_STENCIL_REFERENCE},
+    }
+    return tkn.tknCreatePipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, imagePipelineSpvPaths, pUIVertexInputLayout, pUIInstanceInputLayout, vkPipelineInputAssemblyStateCreateInfo, tkn.defaultVkPipelineViewportStateCreateInfo, tkn.defaultVkPipelineRasterizationStateCreateInfo, tkn.defaultVkPipelineMultisampleStateCreateInfo, vkPipelineDepthStencilStateCreateInfo, vkPipelineColorBlendStateCreateInfo, vkPipelineDynamicStateCreateInfo)
 end
 
 function imagePipeline.destroyPipelinePtr(pTknGfxContext, pTknPipeline)

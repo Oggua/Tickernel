@@ -1,32 +1,29 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
-local uiDefault = require("atlas.uiDefault")
-local colorPreset = require("ui.colorPreset")
 local toggleWidget = {}
 
-function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, uiDefaultCornerRadiusPreset, handleScale, handleColor, callback)
+function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleScale, handleColor, animate, onValueChange)
     local widget = {}
     widget.isToggled = true
-    local processInputFunction = function(node, xNDC, yNDC, inputState)
-        if ui.rectContainsPoint(node.rect, xNDC, yNDC) then
+    local processInput = function(node, xNdc, yNdc, inputState)
+        if animate then
+            animate(node, xNdc, yNdc, inputState)
+        end
+        if ui.rectContainsPoint(node.rect, xNdc, yNdc) then
             if inputState == input.inputState.down then
-                ui.setNodeTransformColor(node, colorPreset.light)
                 return true
             elseif inputState == input.inputState.up then
-                ui.setNodeTransformColor(node, colorPreset.white)
                 widget.isToggled = not widget.isToggled
                 ui.setNodeTransformActive(widget.handleNode, widget.isToggled)
-                if callback then
-                    callback(widget.isToggled)
+                if onValueChange then
+                    onValueChange(widget.isToggled)
                 end
                 return false
             else
-                ui.setNodeTransformColor(node, colorPreset.white)
                 return false
             end
         else
-            ui.setNodeTransformColor(node, colorPreset.white)
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
@@ -40,10 +37,10 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = colorPreset.white,
+        color = nil,
         active = true,
     }
-    widget.toggleNode = ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, toggleTransform)
+    widget.toggleNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, toggleTransform)
 
     -- Directly use horizontal/vertical for background node, no need for extra layout object
     local backgroundHorizontal = {
@@ -60,16 +57,15 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         maxOffset = 0,
         offset = 0,
     }
-    local image, imageFitMode, imageUV = uiDefault.getSprite(uiDefaultCornerRadiusPreset)
 
     local backgroundTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = colorPreset.white,
+        color = nil,
         active = true,
     }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, 0, imageFitMode, image, imageUV, nil)
+    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, 0, imageFitMode, image, imageUv, nil)
 
     -- Directly use horizontal/vertical for handle node, no need for extra layout object
     local handleHorizontal = {
@@ -90,10 +86,10 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         rotation = 0,
         horizontalScale = handleScale,
         verticalScale = handleScale,
-        color = colorPreset.white,
+        color = nil,
         active = true,
     }
-    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, handleColor, 0, imageFitMode, image, imageUV, nil)
+    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, handleColor, 0, imageFitMode, image, imageUv, nil)
     return widget
 end
 

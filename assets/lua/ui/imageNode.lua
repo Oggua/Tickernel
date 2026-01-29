@@ -116,7 +116,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
             local indices = {0, 1, 2, 2, 3, 0}
             tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         elseif node.fitMode.type == imageNode.fitModeType.sliced then
-            -- 9-slice: calculate 16 UVs and positions based on padding and uv
+            -- 9-slice: calculate 16 Uvs and positions based on padding and uv
             local h = node.fitMode.horizontal
             local v = node.fitMode.vertical
             local u0, v0, u1, v1 = node.uv.u0, node.uv.v0, node.uv.u1, node.uv.v1
@@ -197,7 +197,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
             end
             tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         else
-            -- Calculate UV based on fitMode (cover/contain)
+            -- Calculate Uv based on fitMode (cover/contain)
             local u0, v0, u1, v1 = node.uv.u0, node.uv.v0, node.uv.u1, node.uv.v1
             local containerWidth = right - left
             local containerHeight = bottom - top
@@ -226,7 +226,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
                 local indices = {0, 1, 2, 2, 3, 0}
                 tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
             elseif node.fitMode.type == imageNode.fitModeType.contain then
-                -- Adjust vertex positions instead of UV for true contain
+                -- Adjust vertex positions instead of Uv for true contain
                 if imageAspect > containerAspect then
                     -- Image is wider, add letterbox top/bottom
                     local newHeight = ((containerWidth * screenWidth / 2.0) / imageAspect) / screenHeight * 2.0

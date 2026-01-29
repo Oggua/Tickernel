@@ -132,8 +132,9 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             local maxInEffectiveParentNDC = -math.huge
             for _, child in ipairs(node.children) do
                 if child.rect and child.rect[key] then
-                    local childMin = child.rect[key].min + child.rect[key].offsetToEffectiveParentNDC
-                    local childMax = child.rect[key].max + child.rect[key].offsetToEffectiveParentNDC
+                    print(node.name .. " fitting to child " .. child.name)
+                    local childMin = child.rect[key].min + child.rect.offsetToEffectiveParentNDC[key]
+                    local childMax = child.rect[key].max + child.rect.offsetToEffectiveParentNDC[key]
                     if childMin < minInEffectiveParentNDC then
                         minInEffectiveParentNDC = childMin
                     end
@@ -356,16 +357,16 @@ local function getTopNode(node)
     end
 end
 
-local function getActiveInteractableInputNode(node, xNDC, yNDC, inputState)
+local function getActiveInteractableInputNode(node, xNdc, yNdc, inputState)
     if node.rect.active then
         for i = #node.children, 1, -1 do
             local child = node.children[i]
-            local foundNode = getActiveInteractableInputNode(child, xNDC, yNDC, inputState)
+            local foundNode = getActiveInteractableInputNode(child, xNdc, yNdc, inputState)
             if foundNode then
                 return foundNode
             end
         end
-        if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNDC, yNDC) then
+        if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNdc, yNdc) then
             return node
         else
             return nil
@@ -532,7 +533,7 @@ local function removeNodeInternal(pTknGfxContext, node)
     node.transform = nil
 end
 
-function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIndex)
+function ui.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment, assetsPath, renderPassIndex)
     ui.layoutType = {
         anchored = "anchored",
         relative = "relative",
@@ -566,7 +567,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, renderPassIn
     }}
     ui.instanceFormat.pTknVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, ui.instanceFormat)
 
-    uiRenderPass.setup(pTknGfxContext, pSwapchainAttachment, assetsPath, ui.vertexFormat.pTknVertexInputLayout, ui.instanceFormat.pTknVertexInputLayout, renderPassIndex)
+    uiRenderPass.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment, assetsPath, ui.vertexFormat.pTknVertexInputLayout, ui.instanceFormat.pTknVertexInputLayout, renderPassIndex)
 
     ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
@@ -624,7 +625,7 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     textNode.update(pTknGfxContext)
 
     if ui.currentInteractableNode then
-        local canInteract = ui.currentInteractableNode.processInputFunction(ui.currentInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
+        local canInteract = ui.currentInteractableNode.processInput(ui.currentInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
         if canInteract then
             -- Keep current interactable node
         else
@@ -645,14 +646,20 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
                 tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
                 maskIndex = maskIndex + 1
                 assert(maskIndex <= 7, "ui.recordDrawCalls: exceeded maximum mask count of 7")
-                local maskBit = bit.lshift(1, maskIndex) - 1
+                local maskBit = (1 << maskIndex) - 1
+                local compareMask = maskBit - 1
+                if compareMask < 0 then
+                    compareMask = 0
+                end
+                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, compareMask)
                 tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
                 -- Disable stencil write for children (they read, not write)
                 tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
             elseif maskIndex > 0 then
                 -- Masked node: read from current mask, don't write
-                local maskBit = bit.lshift(1, maskIndex) - 1
+                local maskBit = (1 << maskIndex) - 1
+                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
                 tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
             else
@@ -755,9 +762,9 @@ function ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, t
     return node
 end
 
-function ui.addInteractableNode(pTknGfxContext, processInputFunction, parent, index, name, horizontal, vertical, transform)
+function ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, transform)
     local node = addNodeInternal(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
-    interactableNode.setupNode(pTknGfxContext, processInputFunction, node)
+    interactableNode.setupNode(pTknGfxContext, processInput, node)
     return node
 end
 
@@ -783,7 +790,7 @@ function ui.removeNode(pTknGfxContext, node)
     removeNodeInternal(pTknGfxContext, node)
 end
 
-function ui.rectContainsPoint(rect, xNDC, yNDC)
+function ui.rectContainsPoint(rect, xNdc, yNdc)
     local rx = rect.horizontal or {
         min = 0,
         max = 0,
@@ -799,7 +806,7 @@ function ui.rectContainsPoint(rect, xNDC, yNDC)
     local maxX = worldX + rx.max
     local minY = worldY + ry.min
     local maxY = worldY + ry.max
-    return xNDC >= minX and xNDC <= maxX and yNDC >= minY and yNDC <= maxY
+    return xNdc >= minX and xNdc <= maxX and yNdc >= minY and yNdc <= maxY
 end
 
 return ui

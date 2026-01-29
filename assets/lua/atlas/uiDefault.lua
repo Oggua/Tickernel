@@ -31,7 +31,7 @@ function uiDefault.setup(pTknGfxContext)
             },
         }
     end
-    uiDefault.cornerRadiusPresetToUV = {
+    uiDefault.cornerRadiusPresetToUv = {
         none = {
             u0 = 0.96875,
             v0 = 0.0,
@@ -71,11 +71,11 @@ function uiDefault.teardown(pTknGfxContext)
     uiDefault.image = nil
     uiDefault.cornerRadiusPresetToRadius = nil
     uiDefault.cornerRadiusPresetToFitMode = nil
-    uiDefault.cornerRadiusPresetToUV = nil
+    uiDefault.cornerRadiusPresetToUv = nil
 end
 
 function uiDefault.getSprite(cornerRadiusPreset)
-    return uiDefault.image, uiDefault.cornerRadiusPresetToFitMode[cornerRadiusPreset], uiDefault.cornerRadiusPresetToUV[cornerRadiusPreset]
+    return uiDefault.image, uiDefault.cornerRadiusPresetToFitMode[cornerRadiusPreset], uiDefault.cornerRadiusPresetToUv[cornerRadiusPreset], uiDefault.cornerRadiusPresetToRadius[cornerRadiusPreset]
 end
 
 return uiDefault

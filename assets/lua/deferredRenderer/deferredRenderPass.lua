@@ -86,11 +86,11 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     }}
 
     local depthVkFormat = tkn.tknGetSupportedFormat(pTknGfxContext, {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-    deferredRenderPass.pDepthAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
+    deferredRenderPass.pDepthStencilAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
     deferredRenderPass.pAlbedoAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
     deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
     deferredRenderPass.pSwapchainAttachment = tkn.tknGetSwapchainAttachmentPtr(pTknGfxContext)
-    local pAttachments = {deferredRenderPass.pDepthAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, deferredRenderPass.pSwapchainAttachment}
+    local pAttachments = {deferredRenderPass.pDepthStencilAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, deferredRenderPass.pSwapchainAttachment}
 
     local depthAttachmentDescription = {
         samples = VK_SAMPLE_COUNT_1_BIT,
@@ -285,7 +285,7 @@ function deferredRenderPass.teardown(pTknGfxContext)
 
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pNormalAttachment)
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pAlbedoAttachment)
-    tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pDepthAttachment)
+    tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pDepthStencilAttachment)
 
     -- Destroy vertex input layouts
     tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout)

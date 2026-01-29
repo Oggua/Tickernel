@@ -1,8 +1,7 @@
 local ui = require("ui.ui")
-local colorPreset = require("ui.colorPreset")
-local buttonWidget = require("ui.widgets.buttonWidget")
+local widget = require("ui.widgets.widget")
 local sliderWidget = require("ui.widgets.sliderWidget")
-local uiDefault = require("atlas.uiDefault")
+local colorPreset = require("ui.colorPreset")
 local mainPanel = {}
 
 function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, settingsButtonCallback, quitButtonCallback)
@@ -26,7 +25,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
     local mainPanelRootNodeFitMode = {
         type = ui.fitModeType.cover,
     }
-    local mainPanelRootNodeUV = {
+    local mainPanelRootNodeUv = {
         u0 = 0,
         v0 = 0,
         u1 = 1,
@@ -36,13 +35,12 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
-        color = colorPreset.white,
+        color = nil,
         active = true,
     }
-    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.white, 0, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUV, nil)
+    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.white, 0, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUv, nil)
 
-    local cornerRadiusPreset = uiDefault.cornerRadiusPreset.small
-    local startButtonWidget = buttonWidget.addWidget(pTknGfxContext, "startButton", mainPanel.rootNode, 1, {
+    local startButtonWidget = widget.addButtonWidget(pTknGfxContext, "startButton", mainPanel.rootNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -54,9 +52,9 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         pivot = 0.5,
         length = 64,
         offset = 0,
-    }, startButtonCallback, cornerRadiusPreset, colorPreset.darker, game.font, "Start Game", 24, colorPreset.white)
+    }, "Start Game", startButtonCallback)
 
-    local settingButtonWidget = buttonWidget.addWidget(pTknGfxContext, "settingButton", mainPanel.rootNode, 2, {
+    local settingButtonWidget = widget.addButtonWidget(pTknGfxContext, "settingButton", mainPanel.rootNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -68,9 +66,9 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         pivot = 0.5,
         length = 64,
         offset = 96,
-    }, settingsButtonCallback, cornerRadiusPreset, colorPreset.darker, game.font, "Settings", 24, colorPreset.white)
+    }, "Settings", settingsButtonCallback)
 
-    local quitButtonWidget = buttonWidget.addWidget(pTknGfxContext, "quitButton", mainPanel.rootNode, 3, {
+    local quitButtonWidget = widget.addButtonWidget(pTknGfxContext, "quitButton", mainPanel.rootNode, 3, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -82,9 +80,9 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         pivot = 0.5,
         length = 64,
         offset = 192,
-    }, quitButtonCallback, cornerRadiusPreset, colorPreset.darker, game.font, "Quit Game", 24, colorPreset.white)
+    }, "Quit Game", quitButtonCallback)
 
-    local customSliderWidget = sliderWidget.addWidget(pTknGfxContext, "customSlider", mainPanel.rootNode, 4, {
+    local customSliderWidget = widget.addSliderWidget(pTknGfxContext, "customSlider", mainPanel.rootNode, 4, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -96,10 +94,25 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         pivot = 0.5,
         length = 512,
         offset = 288,
-    }, colorPreset.darker, "small", colorPreset.white, 32, sliderWidget.direction.vertical, function(value)
+    }, 32, sliderWidget.direction.vertical, function(value)
         -- print("Slider value changed to: " .. tostring(value))
     end)
 
+    local sv = widget.addScrollViewWidget(pTknGfxContext, "customScrollView", mainPanel.rootNode, 5, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 400,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 200,
+        offset = -200,
+    }, function(value)
+        -- print("ScrollView value changed to: " .. tostring(value))
+    end)
     return mainPanel
 end
 

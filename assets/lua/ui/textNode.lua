@@ -221,7 +221,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
                 local charTop = penY - char.bearingYNDC
                 local charBottom = charTop + char.heightNDC
 
-                -- UV coordinates
+                -- Uv coordinates
                 local u0, v0 = char.x * atlasScale, char.y * atlasScale
                 local u1, v1 = (char.x + char.width) * atlasScale, (char.y + char.height) * atlasScale
 
@@ -237,7 +237,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
                     pos[#pos + 1], pos[#pos + 2] = r, b
                     pos[#pos + 1], pos[#pos + 2] = l, b
 
-                    -- UVs
+                    -- Uvs
                     local uv = vertices.uv
                     uv[#uv + 1], uv[#uv + 2] = u0, v0
                     uv[#uv + 1], uv[#uv + 2] = u1, v0

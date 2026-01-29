@@ -4,7 +4,6 @@ local ui = require("ui.ui")
 
 function game.start(pTknGfxContext, assetsPath)
     game.assetsPath = assetsPath
-    game.font = ui.loadFont(pTknGfxContext, "/fonts/Hiragino Sans GB.ttc", 32, 2048)
     game.currentScene = mainScene
     game.nextScene = mainScene
     game.currentScene.start(game, pTknGfxContext, assetsPath)
@@ -17,9 +16,6 @@ end
 function game.stopGfx(pTknGfxContext)
     game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
-    
-    ui.unloadFont(pTknGfxContext, game.font)
-    game.font = nil
 end
 
 -- Returns: nil = quit, self = continue, other scene = switch
