@@ -57,6 +57,7 @@ function uiPipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subpassInd
             VK_DYNAMIC_STATE_SCISSOR,
             VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE,
             VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
             VK_DYNAMIC_STATE_STENCIL_REFERENCE,
         },
     }
