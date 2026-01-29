@@ -39,41 +39,9 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         verticalScale = 1,
         color = nil,
         active = true,
-    }, backgroundColor, 0, imageFitMode, image, imageUv, true)
+    }, backgroundColor, 0.1, imageFitMode, image, imageUv, true)
 
-    widget.rightSliderWidget = sliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 1, {
-        type = ui.layoutType.anchored,
-        anchor = 1,
-        pivot = 1,
-        length = handleOffset * 2,
-        offset = 0,
-    }, {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = -handleOffset * 2,
-        offset = 0,
-    }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.vertical, animate, function(value)
-
-    end)
-
-    widget.bottomSliderWidget = sliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = -handleOffset * 2,
-        offset = 0,
-    }, {
-        type = ui.layoutType.anchored,
-        anchor = 1,
-        pivot = 1,
-        length = handleOffset * 2,
-        offset = 0,
-    }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.horizontal, animate, function(value)
-
-    end)
-
-    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 3, "scrollViewContent", {
+    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", {
         type = ui.layoutType.fit,
         pivot = 0.5,
         minOffset = 0,
@@ -127,6 +95,38 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         active = true,
     }
     ui.addImageNode(pTknGfxContext, widget.contentNode, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, 0xFFFFFFFF, 0, mainPanelRootNodeFitMode, backgroundImage, mainPanelRootNodeUv, nil)
+
+    widget.rightSliderWidget = sliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
+        type = ui.layoutType.anchored,
+        anchor = 1,
+        pivot = 1,
+        length = handleOffset * 2,
+        offset = 0,
+    }, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = -handleOffset * 2,
+        offset = 0,
+    }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.vertical, animate, function(value)
+
+    end)
+
+    widget.bottomSliderWidget = sliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = -handleOffset * 2,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 1,
+        pivot = 1,
+        length = handleOffset * 2,
+        offset = 0,
+    }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.horizontal, animate, function(value)
+
+    end)
     return widget
 end
 

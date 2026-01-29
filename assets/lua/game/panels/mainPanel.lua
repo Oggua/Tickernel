@@ -38,7 +38,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         color = nil,
         active = true,
     }
-    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.white, 0, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUv, nil)
+    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.black, 0, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUv, nil)
 
     local startButtonWidget = widget.addButtonWidget(pTknGfxContext, "startButton", mainPanel.rootNode, 1, {
         type = ui.layoutType.anchored,
@@ -102,13 +102,13 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = 400,
+        length = 800,
         offset = 0,
     }, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = 200,
+        length = 400,
         offset = -200,
     }, function(value)
         -- print("ScrollView value changed to: " .. tostring(value))

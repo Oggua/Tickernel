@@ -664,6 +664,9 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
             else
                 -- Unmasked root node: render normally, can write if needed
+                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
             end
         end
