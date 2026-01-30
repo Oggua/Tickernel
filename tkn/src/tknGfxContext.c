@@ -1,6 +1,6 @@
 #include "tknGfxCore.h"
 
-static void getGfxAndPresentQueueFamilyIndices(TknGfxContext *pTknGfxContext, VkPhysicalDevice vkPhysicalDevice, uint32_t *pGfxQueueFamilyIndex, uint32_t *pPresentQueueFamilyIndex)
+static void tknGetGfxAndPresentQueueFamilyIndices(TknGfxContext *pTknGfxContext, VkPhysicalDevice vkPhysicalDevice, uint32_t *pGfxQueueFamilyIndex, uint32_t *pPresentQueueFamilyIndex)
 {
     VkSurfaceKHR vkSurface = pTknGfxContext->vkSurface;
     uint32_t queueFamilyPropertiesCount;
@@ -38,7 +38,7 @@ static void getGfxAndPresentQueueFamilyIndices(TknGfxContext *pTknGfxContext, Vk
     }
     tknFree(vkQueueFamilyPropertiesArray);
 }
-static void pickPhysicalDevice(TknGfxContext *pTknGfxContext, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode)
+static void tknPickPhysicalDevice(TknGfxContext *pTknGfxContext, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode)
 {
     uint32_t deviceCount = -1;
     tknAssertVkResult(vkEnumeratePhysicalDevices(pTknGfxContext->vkInstance, &deviceCount, NULL));
@@ -109,7 +109,7 @@ static void pickPhysicalDevice(TknGfxContext *pTknGfxContext, VkSurfaceFormatKHR
 
             uint32_t tknGfxQueueFamilyIndex;
             uint32_t tknPresentQueueFamilyIndex;
-            getGfxAndPresentQueueFamilyIndices(pTknGfxContext, vkPhysicalDevice, &tknGfxQueueFamilyIndex, &tknPresentQueueFamilyIndex);
+            tknGetGfxAndPresentQueueFamilyIndices(pTknGfxContext, vkPhysicalDevice, &tknGfxQueueFamilyIndex, &tknPresentQueueFamilyIndex);
             if (UINT32_MAX == tknGfxQueueFamilyIndex || UINT32_MAX == tknPresentQueueFamilyIndex)
             {
                 // No gfx or present queue family index
@@ -227,7 +227,7 @@ static void pickPhysicalDevice(TknGfxContext *pTknGfxContext, VkSurfaceFormatKHR
         }
     }
 }
-static void populateLogicalDevice(TknGfxContext *pTknGfxContext)
+static void tknPopulateLogicalDevice(TknGfxContext *pTknGfxContext)
 {
     VkPhysicalDevice vkPhysicalDevice = pTknGfxContext->vkPhysicalDevice;
     uint32_t tknGfxQueueFamilyIndex = pTknGfxContext->tknGfxQueueFamilyIndex;
@@ -306,11 +306,11 @@ static void populateLogicalDevice(TknGfxContext *pTknGfxContext)
     vkGetDeviceQueue(pTknGfxContext->vkDevice, tknPresentQueueFamilyIndex, 0, &pTknGfxContext->vkPresentQueue);
     tknFree(queueCreateInfos);
 }
-static void cleanupLogicalDevice(TknGfxContext *pTknGfxContext)
+static void tknCleanupLogicalDevice(TknGfxContext *pTknGfxContext)
 {
     vkDestroyDevice(pTknGfxContext->vkDevice, NULL);
 }
-static void createSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent2D targetSwapchainExtent, uint32_t targetSwapchainImageCount)
+static void tknCreateSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent2D targetSwapchainExtent, uint32_t targetSwapchainImageCount)
 {
     TknAttachment *pTknSwapchainAttachment = tknMalloc(sizeof(TknAttachment));
 
@@ -398,7 +398,7 @@ static void createSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent
     };
     pTknGfxContext->pTknSwapchainAttachment = pTknSwapchainAttachment;
 };
-static void destroySwapchainAttachmentPtr(TknGfxContext *pTknGfxContext)
+static void tknDestroySwapchainAttachmentPtr(TknGfxContext *pTknGfxContext)
 {
     TknAttachment *pTknSwapchainAttachment = pTknGfxContext->pTknSwapchainAttachment;
     tknAssert(0 == pTknSwapchainAttachment->tknRenderPassPtrHashSet.count, "TknRenderPass hash set should be empty before destroying TknSwapchainAttachment.");
@@ -417,7 +417,7 @@ static void destroySwapchainAttachmentPtr(TknGfxContext *pTknGfxContext)
     tknFree(pTknSwapchainAttachment);
     pTknGfxContext->pTknSwapchainAttachment = NULL;
 }
-static void updateSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent)
+static void tknUpdateSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent)
 {
     VkDevice vkDevice = pTknGfxContext->vkDevice;
     tknAssertVkResult(vkDeviceWaitIdle(vkDevice));
@@ -487,7 +487,7 @@ static void updateSwapchainAttachmentPtr(TknGfxContext *pTknGfxContext, VkExtent
         tknAssertVkResult(vkCreateImageView(vkDevice, &imageViewCreateInfo, NULL, &pTknSwapchainAttachment->tknSwapchainImageViews[i]));
     }
 }
-static void populateSignals(TknGfxContext *pTknGfxContext)
+static void tknPopulateSignals(TknGfxContext *pTknGfxContext)
 {
     VkSemaphoreCreateInfo semaphoreCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -504,14 +504,14 @@ static void populateSignals(TknGfxContext *pTknGfxContext)
     tknAssertVkResult(vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, NULL, &pTknGfxContext->vkRenderFinishedSemaphore));
     tknAssertVkResult(vkCreateFence(vkDevice, &fenceCreateInfo, NULL, &pTknGfxContext->vkRenderFinishedFence));
 }
-static void cleanupSignals(TknGfxContext *pTknGfxContext)
+static void tknCleanupSignals(TknGfxContext *pTknGfxContext)
 {
     VkDevice vkDevice = pTknGfxContext->vkDevice;
     vkDestroySemaphore(vkDevice, pTknGfxContext->vkImageAvailableSemaphore, NULL);
     vkDestroySemaphore(vkDevice, pTknGfxContext->vkRenderFinishedSemaphore, NULL);
     vkDestroyFence(vkDevice, pTknGfxContext->vkRenderFinishedFence, NULL);
 }
-static void populateCommandPools(TknGfxContext *pTknGfxContext)
+static void tknPopulateCommandPools(TknGfxContext *pTknGfxContext)
 {
     VkCommandPoolCreateInfo vkCommandPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -521,11 +521,11 @@ static void populateCommandPools(TknGfxContext *pTknGfxContext)
     };
     tknAssertVkResult(vkCreateCommandPool(pTknGfxContext->vkDevice, &vkCommandPoolCreateInfo, NULL, &pTknGfxContext->vkGfxCommandPool));
 }
-static void cleanupCommandPools(TknGfxContext *pTknGfxContext)
+static void tknCleanupCommandPools(TknGfxContext *pTknGfxContext)
 {
     vkDestroyCommandPool(pTknGfxContext->vkDevice, pTknGfxContext->vkGfxCommandPool, NULL);
 }
-static void populateVkCommandBuffers(TknGfxContext *pTknGfxContext)
+static void tknPopulateVkCommandBuffers(TknGfxContext *pTknGfxContext)
 {
     TknSwapchainAttachment *pTknSwapchainAttachment = &pTknGfxContext->pTknSwapchainAttachment->tknAttachmentUnion.tknSwapchainAttachment;
     pTknGfxContext->vkGfxCommandBuffers = tknMalloc(sizeof(VkCommandBuffer) * pTknSwapchainAttachment->tknSwapchainImageCount);
@@ -538,14 +538,14 @@ static void populateVkCommandBuffers(TknGfxContext *pTknGfxContext)
     };
     tknAssertVkResult(vkAllocateCommandBuffers(pTknGfxContext->vkDevice, &vkCommandBufferAllocateInfo, pTknGfxContext->vkGfxCommandBuffers));
 }
-static void cleanupVkCommandBuffers(TknGfxContext *pTknGfxContext)
+static void tknCleanupVkCommandBuffers(TknGfxContext *pTknGfxContext)
 {
     TknSwapchainAttachment *pTknSwapchainAttachment = &pTknGfxContext->pTknSwapchainAttachment->tknAttachmentUnion.tknSwapchainAttachment;
     vkFreeCommandBuffers(pTknGfxContext->vkDevice, pTknGfxContext->vkGfxCommandPool, pTknSwapchainAttachment->tknSwapchainImageCount, pTknGfxContext->vkGfxCommandBuffers);
     tknFree(pTknGfxContext->vkGfxCommandBuffers);
 }
 
-static void setupGfxResources(TknGfxContext *pTknGfxContext, uint32_t spvPathCount, const char **spvPaths)
+static void tknSetupGfxResources(TknGfxContext *pTknGfxContext, uint32_t spvPathCount, const char **spvPaths)
 {
     // Create empty resources for empty bindings
     uint32_t emptyData = 0;
@@ -608,7 +608,7 @@ static void setupGfxResources(TknGfxContext *pTknGfxContext, uint32_t spvPathCou
 
     pTknGfxContext->pTknFrame = tknMalloc(sizeof(TknFrame));
 }
-static void teardownGfxResources(TknGfxContext *pTknGfxContext)
+static void tknTeardownGfxResources(TknGfxContext *pTknGfxContext)
 {
     tknFree(pTknGfxContext->pTknFrame);
 
@@ -718,25 +718,25 @@ TknGfxContext *tknCreateGfxContextPtr(int targetSwapchainImageCount, VkSurfaceFo
         .tknRenderPassPtrHashSet = {},
         .pTknGlobalDescriptorSet = NULL,
     };
-    pickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode);
-    populateLogicalDevice(pTknGfxContext);
-    createSwapchainAttachmentPtr(pTknGfxContext, tknSwapchainExtent, targetSwapchainImageCount);
-    populateSignals(pTknGfxContext);
-    populateCommandPools(pTknGfxContext);
-    populateVkCommandBuffers(pTknGfxContext);
-    setupGfxResources(pTknGfxContext, spvPathCount, spvPaths);
+    tknPickPhysicalDevice(pTknGfxContext, targetVkSurfaceFormat, targetVkPresentMode);
+    tknPopulateLogicalDevice(pTknGfxContext);
+    tknCreateSwapchainAttachmentPtr(pTknGfxContext, tknSwapchainExtent, targetSwapchainImageCount);
+    tknPopulateSignals(pTknGfxContext);
+    tknPopulateCommandPools(pTknGfxContext);
+    tknPopulateVkCommandBuffers(pTknGfxContext);
+    tknSetupGfxResources(pTknGfxContext, spvPathCount, spvPaths);
     return pTknGfxContext;
 }
 void tknDestroyGfxContextPtr(TknGfxContext *pTknGfxContext)
 {
     tknAssertVkResult(vkDeviceWaitIdle(pTknGfxContext->vkDevice));
 
-    teardownGfxResources(pTknGfxContext);
-    cleanupVkCommandBuffers(pTknGfxContext);
-    cleanupCommandPools(pTknGfxContext);
-    cleanupSignals(pTknGfxContext);
-    destroySwapchainAttachmentPtr(pTknGfxContext);
-    cleanupLogicalDevice(pTknGfxContext);
+    tknTeardownGfxResources(pTknGfxContext);
+    tknCleanupVkCommandBuffers(pTknGfxContext);
+    tknCleanupCommandPools(pTknGfxContext);
+    tknCleanupSignals(pTknGfxContext);
+    tknDestroySwapchainAttachmentPtr(pTknGfxContext);
+    tknCleanupLogicalDevice(pTknGfxContext);
     tknFree(pTknGfxContext);
 }
 TknFrame *tknAcquireFramePtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent)
@@ -754,7 +754,7 @@ TknFrame *tknAcquireFramePtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapch
                pTknSwapchainAttachment->tknSwapchainExtent.height,
                tknSwapchainExtent.width,
                tknSwapchainExtent.height);
-        updateSwapchainAttachmentPtr(pTknGfxContext, tknSwapchainExtent);
+        tknUpdateSwapchainAttachmentPtr(pTknGfxContext, tknSwapchainExtent);
 
         TknDynamicArray dirtyRenderPassPtrDynamicArray = tknCreateDynamicArray(sizeof(TknRenderPass *), TKN_DEFAULT_COLLECTION_SIZE);
 
@@ -816,7 +816,7 @@ TknFrame *tknAcquireFramePtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapch
             if (VK_ERROR_OUT_OF_DATE_KHR == result || VK_SUBOPTIMAL_KHR == result)
             {
                 printf("Recreate swapchain because of result: %d\n", result);
-                updateSwapchainAttachmentPtr(pTknGfxContext, pTknSwapchainAttachment->tknSwapchainExtent);
+                tknUpdateSwapchainAttachmentPtr(pTknGfxContext, pTknSwapchainAttachment->tknSwapchainExtent);
 
                 for (uint32_t i = 0; i < pTknGfxContext->tknRenderPassPtrHashSet.capacity; i++)
                 {

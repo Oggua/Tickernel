@@ -132,7 +132,7 @@ local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effecti
             local maxInEffectiveParentNDC = -math.huge
             for _, child in ipairs(node.children) do
                 if child.rect and child.rect[key] then
-                    print(node.name .. " fitting to child " .. child.name)
+                    -- DEBUG: print(node.name .. " fitting to child " .. child.name)
                     local childMin = child.rect[key].min + child.rect.offsetToEffectiveParentNDC[key]
                     local childMax = child.rect[key].max + child.rect.offsetToEffectiveParentNDC[key]
                     if childMin < minInEffectiveParentNDC then
@@ -691,7 +691,6 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
 end
 
 function ui.recordFrame(pTknGfxContext, pTknFrame)
-
     tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, ui.renderPass.pTknRenderPass)
     ui.recordDrawCalls(ui.rootNode, pTknGfxContext, pTknFrame, 0)
     tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)

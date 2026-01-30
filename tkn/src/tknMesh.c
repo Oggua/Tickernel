@@ -1,7 +1,7 @@
 #include "tknGfxCore.h"
 // #include "rply.h"
 
-static uint32_t getPlyPropertySize(const char *propertyType)
+static uint32_t tknGetPlyPropertySize(const char *propertyType)
 {
     if (strcmp(propertyType, "float") == 0 || strcmp(propertyType, "int") == 0 || strcmp(propertyType, "uint") == 0)
     {
@@ -25,7 +25,7 @@ static uint32_t getPlyPropertySize(const char *propertyType)
     }
 }
 
-static void copyVkBuffer(TknGfxContext *pTknGfxContext, VkBuffer srcVkBuffer, VkBuffer dstVkBuffer, VkDeviceSize size)
+static void tknCopyVkBuffer(TknGfxContext *pTknGfxContext, VkBuffer srcVkBuffer, VkBuffer dstVkBuffer, VkDeviceSize size)
 {
     VkCommandBuffer vkCommandBuffer = tknBeginSingleTimeCommands(pTknGfxContext);
 
@@ -39,7 +39,7 @@ static void copyVkBuffer(TknGfxContext *pTknGfxContext, VkBuffer srcVkBuffer, Vk
     tknEndSingleTimeCommands(pTknGfxContext, vkCommandBuffer);
 }
 
-static bool readBinaryData(FILE *file, void **data, size_t size, const char *dataType)
+static bool tknReadBinaryData(FILE *file, void **data, size_t size, const char *dataType)
 {
     if (size == 0)
     {
@@ -60,7 +60,7 @@ static bool readBinaryData(FILE *file, void **data, size_t size, const char *dat
     return true;
 }
 
-static bool createBufferWithData(TknGfxContext *pTknGfxContext, void *data, VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer *pBuffer, VkDeviceMemory *pDeviceMemory)
+static bool tknCreateBufferWithData(TknGfxContext *pTknGfxContext, void *data, VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer *pBuffer, VkDeviceMemory *pDeviceMemory)
 {
     if (size == 0)
     {
@@ -89,7 +89,7 @@ static bool createBufferWithData(TknGfxContext *pTknGfxContext, void *data, VkDe
                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pBuffer, pDeviceMemory);
     
     // Copy from staging to device local buffer
-    copyVkBuffer(pTknGfxContext, stagingBuffer, *pBuffer, size);
+    tknCopyVkBuffer(pTknGfxContext, stagingBuffer, *pBuffer, size);
     
     // Clean up staging buffer
     tknDestroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
@@ -107,7 +107,7 @@ TknMesh *tknCreateMeshPtrWithData(TknGfxContext *pTknGfxContext, TknVertexInputL
 
     // Create vertex buffer
     VkDeviceSize vertexSize = tknVertexCount * pTknVertexInputLayout->stride;
-    createBufferWithData(pTknGfxContext, vertices, vertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+    tknCreateBufferWithData(pTknGfxContext, vertices, vertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
                         &tknVertexVkBuffer, &tknVertexVkDeviceMemory);
 
     // Create index buffer if needed
@@ -115,7 +115,7 @@ TknMesh *tknCreateMeshPtrWithData(TknGfxContext *pTknGfxContext, TknVertexInputL
     {
         size_t indexSize = (vkIndexType == VK_INDEX_TYPE_UINT16) ? sizeof(uint16_t) : sizeof(uint32_t);
         VkDeviceSize indexBufferSize = tknIndexCount * indexSize;
-        createBufferWithData(pTknGfxContext, indices, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+        tknCreateBufferWithData(pTknGfxContext, indices, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
                             &tknIndexVkBuffer, &tknIndexVkDeviceMemory);
     }
 
@@ -232,7 +232,7 @@ TknMesh *tknCreateMeshPtrWithPlyFile(TknGfxContext *pTknGfxContext, TknVertexInp
                     strncpy(propertyType, typeStart, typeLen);
                     propertyType[typeLen] = '\0';
                     
-                    propertySize = getPlyPropertySize(propertyType);
+                    propertySize = tknGetPlyPropertySize(propertyType);
                     tknFree(propertyType);
                 }
             }
@@ -316,7 +316,7 @@ TknMesh *tknCreateMeshPtrWithPlyFile(TknGfxContext *pTknGfxContext, TknVertexInp
 
     // Read vertex data
     size_t vertexDataSize = tknVertexCount * pTknMeshVertexInputLayout->stride;
-    if (!readBinaryData(file, &vertices, vertexDataSize, "vertex"))
+    if (!tknReadBinaryData(file, &vertices, vertexDataSize, "vertex"))
     {
         fclose(file);
         return NULL;
@@ -327,7 +327,7 @@ TknMesh *tknCreateMeshPtrWithPlyFile(TknGfxContext *pTknGfxContext, TknVertexInp
     {
         size_t indexSize = (vkIndexType == VK_INDEX_TYPE_UINT16) ? sizeof(uint16_t) : sizeof(uint32_t);
         size_t indexDataSize = tknIndexCount * indexSize;
-        if (!readBinaryData(file, &indices, indexDataSize, "index"))
+        if (!tknReadBinaryData(file, &indices, indexDataSize, "index"))
         {
             tknFree(vertices);
             fclose(file);
@@ -404,7 +404,7 @@ void tknUpdateMeshPtr(TknGfxContext *pTknGfxContext, TknMesh *pTknMesh, const ch
         vkUnmapMemory(vkDevice, stagingBufferMemory);
 
         // Copy from staging to device local buffer
-        copyVkBuffer(pTknGfxContext, stagingBuffer, pTknMesh->tknVertexVkBuffer, vertexSize);
+        tknCopyVkBuffer(pTknGfxContext, stagingBuffer, pTknMesh->tknVertexVkBuffer, vertexSize);
 
         // Clean up staging buffer
         tknDestroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
@@ -455,7 +455,7 @@ void tknUpdateMeshPtr(TknGfxContext *pTknGfxContext, TknMesh *pTknMesh, const ch
         vkUnmapMemory(vkDevice, stagingBufferMemory);
 
         // Copy from staging to device local buffer
-        copyVkBuffer(pTknGfxContext, stagingBuffer, pTknMesh->tknIndexVkBuffer, indexBufferSize);
+        tknCopyVkBuffer(pTknGfxContext, stagingBuffer, pTknMesh->tknIndexVkBuffer, indexBufferSize);
 
         // Clean up staging buffer
         tknDestroyVkBuffer(pTknGfxContext, stagingBuffer, stagingBufferMemory);
@@ -485,7 +485,7 @@ void tknSaveMeshPtrToPlyFile(uint32_t vertexPropertyCount, const char **vertexPr
             }
             
             const char *propertyType = vertexPropertyTypes[propertyIndex];
-            uint32_t propertySize = getPlyPropertySize(propertyType);
+            uint32_t propertySize = tknGetPlyPropertySize(propertyType);
             
             if (propertySize == 0)
             {

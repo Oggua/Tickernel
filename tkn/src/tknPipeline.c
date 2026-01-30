@@ -1,5 +1,5 @@
 #include "tknGfxCore.h"
-static uint32_t getSizeOfVkFormat(VkFormat format)
+static uint32_t tknGetSizeOfVkFormat(VkFormat format)
 {
     switch (format)
     {
@@ -55,7 +55,7 @@ static uint32_t getSizeOfVkFormat(VkFormat format)
     }
 }
 
-static void updateVkVertexInputAttributeDescriptions(TknVertexInputLayout vertexInputLayout, uint32_t attributeIndex, SpvReflectInterfaceVariable spvReflectInterfaceVariable, uint32_t binding, VkVertexInputAttributeDescription *vkVertexInputAttributeDescriptions, uint32_t *pVkVertexInputAttributeDescriptionCount)
+static void tknUpdateVkVertexInputAttributeDescriptions(TknVertexInputLayout vertexInputLayout, uint32_t attributeIndex, SpvReflectInterfaceVariable spvReflectInterfaceVariable, uint32_t binding, VkVertexInputAttributeDescription *vkVertexInputAttributeDescriptions, uint32_t *pVkVertexInputAttributeDescriptionCount)
 {
     SpvReflectTypeFlagBits typeFlags = spvReflectInterfaceVariable.type_description->type_flags;
     uint32_t location = spvReflectInterfaceVariable.location;
@@ -76,7 +76,7 @@ static void updateVkVertexInputAttributeDescriptions(TknVertexInputLayout vertex
                     .location = location + vectorIndex,
                     .binding = binding,
                     .format = vkFormat,
-                    .offset = vertexInputLayout.offsets[attributeIndex] + vectorIndex * getSizeOfVkFormat(vkFormat),
+                    .offset = vertexInputLayout.offsets[attributeIndex] + vectorIndex * tknGetSizeOfVkFormat(vkFormat),
                 };
                 (*pVkVertexInputAttributeDescriptionCount)++;
             }
@@ -89,7 +89,7 @@ static void updateVkVertexInputAttributeDescriptions(TknVertexInputLayout vertex
                     .location = location + itemIndex,
                     .binding = binding,
                     .format = vkFormat,
-                    .offset = vertexInputLayout.offsets[attributeIndex] + itemIndex * getSizeOfVkFormat(vkFormat),
+                    .offset = vertexInputLayout.offsets[attributeIndex] + itemIndex * tknGetSizeOfVkFormat(vkFormat),
                 };
                 (*pVkVertexInputAttributeDescriptionCount)++;
             }
@@ -106,7 +106,7 @@ static void updateVkVertexInputAttributeDescriptions(TknVertexInputLayout vertex
                     .location = location + vectorIndex,
                     .binding = binding,
                     .format = vkFormat,
-                    .offset = vertexInputLayout.offsets[attributeIndex] + vectorIndex * getSizeOfVkFormat(vkFormat),
+                    .offset = vertexInputLayout.offsets[attributeIndex] + vectorIndex * tknGetSizeOfVkFormat(vkFormat),
                 };
                 (*pVkVertexInputAttributeDescriptionCount)++;
             }
@@ -181,7 +181,7 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                         {
                             if (0 == strcmp(pSpvReflectInterfaceVariable->name, pTknMeshVertexInputLayout->names[attributeIndex]))
                             {
-                                updateVkVertexInputAttributeDescriptions(*pTknMeshVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, TKN_VERTEX_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
+                                tknUpdateVkVertexInputAttributeDescriptions(*pTknMeshVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, TKN_VERTEX_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
                                 found = true;
                                 break;
                             }
@@ -195,7 +195,7 @@ TknPipeline *tknCreatePipelinePtr(TknGfxContext *pTknGfxContext, TknRenderPass *
                         {
                             if (0 == strcmp(pSpvReflectInterfaceVariable->name, pTknInstanceVertexInputLayout->names[attributeIndex]))
                             {
-                                updateVkVertexInputAttributeDescriptions(*pTknInstanceVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, TKN_INSTANCE_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
+                                tknUpdateVkVertexInputAttributeDescriptions(*pTknInstanceVertexInputLayout, attributeIndex, *pSpvReflectInterfaceVariable, TKN_INSTANCE_BINDING_DESCRIPTION, vkVertexInputAttributeDescriptions, &vkVertexInputAttributeDescriptionCount);
                                 found = true;
                                 break;
                             }

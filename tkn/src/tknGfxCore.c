@@ -54,7 +54,7 @@ void tknDestroySpvReflectShaderModule(SpvReflectShaderModule *pSpvReflectShaderM
     spvReflectDestroyShaderModule(pSpvReflectShaderModule);
 }
 
-static uint32_t getMemoryTypeIndex(VkPhysicalDevice vkPhysicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags memoryPropertyFlags)
+static uint32_t tknGetMemoryTypeIndex(VkPhysicalDevice vkPhysicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags memoryPropertyFlags)
 {
     VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
     vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &physicalDeviceMemoryProperties);
@@ -116,7 +116,7 @@ void tknCreateVkImage(TknGfxContext *pTknGfxContext, VkExtent3D vkExtent3D, VkFo
     tknAssertVkResult(vkCreateImage(vkDevice, &imageCreateInfo, NULL, pVkImage));
     VkMemoryRequirements memoryRequirements;
     vkGetImageMemoryRequirements(vkDevice, *pVkImage, &memoryRequirements);
-    uint32_t memoryTypeIndex = getMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, vkMemoryPropertyFlags);
+    uint32_t memoryTypeIndex = tknGetMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, vkMemoryPropertyFlags);
     VkMemoryAllocateInfo memoryAllocateInfo = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = NULL,
@@ -176,7 +176,7 @@ void tknCreateVkBuffer(TknGfxContext *pTknGfxContext, VkDeviceSize bufferSize, V
     tknAssertVkResult(vkCreateBuffer(vkDevice, &bufferCreateInfo, NULL, pVkBuffer));
     VkMemoryRequirements memoryRequirements;
     vkGetBufferMemoryRequirements(vkDevice, *pVkBuffer, &memoryRequirements);
-    uint32_t memoryTypeIndex = getMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags);
+    uint32_t memoryTypeIndex = tknGetMemoryTypeIndex(vkPhysicalDevice, memoryRequirements.memoryTypeBits, memoryPropertyFlags);
     VkMemoryAllocateInfo memoryAllocateInfo = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = NULL,

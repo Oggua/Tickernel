@@ -12,11 +12,11 @@ typedef struct {
 } TknASTCHeader;
 
 // Helper function to read 24-bit little endian value
-static uint32_t read24LE(const uint8_t* data) {
+static uint32_t tknRead24LE(const uint8_t* data) {
     return data[0] | (data[1] << 8) | (data[2] << 16);
 }
 
-static VkFormat getASTCVulkanFormat(uint32_t blockWidth, uint32_t blockHeight) {
+static VkFormat tknGetASTCVulkanFormat(uint32_t blockWidth, uint32_t blockHeight) {
     // Map ASTC block sizes to Vulkan formats
     if (blockWidth == 4 && blockHeight == 4) {
         return VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
@@ -70,9 +70,9 @@ TknASTCImage* tknCreateASTCFromMemory(const char* buffer, size_t bufferSize) {
     }
     
     // Parse dimensions
-    uint32_t width = read24LE(header->xsize);
-    uint32_t height = read24LE(header->ysize);
-    uint32_t depth = read24LE(header->zsize);
+    uint32_t width = tknRead24LE(header->xsize);
+    uint32_t height = tknRead24LE(header->ysize);
+    uint32_t depth = tknRead24LE(header->zsize);
     uint32_t blockWidth = header->blockdim_x;
     uint32_t blockHeight = header->blockdim_y;
     uint32_t blockDepth = header->blockdim_z;
@@ -96,7 +96,7 @@ TknASTCImage* tknCreateASTCFromMemory(const char* buffer, size_t bufferSize) {
     }
     
     // Get Vulkan format
-    VkFormat vkFormat = getASTCVulkanFormat(blockWidth, blockHeight);
+    VkFormat vkFormat = tknGetASTCVulkanFormat(blockWidth, blockHeight);
     if (vkFormat == VK_FORMAT_UNDEFINED) {
         return NULL;
     }
