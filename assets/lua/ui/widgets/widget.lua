@@ -90,7 +90,7 @@ function widget.removeToggleWidget(pTknGfxContext, toggleWidgetToRemove)
 end
 
 function widget.addScrollViewWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
-    local newScrollViewWidget = scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.cornerRadius, widget.color.foreground, handleLength, widget.updateDragWidgetColor, onValueChange)
+    local newScrollViewWidget = scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.cornerRadius, widget.color.foreground, widget.updateDragWidgetColor, onValueChange)
     return newScrollViewWidget
 end
 

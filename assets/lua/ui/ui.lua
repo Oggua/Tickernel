@@ -8,234 +8,116 @@ local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
 local colorPreset = require("ui.colorPreset")
 
-local function updateOrientationRecursive(pTknGfxContext, ui, node, key, effectiveParent, screenLength, screenLengthDirty, parentOrientationDirty)
-    -- Get orientation properties based on key (horizontal or vertical)
+local function calculateOrientation(node, key, screenLength)
     local orientation = node[key]
+    local parentLengthNdc = node.parent and (node.parent.rect[key].max - node.parent.rect[key].min) or 2
+    local lengthNdc, offsetToParentNdc
+    local parentPivot = node.parent and node.parent[key].pivot or 0.5
+    -- Calculate length and offset based on layout type
+    if orientation.type == ui.layoutType.anchored then
+        if math.type(orientation.length) == "integer" then
+            lengthNdc = orientation.length / screenLength * 2
+        else
+            lengthNdc = orientation.length
+        end
+        offsetToParentNdc = (orientation.anchor - parentPivot) * parentLengthNdc
+    elseif orientation.type == ui.layoutType.relative then
+        local minOffsetToParentNdc, maxOffsetToParentNdc
+        if math.type(orientation.minOffset) == "integer" then
+            minOffsetToParentNdc = orientation.minOffset / screenLength * 2
+        else
+            minOffsetToParentNdc = parentLengthNdc * orientation.minOffset
+        end
+        if math.type(orientation.maxOffset) == "integer" then
+            maxOffsetToParentNdc = orientation.maxOffset / screenLength * 2
+        else
+            maxOffsetToParentNdc = parentLengthNdc * orientation.maxOffset
+        end
+        lengthNdc = parentLengthNdc - minOffsetToParentNdc + maxOffsetToParentNdc
+        lengthNdc = lengthNdc < 0 and 0 or lengthNdc
+        local anchorToParent = (minOffsetToParentNdc + lengthNdc * orientation.pivot) / parentLengthNdc
+        offsetToParentNdc = (anchorToParent - parentPivot) * parentLengthNdc
+    else
+        error("Unknown orientation type " .. tostring(orientation.type))
+    end
 
-    local initialized = node.rect
-    if not initialized then
+    -- Apply additional offset
+    if math.type(orientation.offset) == "integer" then
+        offsetToParentNdc = offsetToParentNdc + orientation.offset / screenLength * 2
+    else
+        offsetToParentNdc = offsetToParentNdc + orientation.offset
+    end
+
+    local rectMin = -lengthNdc * orientation.pivot
+    local rectMax = lengthNdc * (1 - orientation.pivot)
+    orientation.dirty = false
+    return rectMin, rectMax, offsetToParentNdc
+end
+
+local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, screenWidthDirty, screenHeightDirty, parentHorizontalDirty, parentVerticalDirty, parentModelDirty, parentColorDirty, parentActiveDirty)
+    if node.rect == nil then
         node.rect = {
             horizontal = {
                 min = nil,
                 max = nil,
+                offset = nil,
             },
             vertical = {
                 min = nil,
                 max = nil,
-            },
-            offsetToEffectiveParentNDC = {
-                horizontal = nil,
-                vertical = nil,
+                offset = nil,
             },
             model = {nil, nil, nil, nil, nil, nil, nil, nil, nil},
             color = nil,
-            boundsDirty = true,
-            modelDirty = true,
-            colorDirty = true,
             active = false,
         }
     end
-
-    if orientation.type ~= ui.layoutType.fit then
-        if orientation.dirty or screenLengthDirty or parentOrientationDirty or not initialized then
-            node.rect.modelDirty = true
-            local effectiveParentLengthNDC
-            if effectiveParent then
-                effectiveParentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
-            else
-                effectiveParentLengthNDC = 2
-            end
-            local lengthNDC, offsetToEffectiveParentNDC
-            local effectiveParentPivot = effectiveParent and effectiveParent[key].pivot or 0.5
-            -- Calculate length and offset based on layout type
-            if orientation.type == ui.layoutType.anchored then
-                if math.type(orientation.length) == "integer" then
-                    lengthNDC = orientation.length / screenLength * 2
-                else
-                    lengthNDC = orientation.length
-                end
-                offsetToEffectiveParentNDC = (orientation.anchor - effectiveParentPivot) * effectiveParentLengthNDC
-            elseif orientation.type == ui.layoutType.relative then
-                local minOffsetToEffectiveParentNDC, maxOffsetToEffectiveParentNDC
-                if math.type(orientation.minOffset) == "integer" then
-                    minOffsetToEffectiveParentNDC = orientation.minOffset / screenLength * 2
-                else
-                    minOffsetToEffectiveParentNDC = effectiveParentLengthNDC * orientation.minOffset
-                end
-                if math.type(orientation.maxOffset) == "integer" then
-                    maxOffsetToEffectiveParentNDC = orientation.maxOffset / screenLength * 2
-                else
-                    maxOffsetToEffectiveParentNDC = effectiveParentLengthNDC * orientation.maxOffset
-                end
-                lengthNDC = effectiveParentLengthNDC - minOffsetToEffectiveParentNDC + maxOffsetToEffectiveParentNDC
-                lengthNDC = lengthNDC < 0 and 0 or lengthNDC
-                local anchorToEffectiveParent = (minOffsetToEffectiveParentNDC + lengthNDC * orientation.pivot) / effectiveParentLengthNDC
-                offsetToEffectiveParentNDC = (anchorToEffectiveParent - effectiveParentPivot) * effectiveParentLengthNDC
-            else
-                error("Unknown orientation type " .. tostring(orientation.type))
-            end
-
-            -- Apply additional offset
-            if math.type(orientation.offset) == "integer" then
-                offsetToEffectiveParentNDC = offsetToEffectiveParentNDC + orientation.offset / screenLength * 2
-            else
-                offsetToEffectiveParentNDC = offsetToEffectiveParentNDC + orientation.offset
-            end
-
-            local rectMin = -lengthNDC * orientation.pivot
-            local rectMax = lengthNDC * (1 - orientation.pivot)
-            if node.rect[key].min ~= rectMin or node.rect[key].max ~= rectMax then
-                node.rect.boundsDirty = true
-                node.rect[key].min = rectMin
-                node.rect[key].max = rectMax
-            end
-
-            node.rect.offsetToEffectiveParentNDC[key] = offsetToEffectiveParentNDC
-        end
-        effectiveParent = node
-    else
-        -- Keep effectiveParent as is
-    end
-
-    -- Update children
-    parentOrientationDirty = parentOrientationDirty or orientation.dirty or screenLengthDirty
-    for i, child in ipairs(node.children) do
-        updateOrientationRecursive(pTknGfxContext, ui, child, key, effectiveParent, screenLength, screenLengthDirty, parentOrientationDirty)
-    end
-
-    if orientation.type ~= ui.layoutType.fit then
-        -- Do nothing
-    else
-        -- Recursively check if any non-fit descendant's orientation is dirty
-        local function hasNonFitChildOrientationDirty(checkNode)
-            for _, child in ipairs(checkNode.children) do
-                local childOrientationType = child[key].type
-                if childOrientationType == ui.layoutType.fit and #child.children > 0 then
-                    -- Fit node, recursively check its children
-                    if hasNonFitChildOrientationDirty(child) then
-                        return true
-                    end
-                else
-                    -- Non-fit node, check dirty status
-                    if child[key].dirty then
-                        return true
-                    end
-                end
-            end
-            return false
-        end
-
-        if orientation.dirty or screenLengthDirty or parentOrientationDirty or hasNonFitChildOrientationDirty(node) then
-            node.rect.modelDirty = true
-            -- Calculate fit node's bounds based on children's bounds
-            local minInEffectiveParentNDC = math.huge
-            local maxInEffectiveParentNDC = -math.huge
-            for _, child in ipairs(node.children) do
-                if child.rect and child.rect[key] then
-                    -- DEBUG: print(node.name .. " fitting to child " .. child.name)
-                    local childMin = child.rect[key].min + child.rect.offsetToEffectiveParentNDC[key]
-                    local childMax = child.rect[key].max + child.rect.offsetToEffectiveParentNDC[key]
-                    if childMin < minInEffectiveParentNDC then
-                        minInEffectiveParentNDC = childMin
-                    end
-                    if childMax > maxInEffectiveParentNDC then
-                        maxInEffectiveParentNDC = childMax
-                    end
-                end
-            end
-            if math.type(orientation.minOffset) == "integer" then
-                minInEffectiveParentNDC = minInEffectiveParentNDC + orientation.minOffset / screenLength * 2
-                maxInEffectiveParentNDC = maxInEffectiveParentNDC + orientation.maxOffset / screenLength * 2
-            else
-                minInEffectiveParentNDC = minInEffectiveParentNDC + orientation.minOffset
-                maxInEffectiveParentNDC = maxInEffectiveParentNDC + orientation.maxOffset
-            end
-
-            -- Handle case with no children
-            if minInEffectiveParentNDC == math.huge or maxInEffectiveParentNDC == -math.huge then
-                minInEffectiveParentNDC = 0
-                maxInEffectiveParentNDC = 0
-            end
-
-            -- Calculate length and offset relative to effective parent
-            local lengthNDC = maxInEffectiveParentNDC - minInEffectiveParentNDC
-            local effectiveParentPivot = effectiveParent and effectiveParent[key].pivot or 0.5
-            local effectiveParentLengthNDC
-            if effectiveParent then
-                effectiveParentLengthNDC = effectiveParent.rect[key].max - effectiveParent.rect[key].min
-            else
-                effectiveParentLengthNDC = 2
-            end
-
-            -- Apply node's pivot
-            local pivot = orientation.pivot
-            local rectMin = -lengthNDC * pivot
-            local rectMax = lengthNDC * (1 - pivot)
-
-            if node.rect[key].min ~= rectMin or node.rect[key].max ~= rectMax then
-                node.rect[key].min = rectMin
-                node.rect[key].max = rectMax
-                node.rect.boundsDirty = true
-            end
-            -- Offset is the center of children bounds adjusted for pivot difference
-            local offsetToEffectiveParentNDC = tknMath.lerp(minInEffectiveParentNDC, maxInEffectiveParentNDC, pivot)
-            if math.type(orientation.offset) == "integer" then
-                offsetToEffectiveParentNDC = offsetToEffectiveParentNDC + orientation.offset / screenLength * 2
-            else
-                offsetToEffectiveParentNDC = offsetToEffectiveParentNDC + orientation.offset
-            end
-
-            node.rect.offsetToEffectiveParentNDC[key] = offsetToEffectiveParentNDC
-        end
-    end
-    node[key].dirty = false
-end
-
--- Helper function to find effective parent for a given direction (skip fit nodes)
-local function findEffectiveParent(node, key)
-    local effectiveParent = node.parent
-    while effectiveParent and effectiveParent[key].type == ui.layoutType.fit do
-        effectiveParent = effectiveParent.parent
-    end
-    return effectiveParent
-end
-
--- Calculate offset from effectiveParent to direct parent in a given direction
-local function calculateOffsetToParent(node, key)
-    -- Find effective parent for this direction (skip fit nodes)
-    local effectiveParent = findEffectiveParent(node, key)
-
-    if effectiveParent == node.parent then
-        -- Parent is effective parent, use offset directly
-        return node.rect.offsetToEffectiveParentNDC[key]
-    else
-        -- Calculate offset relative to direct parent
-        -- offsetToParent = offsetToEffectiveParent(node) - offsetToEffectiveParent(parent)
-        local nodeOffset = node.rect.offsetToEffectiveParentNDC[key]
-        local parentOffset = node.parent.rect.offsetToEffectiveParentNDC[key]
-        return nodeOffset - parentOffset
-    end
-end
-
--- Transform a 2D offset (already in effectiveParent space) by the parent's full 2x2 + translation.
-local function transformOffsetToWorld(localOffsetX, localOffsetY, effectiveParent)
-    if effectiveParent and effectiveParent.rect and effectiveParent.rect.model then
-        local m = effectiveParent.rect.model
-        local worldX = m[1] * localOffsetX + m[2] * localOffsetY + m[7]
-        local worldY = m[4] * localOffsetX + m[5] * localOffsetY + m[8]
-        return worldX, worldY
-    end
-    return localOffsetX, localOffsetY
-end
-
-local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, parentModelDirty, parentColorDirty, parentColor, parentActiveDirty, parentActive, parentMaskDirty, parentMaskBit)
     local rect = node.rect
+
+    local modelDirty = false
+    local meshDirty = false
+
+    if node.horizontal.dirty or screenWidthDirty or parentHorizontalDirty then
+        local rectHorizontalMin, rectHorizontalMax, offsetToParentX = calculateOrientation(node, "horizontal", screenWidth)
+        if rect.horizontal.min ~= rectHorizontalMin or rect.horizontal.max ~= rectHorizontalMax then
+            rect.horizontal.min = rectHorizontalMin
+            rect.horizontal.max = rectHorizontalMax
+            meshDirty = true
+            parentHorizontalDirty = true
+        else
+            -- parentHorizontalDirty = false
+        end
+        if rect.horizontal.offset ~= offsetToParentX then
+            rect.horizontal.offset = offsetToParentX
+            modelDirty = true
+            parentHorizontalDirty = true
+        end
+    else
+        -- parentHorizontalDirty = false
+    end
+
+    if node.vertical.dirty or screenHeightDirty or parentVerticalDirty then
+        local rectVerticalMin, rectVerticalMax, offsetToParentY = calculateOrientation(node, "vertical", screenHeight)
+        if rect.vertical.min ~= rectVerticalMin or rect.vertical.max ~= rectVerticalMax then
+            rect.vertical.min = rectVerticalMin
+            rect.vertical.max = rectVerticalMax
+            meshDirty = true
+            parentVerticalDirty = true
+        else
+            -- parentVerticalDirty = false
+        end
+        if rect.vertical.offset ~= offsetToParentY then
+            rect.vertical.offset = offsetToParentY
+            modelDirty = true
+            parentVerticalDirty = true
+        end
+    else
+        -- parentVerticalDirty = false
+    end
+
     local instanceDirty = false
-    if node.transform.modelDirty or node.rect.modelDirty or parentModelDirty then
-        parentModelDirty = node.rect.modelDirty or parentModelDirty
-        -- Calculate offset relative to direct parent
-        local offsetToParentX = calculateOffsetToParent(node, "horizontal")
-        local offsetToParentY = calculateOffsetToParent(node, "vertical")
+    modelDirty = modelDirty or node.transform.modelDirty
+    if parentModelDirty or modelDirty then
         -- Get scale values from node
         local scaleX = node.transform.horizontalScale
         local scaleY = node.transform.verticalScale
@@ -248,7 +130,8 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
         local local01 = scaleX * sinR
         local local10 = -scaleY * sinR
         local local11 = scaleY * cosR
-
+        local offsetToParentX = rect.horizontal.offset
+        local offsetToParentY = rect.vertical.offset
         if node.parent then
             local pm = node.parent.rect.model
             -- Inherit rotation/scale from parent and combine with local transform
@@ -286,34 +169,44 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
             rect.model[8] = offsetToParentY
             rect.model[9] = 1
         end
-        node.rect.modelDirty = false
         node.transform.modelDirty = false
+        parentModelDirty = true
+    else
+        parentModelDirty = false
     end
 
-    if node.transform.colorDirty or node.colorDirty or parentColorDirty then
-        parentColorDirty = node.transform.colorDirty or parentColorDirty
-
-        local newColor = tknMath.multiplyColors(parentColor, node.transform.color or colorPreset.white)
-        if rect.color ~= newColor then
+    if node.transform.colorDirty or parentColorDirty or rect.color == nil then
+        local parentRectColor = node.parent and node.parent.rect.color or colorPreset.white
+        local rectColor = tknMath.multiplyColors(parentRectColor, node.transform.color or colorPreset.white)
+        if rect.color ~= rectColor then
             instanceDirty = true
-            rect.color = newColor
+            rect.color = rectColor
         end
         node.transform.colorDirty = false
+        parentColorDirty = true
+    end
+
+    if node.colorDirty then
+        instanceDirty = true
         node.colorDirty = false
     end
 
     local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
-    if rect.boundsDirty or screenSizeDirty then
+    if meshDirty or screenSizeDirty then
         -- Update mesh if bounds changed
         if node.type == "imageNode" then
-            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, rect.boundsDirty, screenSizeDirty)
+            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, meshDirty, screenSizeDirty)
         elseif node.type == "textNode" then
-            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, rect.boundsDirty, screenSizeDirty)
+            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, meshDirty, screenSizeDirty)
         end
     end
-    rect.boundsDirty = false
 
-    -- Update instance if model or color changed
+    -- TODO Mark dirty for alphaThreshold and node's color
+    if node.alphaThresholdDirty then
+        instanceDirty = true
+        node.alphaThresholdDirty = false
+    end
+
     if node.pTknInstance and instanceDirty then
         local instances = {
             model = rect.model,
@@ -324,17 +217,16 @@ local function updateGraphicsRecursive(pTknGfxContext, ui, node, screenWidth, sc
     end
 
     if node.transform.activeDirty or parentActiveDirty then
-        parentActiveDirty = node.transform.activeDirty or parentActiveDirty
-        local finalActive = parentActive and node.transform.active
-        node.rect.active = finalActive
+        local parentRectActive = node.parent and node.parent.rect.active or true
+        node.rect.active = parentRectActive and node.transform.active
         node.transform.activeDirty = false
+        parentActiveDirty = true
     end
 
-    -- Recursively update children
-    for _, child in ipairs(node.children) do
-        updateGraphicsRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, parentModelDirty, parentColorDirty, rect.color, parentActiveDirty, node.rect.active, parentMaskDirty, parentMaskBit)
+    for i = 1, #node.children do
+        local child = node.children[i]
+        updateNodeGfxRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, screenWidthDirty, screenHeightDirty, parentHorizontalDirty, parentVerticalDirty, parentModelDirty, parentColorDirty, parentActiveDirty)
     end
-
 end
 
 local function isTopNode(node)
@@ -379,15 +271,6 @@ local function getActiveInteractableInputNode(node, xNdc, yNdc, inputState)
 end
 
 local function removeNodeRecursive(pTknGfxContext, node)
-    if node.parent then
-        local parent = node.parent
-        if parent.horizontal.type == ui.layoutType.fit then
-            parent.horizontal.dirty = true
-        end
-        if parent.vertical.type == ui.layoutType.fit then
-            parent.vertical.dirty = true
-        end
-    end
     for i = #node.children, 1, -1 do
         removeNodeRecursive(pTknGfxContext, node.children[i])
     end
@@ -418,30 +301,12 @@ local function removeNodeRecursive(pTknGfxContext, node)
     node.rect = nil
 end
 
-local function markParentFitNodeDirty(node, orientation)
-    local parent = node.parent
-    while parent do
-        if parent[orientation].type == ui.layoutType.fit then
-            parent[orientation].dirty = true
-            parent = parent.parent
-        else
-            break
-        end
-    end
-end
-
 function ui.setNodeOrienation(node, orientationKey, orientation)
     if orientation.type == ui.layoutType.anchored then
         node[orientationKey].type = ui.layoutType.anchored
         node[orientationKey].anchor = orientation.anchor
         node[orientationKey].pivot = orientation.pivot
         node[orientationKey].length = orientation.length
-        node[orientationKey].offset = orientation.offset
-    elseif orientation.type == ui.layoutType.fit then
-        node[orientationKey].type = ui.layoutType.fit
-        node[orientationKey].pivot = orientation.pivot
-        node[orientationKey].minOffset = orientation.minOffset
-        node[orientationKey].maxOffset = orientation.maxOffset
         node[orientationKey].offset = orientation.offset
     elseif orientation.type == ui.layoutType.relative then
         node[orientationKey].type = ui.layoutType.relative
@@ -450,7 +315,7 @@ function ui.setNodeOrienation(node, orientationKey, orientation)
         node[orientationKey].maxOffset = orientation.maxOffset
         node[orientationKey].offset = orientation.offset
     else
-        error("ui.copyOrientation: unknown layout type " .. tostring(orientation.type))
+        error("ui.setNodeOrienation: unknown layout type " .. tostring(orientation.type))
     end
     node[orientationKey].dirty = true
 end
@@ -494,8 +359,6 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
     else
         assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
         table.insert(parent.children, index, node)
-        markParentFitNodeDirty(node, "horizontal")
-        markParentFitNodeDirty(node, "vertical")
         if isTopNode(node) then
             ui.topNode = node
         end
@@ -507,15 +370,6 @@ end
 local function removeNodeInternal(pTknGfxContext, node)
     local needUpdateTopNode = isTopNode(node)
     local parent = node.parent
-    if parent and parent.horizontal.type == ui.layoutType.fit then
-        parent.horizontal.dirty = true
-    end
-    if parent and parent.vertical.type == ui.layoutType.fit then
-        parent.vertical.dirty = true
-    end
-
-    markParentFitNodeDirty(node, "horizontal")
-    markParentFitNodeDirty(node, "vertical")
     removeNodeRecursive(pTknGfxContext, node)
     if needUpdateTopNode then
         if parent == nil then
@@ -537,7 +391,6 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment,
     ui.layoutType = {
         anchored = "anchored",
         relative = "relative",
-        fit = "fit",
     }
     -- Vertex format: position + uv (no color)
     ui.vertexFormat = {{
@@ -617,9 +470,7 @@ function ui.teardown(pTknGfxContext)
 end
 
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
-    updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "horizontal", nil, screenWidth, ui.screenWidth ~= screenWidth, false)
-    updateOrientationRecursive(pTknGfxContext, ui, ui.rootNode, "vertical", nil, screenHeight, ui.screenHeight ~= screenHeight, false)
-    updateGraphicsRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, false, false, colorPreset.white, false, true, false, 0x0, 0)
+    updateNodeGfxRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
     textNode.update(pTknGfxContext)
@@ -720,23 +571,15 @@ function ui.moveNode(pTknGfxContext, node, parent, index)
         end
     end
 
-    markParentFitNodeDirty(node, "horizontal")
-    markParentFitNodeDirty(node, "vertical")
-
     local originalIndex = ui.getNodeIndex(node)
     table.remove(node.parent.children, originalIndex)
     table.insert(parent.children, index, node)
     node.parent = parent
 
-    if node.type ~= ui.layoutType.fit then
-        node.horizontal.dirty = true
-        node.vertical.dirty = true
-        node.transform.modelDirty = true
-        node.transform.colorDirty = true
-    end
-
-    markParentFitNodeDirty(node, "horizontal")
-    markParentFitNodeDirty(node, "vertical")
+    node.horizontal.dirty = true
+    node.vertical.dirty = true
+    node.transform.modelDirty = true
+    node.transform.colorDirty = true
 
     if isTopNode(node) then
         ui.topNode = getTopNode(ui.rootNode)

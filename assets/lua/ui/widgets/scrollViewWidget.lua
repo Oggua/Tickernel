@@ -41,19 +41,22 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         active = true,
     }, backgroundColor, 0.1, imageFitMode, image, imageUv, true)
 
-    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", {
-        type = ui.layoutType.fit,
+    local contentNodeHorizontal = {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
         pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
+        length = 1920,
         offset = 0,
-    }, {
-        type = ui.layoutType.fit,
+    }
+    local contentNodeVertical = {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
         pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
+        length = 1080,
         offset = 0,
-    }, {
+    }
+
+    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", contentNodeHorizontal, contentNodeVertical, {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
@@ -62,39 +65,33 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
     })
 
     local backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
-    local mainPanelRootNodeLayout = {
-        horizontal = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 1920,
-            offset = 0,
-        },
-        vertical = {
-            type = ui.layoutType.anchored,
-            anchor = 0.5,
-            pivot = 0.5,
-            length = 1080,
-            offset = 0,
-        },
-    }
-    local mainPanelRootNodeFitMode = {
-        type = ui.fitModeType.cover,
-    }
-    local mainPanelRootNodeUv = {
-        u0 = 0,
-        v0 = 0,
-        u1 = 1,
-        v1 = 1,
-    }
-    local rootTransform = {
+
+    local rootTransform = ui.addImageNode(pTknGfxContext, widget.contentNode, 1, "mainPanelRoot", {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }, {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
         color = nil,
         active = true,
-    }
-    ui.addImageNode(pTknGfxContext, widget.contentNode, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, 0xFFFFFFFF, 0, mainPanelRootNodeFitMode, backgroundImage, mainPanelRootNodeUv, nil)
+    }, 0xFFFFFFFF, 0, {
+        type = ui.fitModeType.cover,
+    }, backgroundImage, {
+        u0 = 0,
+        v0 = 0,
+        u1 = 1,
+        v1 = 1,
+    }, nil)
 
     widget.rightSliderWidget = sliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
         type = ui.layoutType.anchored,
@@ -109,7 +106,8 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         maxOffset = -handleOffset * 2,
         offset = 0,
     }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.vertical, animate, function(value)
-
+        contentNodeVertical.anchor = 1 - value
+        ui.setNodeOrienation(widget.contentNode, "vertical", contentNodeVertical)
     end)
 
     widget.bottomSliderWidget = sliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
@@ -125,7 +123,8 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         length = handleOffset * 2,
         offset = 0,
     }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.horizontal, animate, function(value)
-
+        contentNodeHorizontal.anchor = 1 - value
+        ui.setNodeOrienation(widget.contentNode, "horizontal", contentNodeHorizontal)
     end)
     return widget
 end
