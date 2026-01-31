@@ -6,12 +6,32 @@ local scrollViewWidget = {}
 
 function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, animate, onValueChange)
     local widget = {}
+    local startX, startY = nil, nil
     local processInput = function(node, xNdc, yNdc, inputState)
         if animate then
             animate(node, xNdc, yNdc, inputState)
         end
-        -- Scroll view specific input handling would go here
-        return false
+        if inputState == input.inputState.down then
+            if startX == nil or startY == nil then
+                startX = xNdc
+                startY = yNdc
+            end
+            local currentX = xNdc
+            local currentY = yNdc
+            local deltaX = currentX - startX
+            local deltaY = currentY - startY
+            sliderWidget.setValue(widget.rightSliderWidget, widget.rightSliderWidget.handleNode.vertical.anchor - deltaY)
+            sliderWidget.setValue(widget.bottomSliderWidget, widget.bottomSliderWidget.handleNode.horizontal.anchor - deltaX)
+            startX = currentX
+            startY = currentY
+            return true
+        elseif inputState == input.inputState.up then
+            startX = nil
+            startY = nil
+            return false
+        else
+            return false
+        end
     end
     widget.scrollViewNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, {
         rotation = 0,
@@ -106,7 +126,8 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         maxOffset = -handleOffset * 2,
         offset = 0,
     }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.vertical, animate, function(value)
-        contentNodeVertical.anchor = 1 - value
+        contentNodeVertical.anchor = value
+        contentNodeVertical.pivot = value
         ui.setNodeOrienation(widget.contentNode, "vertical", contentNodeVertical)
     end)
 
@@ -123,7 +144,8 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         length = handleOffset * 2,
         offset = 0,
     }, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, 32, sliderWidget.direction.horizontal, animate, function(value)
-        contentNodeHorizontal.anchor = 1 - value
+        contentNodeHorizontal.anchor = value
+        contentNodeHorizontal.pivot = value
         ui.setNodeOrienation(widget.contentNode, "horizontal", contentNodeHorizontal)
     end)
     return widget

@@ -11,6 +11,7 @@ local sliderWidget = {
 function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, handleLength, direction, animate, onValueChange)
     local widget = {}
     widget.direction = direction
+    widget.onValueChange = onValueChange
     local handleHorizontal = {
         type = "anchored",
         anchor = 0.5,
@@ -47,40 +48,34 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                 local inv01 = -m01 / det
                 local inv10 = -m10 / det
                 local inv11 = m00 / det
-
+                local value
                 if widget.direction == sliderWidget.direction.horizontal then
                     local lx = inv00 * (xNdc - tx) + inv01 * (yNdc - ty)
                     local rx = widget.handleParent.rect.horizontal
                     local length = (rx.max - rx.min)
                     local pivot = widget.handleParent.horizontal.pivot or 0.5
-                    local anchor = lx / length + pivot
-                    if anchor < 0 then
-                        anchor = 0
-                    elseif anchor > 1 then
-                        anchor = 1
+                    value = lx / length + pivot
+                    if value < 0 then
+                        value = 0
+                    elseif value > 1 then
+                        value = 1
                     end
-                    handleHorizontal.anchor = anchor
-                    ui.setNodeOrienation(widget.handleNode, "horizontal", handleHorizontal)
+
                 else
                     assert(widget.direction == sliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
                     local ly = inv10 * (xNdc - tx) + inv11 * (yNdc - ty)
                     local ry = widget.handleParent.rect.vertical
                     local length = (ry.max - ry.min)
                     local pivot = widget.handleParent.vertical.pivot or 0.5
-                    local anchor = ly / length + pivot
-                    if anchor < 0 then
-                        anchor = 0
-                    elseif anchor > 1 then
-                        anchor = 1
+                    value = ly / length + pivot
+                    if value < 0 then
+                        value = 0
+                    elseif value > 1 then
+                        value = 1
                     end
-                    handleVertical.anchor = anchor
-                    ui.setNodeOrienation(widget.handleNode, "vertical", handleVertical)
-                end
 
-                if onValueChange then
-                    local value = widget.direction == sliderWidget.direction.vertical and widget.handleNode.vertical.anchor or widget.handleNode.horizontal.anchor
-                    onValueChange(value)
                 end
+                sliderWidget.setValue(widget, value)
             end
             return true
         else
@@ -168,11 +163,30 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     return widget
 end
 
-function sliderWidget.removeWidget(pTknGfxContext, sliderWidget)
-    ui.removeNode(pTknGfxContext, sliderWidget.sliderNode)
-    sliderWidget.sliderNode = nil
-    sliderWidget.backgroundNode = nil
-    sliderWidget.handleNode = nil
+function sliderWidget.setValue(widget, value)
+    value = tknMath.clamp(value, 0, 1)
+    if widget.direction == sliderWidget.direction.horizontal then
+        local handleHorizontal = widget.handleNode.horizontal
+        handleHorizontal.anchor = value
+        ui.setNodeOrienation(widget.handleNode, "horizontal", handleHorizontal)
+    elseif widget.direction == sliderWidget.direction.vertical then
+        local handleVertical = widget.handleNode.vertical
+        handleVertical.anchor = value
+        ui.setNodeOrienation(widget.handleNode, "vertical", handleVertical)
+    else
+        error("Invalid slider direction: " .. tostring(widget.direction))
+    end
+    if widget.onValueChange then
+        widget.onValueChange(value)
+    end
+end
+
+function sliderWidget.removeWidget(pTknGfxContext, widget)
+    ui.removeNode(pTknGfxContext, widget.sliderNode)
+    widget.sliderNode = nil
+    widget.backgroundNode = nil
+    widget.handleNode = nil
+    widget.onValueChange = nil
 end
 
 return sliderWidget
