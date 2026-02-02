@@ -26,12 +26,12 @@ local function calculateOrientation(node, key, screenLength)
         if math.type(orientation.minOffset) == "integer" then
             minOffsetToParentNdc = orientation.minOffset / screenLength * 2
         else
-            minOffsetToParentNdc = parentLengthNdc * orientation.minOffset
+            minOffsetToParentNdc = orientation.minOffset
         end
         if math.type(orientation.maxOffset) == "integer" then
             maxOffsetToParentNdc = orientation.maxOffset / screenLength * 2
         else
-            maxOffsetToParentNdc = parentLengthNdc * orientation.maxOffset
+            maxOffsetToParentNdc = orientation.maxOffset
         end
         lengthNdc = parentLengthNdc - minOffsetToParentNdc + maxOffsetToParentNdc
         lengthNdc = lengthNdc < 0 and 0 or lengthNdc
@@ -75,14 +75,13 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
     local rect = node.rect
 
     local modelDirty = false
-    local meshDirty = false
-
+    local boundsDirty = false
     if node.horizontal.dirty or screenWidthDirty or parentHorizontalDirty then
         local rectHorizontalMin, rectHorizontalMax, offsetToParentX = calculateOrientation(node, "horizontal", screenWidth)
         if rect.horizontal.min ~= rectHorizontalMin or rect.horizontal.max ~= rectHorizontalMax then
             rect.horizontal.min = rectHorizontalMin
             rect.horizontal.max = rectHorizontalMax
-            meshDirty = true
+            boundsDirty = true
             parentHorizontalDirty = true
         else
             -- parentHorizontalDirty = false
@@ -101,7 +100,7 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
         if rect.vertical.min ~= rectVerticalMin or rect.vertical.max ~= rectVerticalMax then
             rect.vertical.min = rectVerticalMin
             rect.vertical.max = rectVerticalMax
-            meshDirty = true
+            boundsDirty = true
             parentVerticalDirty = true
         else
             -- parentVerticalDirty = false
@@ -192,12 +191,12 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
     end
 
     local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
-    if meshDirty or screenSizeDirty then
+    if boundsDirty or screenSizeDirty then
         -- Update mesh if bounds changed
         if node.type == "imageNode" then
-            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, meshDirty, screenSizeDirty)
+            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
         elseif node.type == "textNode" then
-            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, meshDirty, screenSizeDirty)
+            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
         end
     end
 
@@ -450,8 +449,12 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment,
         color = colorPreset.white,
         active = true,
     })
+
+    ui.postUpdateGfxCallbacks = {}
 end
+
 function ui.teardown(pTknGfxContext)
+    ui.postUpdateGfxCallbacks = nil
     ui.removeNode(pTknGfxContext, ui.rootNode)
     ui.renderPass = nil
     tkn.tknDestroySamplerPtr(pTknGfxContext, ui.pTknSampler)
@@ -470,10 +473,14 @@ function ui.teardown(pTknGfxContext)
 end
 
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
+    textNode.update(pTknGfxContext)
     updateNodeGfxRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
-    textNode.update(pTknGfxContext)
+
+    for _, callback in ipairs(ui.postUpdateGfxCallbacks) do
+        callback()
+    end
 
     if ui.currentInteractableNode then
         local canInteract = ui.currentInteractableNode.processInput(ui.currentInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
@@ -652,6 +659,19 @@ function ui.rectContainsPoint(rect, xNdc, yNdc)
     local minY = worldY + ry.min
     local maxY = worldY + ry.max
     return xNdc >= minX and xNdc <= maxX and yNdc >= minY and yNdc <= maxY
+end
+
+function ui.addPostUpdateGfxCallback(callback)
+    table.insert(ui.postUpdateGfxCallbacks, callback)
+end
+
+function ui.removePostUpdateGfxCallback(callback)
+    for i, cb in ipairs(ui.postUpdateGfxCallbacks) do
+        if cb == callback then
+            table.remove(ui.postUpdateGfxCallbacks, i)
+            return
+        end
+    end
 end
 
 return ui

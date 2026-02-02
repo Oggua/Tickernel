@@ -8,24 +8,10 @@ local sliderWidget = {
     },
 }
 
-function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleOffset, handleColor, handleLength, direction, animate, onValueChange)
+function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleLength, direction, animate, onValueChange)
     local widget = {}
     widget.direction = direction
     widget.onValueChange = onValueChange
-    local handleHorizontal = {
-        type = "anchored",
-        anchor = 0.5,
-        pivot = 0.5,
-        length = handleLength,
-        offset = 0,
-    }
-    local handleVertical = {
-        type = "anchored",
-        anchor = 0.5,
-        pivot = 0.5,
-        length = handleLength,
-        offset = 0,
-    }
 
     local sliderTransform = {
         rotation = 0,
@@ -110,39 +96,81 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     }
     widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, 0, imageFitMode, image, imageUv, nil)
 
-    local handleParentHorizontal, handleParentVertical
+    local handleParentHorizontal = {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }
+    local handleParentVertical = {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }
+    local handleHorizontal = {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }
+    local handleVertical = {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }
+
     if widget.direction == sliderWidget.direction.horizontal then
+        local handleParentOffset
+        if math.type(handleLength) == "integer" then
+            handleParentOffset = handleLength // 2
+        else
+            handleParentOffset = handleLength / 2
+        end
+
         handleParentHorizontal = {
             type = ui.layoutType.relative,
-            pivot = 0,
-            minOffset = handleOffset,
-            maxOffset = -handleOffset,
+            pivot = 0.5,
+            minOffset = handleParentOffset,
+            maxOffset = -handleParentOffset,
             offset = 0,
         }
-        handleParentVertical = {
-            type = ui.layoutType.relative,
+        handleHorizontal = {
+            type = ui.layoutType.anchored,
+            anchor = 0.5,
             pivot = 0.5,
-            minOffset = 0,
-            maxOffset = 0,
+            length = handleLength,
             offset = 0,
         }
     else
         assert(widget.direction == sliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
-        handleParentHorizontal = {
-            type = ui.layoutType.relative,
-            pivot = 0.5,
-            minOffset = 0,
-            maxOffset = 0,
-            offset = 0,
-        }
+        local handleParentOffset
+        if math.type(handleLength) == "integer" then
+            handleParentOffset = handleLength // 2
+        else
+            handleParentOffset = math.floor(handleLength * ui.screenHeight * 0.25)
+        end
         handleParentVertical = {
             type = ui.layoutType.relative,
-            pivot = 0,
-            minOffset = handleOffset,
-            maxOffset = -handleOffset,
+            pivot = 0.5,
+            minOffset = handleParentOffset,
+            maxOffset = -handleParentOffset,
+            offset = 0,
+        }
+        handleVertical = {
+            type = ui.layoutType.anchored,
+            anchor = 0.5,
+            pivot = 0.5,
+            length = handleLength,
             offset = 0,
         }
     end
+
     local handleParentTransform = {
         rotation = 0,
         horizontalScale = 1,
@@ -166,13 +194,11 @@ end
 function sliderWidget.setValue(widget, value)
     value = tknMath.clamp(value, 0, 1)
     if widget.direction == sliderWidget.direction.horizontal then
-        local handleHorizontal = widget.handleNode.horizontal
-        handleHorizontal.anchor = value
-        ui.setNodeOrienation(widget.handleNode, "horizontal", handleHorizontal)
+        widget.handleNode.horizontal.anchor = value
+        ui.setNodeOrienation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
     elseif widget.direction == sliderWidget.direction.vertical then
-        local handleVertical = widget.handleNode.vertical
-        handleVertical.anchor = value
-        ui.setNodeOrienation(widget.handleNode, "vertical", handleVertical)
+        widget.handleNode.vertical.anchor = value
+        ui.setNodeOrienation(widget.handleNode, "vertical", widget.handleNode.vertical)
     else
         error("Invalid slider direction: " .. tostring(widget.direction))
     end
@@ -185,8 +211,34 @@ function sliderWidget.removeWidget(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.sliderNode)
     widget.sliderNode = nil
     widget.backgroundNode = nil
+    widget.handleParent = nil
     widget.handleNode = nil
+    widget.direction = nil
     widget.onValueChange = nil
+end
+
+function sliderWidget.setHandleLength(widget, handleLength)
+    local handleParentOffset
+    if math.type(handleLength) == "integer" then
+        handleParentOffset = handleLength // 2
+    else
+        handleParentOffset = handleLength / 2
+    end
+    if widget.direction == sliderWidget.direction.horizontal then
+        widget.handleNode.horizontal.length = handleLength
+        widget.handleParent.horizontal.minOffset = handleParentOffset
+        widget.handleParent.horizontal.maxOffset = -handleParentOffset
+        ui.setNodeOrienation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
+        ui.setNodeOrienation(widget.handleParent, "horizontal", widget.handleParent.horizontal)
+    elseif widget.direction == sliderWidget.direction.vertical then
+        widget.handleNode.vertical.length = handleLength
+        widget.handleParent.vertical.minOffset = handleParentOffset
+        widget.handleParent.vertical.maxOffset = -handleParentOffset
+        ui.setNodeOrienation(widget.handleNode, "vertical", widget.handleNode.vertical)
+        ui.setNodeOrienation(widget.handleParent, "vertical", widget.handleParent.vertical)
+    else
+        error("Invalid slider direction: " .. tostring(widget.direction))
+    end
 end
 
 return sliderWidget

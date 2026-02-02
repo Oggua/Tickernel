@@ -72,7 +72,7 @@ function widget.removeButtonWidget(pTknGfxContext, buttonWidget)
 end
 
 function widget.addSliderWidget(pTknGfxContext, name, parent, index, horizontal, vertical, handleLength, direction, onValueChange)
-    local newSliderWidget = sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.cornerRadius, widget.color.foreground, handleLength, direction, widget.updateDragWidgetColor, onValueChange)
+    local newSliderWidget = sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.color.foreground, handleLength, direction, widget.updateDragWidgetColor, onValueChange)
     return newSliderWidget
 end
 
@@ -90,7 +90,7 @@ function widget.removeToggleWidget(pTknGfxContext, toggleWidgetToRemove)
 end
 
 function widget.addScrollViewWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
-    local newScrollViewWidget = scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.cornerRadius, widget.color.foreground, widget.updateDragWidgetColor, onValueChange)
+    local newScrollViewWidget = scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.color.foreground, widget.cornerRadius * 2, widget.updateDragWidgetColor, onValueChange)
     return newScrollViewWidget
 end
 

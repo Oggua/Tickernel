@@ -94,9 +94,10 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         pivot = 0.5,
         length = 512,
         offset = 288,
-    }, 32, sliderWidget.direction.vertical, function(value)
+    }, 64, sliderWidget.direction.vertical, function(value)
         -- print("Slider value changed to: " .. tostring(value))
     end)
+    -- sliderWidget.setHandleLength(customSliderWidget, 0.2)
 
     local sv = widget.addScrollViewWidget(pTknGfxContext, "customScrollView", mainPanel.rootNode, 5, {
         type = ui.layoutType.anchored,
