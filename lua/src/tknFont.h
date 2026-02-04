@@ -31,7 +31,9 @@ typedef struct TknFont
     uint32_t atlasLength;
     uint32_t penX, penY;
     uint32_t maxRowHeight;
-
+    int32_t ascender;     // in pixels (after conversion from font units)
+    int32_t descender;    // in pixels (after conversion from font units)
+    
     struct TknFont *pNext;
 } TknFont;
 

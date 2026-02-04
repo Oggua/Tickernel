@@ -11,8 +11,10 @@ local widget = {}
 
 function widget.setup(pTknGfxContext, assetsPath)
     widget.color = {
-        background = 0x333333CC,
-        foreground = 0xCCCCCCFF,
+        -- background = 0x333333CC,
+        -- foreground = 0xCCCCCCFF,
+        background = 0x000000CC,
+        foreground = 0xFFFFFFCC,
     }
 
     widget.updateClickWidgetColor = function(node, xNdc, yNdc, inputState)
@@ -39,15 +41,18 @@ function widget.setup(pTknGfxContext, assetsPath)
 
     widget.image, widget.imageFitMode, widget.imageUv, widget.cornerRadius = uiDefault.getSprite(uiDefault.cornerRadiusPreset.small)
 
-    widget.font = ui.loadFont(pTknGfxContext, "/fonts/Hiragino Sans GB.ttc", 32, 2048)
-    widget.fontSize = 20
+    widget.font = ui.loadFont(pTknGfxContext, "/fonts/Monaco.ttf", 32, 2048)
+    widget.smallFontSize = 18
+    widget.normalFontSize = 24
+    widget.largeFontSize = 32
 end
 
 function widget.teardown(pTknGfxContext)
     ui.unloadFont(pTknGfxContext, widget.font)
     widget.font = nil
-    widget.fontSize = nil
-
+    widget.smallFontSize = nil
+    widget.normalFontSize = nil
+    widget.largeFontSize = nil
     widget.image = nil
     widget.imageFitMode = nil
     widget.imageUv = nil
@@ -64,12 +69,12 @@ function widget.teardown(pTknGfxContext)
 end
 
 function widget.addButtonWidget(pTknGfxContext, name, parent, index, horizontal, vertical, text, onClick)
-    local newButtonWidget = buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.image, widget.imageFitMode, widget.imageUv, widget.color.background, widget.font, text, widget.fontSize, widget.color.foreground, widget.updateClickWidgetColor, onClick)
+    local newButtonWidget = buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.image, widget.imageFitMode, widget.imageUv, widget.color.background, widget.font, text, widget.normalFontSize, widget.color.foreground, widget.updateClickWidgetColor, onClick)
     return newButtonWidget
 end
 
-function widget.removeButtonWidget(pTknGfxContext, buttonWidget)
-    buttonWidget.removeWidget(pTknGfxContext, buttonWidget)
+function widget.removeButtonWidget(pTknGfxContext, widget)
+    buttonWidget.removeWidget(pTknGfxContext, widget)
 end
 
 function widget.addSliderWidget(pTknGfxContext, name, parent, index, horizontal, vertical, handleLength, direction, onValueChange)
@@ -81,8 +86,8 @@ function widget.removeSliderWidget(pTknGfxContext, sliderWidgetToRemove)
     sliderWidget.removeWidget(pTknGfxContext, sliderWidgetToRemove)
 end
 
-function widget.addToggleWidget(pTknGfxContext, name, parent, index, horizontal, vertical, handleScale, onValueChange)
-    local newToggleWidget = toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, handleScale, widget.color.foreground, widget.updateClickWidgetColor, onValueChange)
+function widget.addToggleWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
+    local newToggleWidget = toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, 0.6, widget.color.foreground, widget.updateClickWidgetColor, onValueChange)
     return newToggleWidget
 end
 

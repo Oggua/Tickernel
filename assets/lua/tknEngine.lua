@@ -4,7 +4,8 @@ local ui = require("ui.ui")
 local game = require("game.game")
 local input = require("input")
 local widget = require("engine.widgets.widget")
-local enginePanel = require("engine.panels.enginePanel")
+local editorTopBarPanel = require("engine.panels.editorTopBarPanel")
+local editorPanel = require("engine.panels.editorPanel")
 local tknEngine = {}
 
 local function addCoreNodes(pTknGfxContext)
@@ -32,7 +33,14 @@ local function addCoreNodes(pTknGfxContext)
     }
     tknEngine.gameRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "TickernelEngine", fullScreenHorizontal, fullScreenVertical, defaultTransform)
 
-    tknEngine.editorRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 2, "Editor", fullScreenHorizontal, fullScreenVertical, defaultTransform)
+    local editorTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+        color = nil,
+        active = false,
+    }
+    tknEngine.editorRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 2, "Editor", fullScreenHorizontal, fullScreenVertical, editorTransform)
 
     tknEngine.editorTopBarNode = ui.addNode(pTknGfxContext, ui.rootNode, 3, "EditorTopBar", fullScreenHorizontal, fullScreenVertical, defaultTransform)
 end
@@ -52,7 +60,8 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     ui.setup(pTknGfxContext, deferredRenderPass.pSwapchainAttachment, deferredRenderPass.pDepthStencilAttachment, assetsPath, renderPassIndex)
     widget.setup(pTknGfxContext, assetsPath)
     addCoreNodes(pTknGfxContext)
-    enginePanel.create(pTknGfxContext, tknEngine.editorRootNode, tknEngine.editorTopBarNode)
+    editorTopBarPanel.create(pTknGfxContext, tknEngine.editorRootNode, tknEngine.editorTopBarNode)
+    editorPanel.create(pTknGfxContext, tknEngine.editorRootNode)
     game.start(pTknGfxContext, assetsPath, tknEngine.gameRootNode)
 end
 
@@ -60,7 +69,8 @@ function tknEngine.stop(pTknGfxContext)
     game.stop()
     tkn.tknWaitRenderFence(pTknGfxContext)
     game.stopGfx(pTknGfxContext)
-    enginePanel.destroy(pTknGfxContext)
+    editorPanel.destroy(pTknGfxContext)
+    editorTopBarPanel.destroy(pTknGfxContext)
     removeCoreNodes(pTknGfxContext)
     widget.teardown(pTknGfxContext)
     ui.teardown(pTknGfxContext)

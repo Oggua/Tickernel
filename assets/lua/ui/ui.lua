@@ -222,10 +222,11 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
     end
 
     if node.transform.activeDirty or parentActiveDirty then
-        local parentRectActive = node.parent and node.parent.rect.active or true
+        local parentRectActive = (node.parent == nil) or node.parent.rect.active
         node.rect.active = parentRectActive and node.transform.active
         node.transform.activeDirty = false
         parentActiveDirty = true
+        print("Node " .. tostring(node.name) .. " active state changed to " .. tostring(node.rect.active))
     end
 
     for i = 1, #node.children do
@@ -545,7 +546,6 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
         -- Clear stencil by writing back to parent level value
         -- compareMask selects only the parent level bits for comparison
         local parentMaskBit = maskIndex > 1 and ((1 << (maskIndex - 1)) - 1) or 0
-        print("Clearing mask level " .. tostring(maskIndex) .. "parentMaskBit=" .. tostring(parentMaskBit))
         tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
         tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
         tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)

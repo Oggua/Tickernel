@@ -28,7 +28,7 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
     if font then
         if fontSize > font.fontSize then
             tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
-            local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
+            local pTknFont, pTknImage, ascender, descender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
             local inputBindings = {{
                 vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 pTknImage = pTknImage,
@@ -40,13 +40,15 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
             font.atlasLength = atlasLength
             font.pTknFont = pTknFont
             font.pTknImage = pTknImage
+            font.ascender = ascender
+            font.descender = descender
             font.dirty = true
             return font
         else
             return font
         end
     else
-        local pTknFont, pTknImage = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
+        local pTknFont, pTknImage, ascender, descender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
         local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -63,6 +65,8 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
             pTknImage = pTknImage,
             pTknMaterial = pTknMaterial,
             dirty = false,
+            ascender = ascender,
+            descender = descender,
         }
         textNode.pathToFont[path] = font
         return font
@@ -134,7 +138,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         local sizeScale = node.size / font.fontSize
         local scaleX = sizeScale / screenWidth * 2
         local scaleY = sizeScale / screenHeight * 2
-        local lineHeight = node.size / screenHeight * 2
+        local lineHeight = (font.ascender - font.descender) * sizeScale / screenHeight * 2
         local atlasScale = 1 / font.atlasLength
 
         -- Bold offset in pixels (converted to NDC)
@@ -200,8 +204,6 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
 
         -- Calculate starting Y position based on vertical alignment
         local totalHeight = #lines * lineHeight
-        local startY = top + (rectHeight - totalHeight) * node.alignV + lineHeight
-
         -- Second pass: generate vertices with alignment
         local vertices = {
             position = {},
@@ -209,7 +211,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         }
         local indices = {}
         local charIndex = 0
-        local penY = startY
+        local penY = top + (rectHeight - totalHeight) * node.alignV + (font.ascender * sizeScale / screenHeight * 2)
 
         for lineIdx, line in ipairs(lines) do
             -- Calculate starting X position based on horizontal alignment

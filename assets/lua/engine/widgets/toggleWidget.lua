@@ -5,7 +5,7 @@ local toggleWidget = {}
 
 function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleScale, handleColor, animate, onValueChange)
     local widget = {}
-    widget.isToggled = true
+    widget.isToggled = false
     local processInput = function(node, xNdc, yNdc, inputState)
         if animate then
             animate(node, xNdc, yNdc, inputState)
@@ -87,7 +87,7 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         horizontalScale = handleScale,
         verticalScale = handleScale,
         color = nil,
-        active = true,
+        active = false,
     }
     widget.handleNode = ui.addImageNode(pTknGfxContext, widget.toggleNode, 2, "toggleHandle", handleHorizontal, handleVertical, handleTransform, handleColor, 0, imageFitMode, image, imageUv, nil)
     return widget

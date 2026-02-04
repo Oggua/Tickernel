@@ -522,9 +522,9 @@ static int luaCreateRenderPassPtr(lua_State *pLuaState)
     uint32_t renderPassIndex = (uint32_t)lua_tointeger(pLuaState, -1);
     // Call the C function
     TknRenderPass *pTknRenderPass = tknCreateRenderPassPtr(pTknGfxContext, attachmentCount, vkAttachmentDescriptions,
-                                                  inputAttachmentPtrs, vkClearValues, subpassCount, vkSubpassDescriptions,
-                                                  spvPathCounts, spvPathsArray, vkSubpassDependencyCount,
-                                                  vkSubpassDependencies, renderPassIndex);
+                                                           inputAttachmentPtrs, vkClearValues, subpassCount, vkSubpassDescriptions,
+                                                           spvPathCounts, spvPathsArray, vkSubpassDependencyCount,
+                                                           vkSubpassDependencies, renderPassIndex);
 
     // Clean up memory
     tknFree(vkAttachmentDescriptions);
@@ -978,15 +978,15 @@ static int luaCreatePipelinePtr(lua_State *pLuaState)
 
     // Call the C function
     TknPipeline *pTknPipeline = tknCreatePipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, spvPathCount, spvPaths,
-                                            pTknMeshVertexInputLayout,
-                                            pTknInstanceVertexInputLayout,
-                                            vkPipelineInputAssemblyStateCreateInfo,
-                                            vkPipelineViewportStateCreateInfo,
-                                            vkPipelineRasterizationStateCreateInfo,
-                                            vkPipelineMultisampleStateCreateInfo,
-                                            vkPipelineDepthStencilStateCreateInfo,
-                                            vkPipelineColorBlendStateCreateInfo,
-                                            vkPipelineDynamicStateCreateInfo);
+                                                     pTknMeshVertexInputLayout,
+                                                     pTknInstanceVertexInputLayout,
+                                                     vkPipelineInputAssemblyStateCreateInfo,
+                                                     vkPipelineViewportStateCreateInfo,
+                                                     vkPipelineRasterizationStateCreateInfo,
+                                                     vkPipelineMultisampleStateCreateInfo,
+                                                     vkPipelineDepthStencilStateCreateInfo,
+                                                     vkPipelineColorBlendStateCreateInfo,
+                                                     vkPipelineDynamicStateCreateInfo);
 
     // Clean up memory
     tknFree(spvPaths);
@@ -1275,7 +1275,7 @@ static int luaSaveMeshPtrToPlyFile(lua_State *pLuaState)
 
     // Call the C function
     tknSaveMeshPtrToPlyFile(vertexPropertyCount, vertexPropertyNames, vertexPropertyTypes,
-                         pTknMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount, plyFilePath);
+                            pTknMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount, plyFilePath);
 
     // Clean up
     tknFree(vertexPropertyNames);
@@ -1556,8 +1556,8 @@ static int luaCreateImagePtr(lua_State *pLuaState)
     }
 
     TknImage *pTknImage = tknCreateImagePtr(pTknGfxContext, vkExtent3D, vkFormat, vkImageTiling,
-                                   vkImageUsageFlags, vkMemoryPropertyFlags,
-                                   vkImageAspectFlags, data, dataSize);
+                                            vkImageUsageFlags, vkMemoryPropertyFlags,
+                                            vkImageAspectFlags, data, dataSize);
     if (data != NULL)
     {
         tknFree(data);
@@ -1584,8 +1584,8 @@ static int luaCreateSamplerPtr(lua_State *pLuaState)
     VkBorderColor borderColor = (VkBorderColor)lua_tointeger(pLuaState, -1);
 
     TknSampler *pTknSampler = tknCreateSamplerPtr(pTknGfxContext, magFilter, minFilter, mipmapMode,
-                                         addressModeU, addressModeV, addressModeW, mipLodBias,
-                                         anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor);
+                                                  addressModeU, addressModeV, addressModeW, mipLodBias,
+                                                  anisotropyEnable, maxAnisotropy, minLod, maxLod, borderColor);
 
     lua_pushlightuserdata(pLuaState, pTknSampler);
     return 1;
@@ -1629,12 +1629,12 @@ static int luaCreateASTCFromMemory(lua_State *pLuaState)
         return 1;
     }
     // Return multiple values: tknAstcImage pointer, data, width, height, vkFormat, dataSize
-    lua_pushlightuserdata(pLuaState, tknAstcImage);                  // TknASTCImage pointer
+    lua_pushlightuserdata(pLuaState, tknAstcImage);                     // TknASTCImage pointer
     lua_pushlstring(pLuaState, tknAstcImage->data, tknAstcImage->size); // Binary data with exact length
-    lua_pushinteger(pLuaState, tknAstcImage->width);                 // width
-    lua_pushinteger(pLuaState, tknAstcImage->height);                // height
-    lua_pushinteger(pLuaState, tknAstcImage->vkFormat);              // vkFormat
-    lua_pushinteger(pLuaState, tknAstcImage->size);                  // dataSize
+    lua_pushinteger(pLuaState, tknAstcImage->width);                    // width
+    lua_pushinteger(pLuaState, tknAstcImage->height);                   // height
+    lua_pushinteger(pLuaState, tknAstcImage->vkFormat);                 // vkFormat
+    lua_pushinteger(pLuaState, tknAstcImage->size);                     // dataSize
     return 6;
 }
 
@@ -1675,7 +1675,9 @@ static int luaCreateTknFontPtr(lua_State *pLuaState)
     TknFont *pTknFont = createTknFontPtr(pTknFontLibrary, pTknGfxContext, fontPath, fontSize, atlasLength);
     lua_pushlightuserdata(pLuaState, pTknFont);
     lua_pushlightuserdata(pLuaState, pTknFont->pTknImage);
-    return 2;
+    lua_pushinteger(pLuaState, pTknFont->ascender);
+    lua_pushinteger(pLuaState, pTknFont->descender);
+    return 4;
 }
 
 static int luaDestroyTknFontPtr(lua_State *pLuaState)
@@ -1711,6 +1713,7 @@ static int luaLoadTknChar(lua_State *pLuaState)
         lua_pushinteger(pLuaState, pTknChar->bearingX);
         lua_pushinteger(pLuaState, pTknChar->bearingY);
         lua_pushinteger(pLuaState, pTknChar->advance);
+
         return 8;
     }
     else
@@ -1795,33 +1798,33 @@ static int luaClearAttachments(lua_State *pLuaState)
 {
     TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -4);
     TknFrame *pTknFrame = (TknFrame *)lua_touserdata(pLuaState, -3);
-    
+
     // Get clearAttachments table
     int clearAttachmentIndices = lua_absindex(pLuaState, -2);
     lua_len(pLuaState, clearAttachmentIndices);
     uint32_t clearAttachmentCount = (uint32_t)lua_tointeger(pLuaState, -1);
     lua_pop(pLuaState, 1);
-    
+
     VkClearAttachment *pClearAttachments = tknMalloc(sizeof(VkClearAttachment) * clearAttachmentCount);
     memset(pClearAttachments, 0, sizeof(VkClearAttachment) * clearAttachmentCount);
-    
+
     for (uint32_t i = 0; i < clearAttachmentCount; i++)
     {
         lua_geti(pLuaState, clearAttachmentIndices, i + 1);
         int attachmentIndex = lua_absindex(pLuaState, -1);
         VkClearAttachment *pClearAttachment = &pClearAttachments[i];
-        
+
         lua_getfield(pLuaState, attachmentIndex, "aspectMask");
         pClearAttachment->aspectMask = (VkImageAspectFlags)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_getfield(pLuaState, attachmentIndex, "colorAttachment");
         pClearAttachment->colorAttachment = (uint32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_getfield(pLuaState, attachmentIndex, "clearValue");
         int clearValueIndex = lua_absindex(pLuaState, -1);
-        
+
         lua_getfield(pLuaState, clearValueIndex, "color");
         if (!lua_isnil(pLuaState, -1))
         {
@@ -1839,7 +1842,7 @@ static int luaClearAttachments(lua_State *pLuaState)
             lua_pop(pLuaState, 1);
         }
         lua_pop(pLuaState, 1);
-        
+
         lua_getfield(pLuaState, clearValueIndex, "depthStencil");
         if (!lua_isnil(pLuaState, -1))
         {
@@ -1847,82 +1850,82 @@ static int luaClearAttachments(lua_State *pLuaState)
             lua_getfield(pLuaState, dsIndex, "depth");
             pClearAttachment->clearValue.depthStencil.depth = (float)lua_tonumber(pLuaState, -1);
             lua_pop(pLuaState, 1);
-            
+
             lua_getfield(pLuaState, dsIndex, "stencil");
             pClearAttachment->clearValue.depthStencil.stencil = (uint32_t)lua_tointeger(pLuaState, -1);
             lua_pop(pLuaState, 1);
         }
         lua_pop(pLuaState, 1);
-        
+
         lua_pop(pLuaState, 1); // Pop clearValue
         lua_pop(pLuaState, 1); // Pop attachment item
     }
-    
+
     // Get clearRects table
     int clearRectIndices = lua_absindex(pLuaState, -1);
     lua_len(pLuaState, clearRectIndices);
     uint32_t clearRectCount = (uint32_t)lua_tointeger(pLuaState, -1);
     lua_pop(pLuaState, 1);
-    
+
     VkClearRect *pClearRects = tknMalloc(sizeof(VkClearRect) * clearRectCount);
     memset(pClearRects, 0, sizeof(VkClearRect) * clearRectCount);
-    
+
     for (uint32_t i = 0; i < clearRectCount; i++)
     {
         lua_geti(pLuaState, clearRectIndices, i + 1);
         int rectItemIndex = lua_absindex(pLuaState, -1);
         VkClearRect *pClearRect = &pClearRects[i];
-        
+
         // Get rect
         lua_getfield(pLuaState, rectItemIndex, "rect");
         int rectIndex = lua_absindex(pLuaState, -1);
-        
+
         // Get offset
         lua_getfield(pLuaState, rectIndex, "offset");
         int offsetIndex = lua_absindex(pLuaState, -1);
-        
+
         lua_getfield(pLuaState, offsetIndex, "x");
         pClearRect->rect.offset.x = (int32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_getfield(pLuaState, offsetIndex, "y");
         pClearRect->rect.offset.y = (int32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_pop(pLuaState, 1); // Pop offset
-        
+
         // Get extent
         lua_getfield(pLuaState, rectIndex, "extent");
         int extentIndex = lua_absindex(pLuaState, -1);
-        
+
         lua_getfield(pLuaState, extentIndex, "width");
         pClearRect->rect.extent.width = (uint32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_getfield(pLuaState, extentIndex, "height");
         pClearRect->rect.extent.height = (uint32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_pop(pLuaState, 1); // Pop extent
         lua_pop(pLuaState, 1); // Pop rect
-        
+
         // Get baseArrayLayer and layerCount
         lua_getfield(pLuaState, rectItemIndex, "baseArrayLayer");
         pClearRect->baseArrayLayer = (uint32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_getfield(pLuaState, rectItemIndex, "layerCount");
         pClearRect->layerCount = (uint32_t)lua_tointeger(pLuaState, -1);
         lua_pop(pLuaState, 1);
-        
+
         lua_pop(pLuaState, 1); // Pop rect item
     }
-    
+
     tknClearAttachments(pTknGfxContext, pTknFrame, clearAttachmentCount, pClearAttachments, clearRectCount, pClearRects);
-    
+
     tknFree(pClearAttachments);
     tknFree(pClearRects);
-    
+
     return 0;
 }
 

@@ -495,7 +495,7 @@ if not tkn.tknCreateTknFontPtr then
     ---@param fontPath string Path to font file
     ---@param fontSize integer Font size in pixels
     ---@param atlasLength integer Size of text atlas
-    ---@return lightuserdata TknFont pointer
+    ---@return lightuserdata TknFont pointer ascender and descender
     function tkn.tknCreateTknFontPtr(pTknFontLibrary, fontPath, fontSize, atlasLength)
         error("tkn.tknCreateTknFontPtr: C binding not loaded")
     end

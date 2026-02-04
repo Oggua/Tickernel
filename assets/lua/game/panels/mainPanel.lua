@@ -7,39 +7,32 @@ local mainPanel = {}
 function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, settingsButtonCallback, quitButtonCallback)
     local panel = {}
     panel.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
-    local mainPanelRootNodeLayout = {
-        horizontal = {
-            type = ui.layoutType.relative,
-            pivot = 0.5,
-            minOffset = 0,
-            maxOffset = 0,
-            offset = 0,
-        },
-        vertical = {
-            type = ui.layoutType.relative,
-            pivot = 0.5,
-            minOffset = 0,
-            maxOffset = 0,
-            offset = 0,
-        },
-    }
-    local mainPanelRootNodeFitMode = {
-        type = ui.fitModeType.cover,
-    }
-    local mainPanelRootNodeUv = {
-        u0 = 0,
-        v0 = 0,
-        u1 = 1,
-        v1 = 1,
-    }
-    local rootTransform = {
+    panel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }, {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
         color = nil,
         active = true,
-    }
-    panel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.black, 0, mainPanelRootNodeFitMode, panel.backgroundImage, mainPanelRootNodeUv, nil)
+    }, 0xFFFFFFFF, 0, {
+        type = ui.fitModeType.cover,
+    }, panel.backgroundImage, {
+        u0 = 0,
+        v0 = 0,
+        u1 = 1,
+        v1 = 1,
+    }, nil)
 
     local startButtonWidget = widget.addButtonWidget(pTknGfxContext, "startButton", panel.rootNode, 1, {
         type = ui.layoutType.anchored,
@@ -111,10 +104,11 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         anchor = 0.5,
         pivot = 0.5,
         length = 400,
-        offset = -200,
+        offset = -400,
     }, function(value)
         -- print("ScrollView value changed to: " .. tostring(value))
     end)
+
     return panel
 end
 

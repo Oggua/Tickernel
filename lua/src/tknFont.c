@@ -204,6 +204,20 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGf
     assertFTError(FT_New_Face(pTknFontLibrary->ftLibrary, fontPath, 0, &pTknFont->ftFace));
     assertFTError(FT_Set_Pixel_Sizes(pTknFont->ftFace, 0, fontSize));
 
+    // Debug: print font metrics (converted to pixels)
+    int32_t ascenderPixel = (int32_t)((int64_t)pTknFont->ftFace->ascender * fontSize / pTknFont->ftFace->units_per_EM);
+    int32_t descenderPixel = (int32_t)((int64_t)pTknFont->ftFace->descender * fontSize / pTknFont->ftFace->units_per_EM);
+    int32_t heightPixel = (int32_t)((int64_t)pTknFont->ftFace->height * fontSize / pTknFont->ftFace->units_per_EM);
+    printf("[TknFont] Loaded font: %s (size: %u)\n", fontPath, fontSize);
+    printf("  ascender: %d px, descender: %d px, height: %d px\n", ascenderPixel, descenderPixel, heightPixel);
+    printf("  (raw units: %hd, %hd, %hd with units_per_EM: %u)\n", 
+           pTknFont->ftFace->ascender, pTknFont->ftFace->descender, pTknFont->ftFace->height,
+           pTknFont->ftFace->units_per_EM);
+
+    // Store ascender and descender for Lua
+    pTknFont->ascender = ascenderPixel;
+    pTknFont->descender = descenderPixel;
+
     pTknFont->pNext = pTknFontLibrary->pTknFont;
     pTknFontLibrary->pTknFont = pTknFont;
 

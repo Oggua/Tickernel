@@ -88,35 +88,6 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
     widget.contentNodeHorizontal = contentNodeHorizontal
     widget.contentNodeVertical = contentNodeVertical
 
-    local backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
-
-    local rootTransform = ui.addImageNode(pTknGfxContext, widget.contentNode, 1, "mainPanelRoot", {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }, {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }, {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }, 0xFFFFFFFF, 0, {
-        type = ui.fitModeType.cover,
-    }, backgroundImage, {
-        u0 = 0,
-        v0 = 0,
-        u1 = 1,
-        v1 = 1,
-    }, nil)
-
     local onRightSliderValueChange = function(value)
         widget.contentNodeVertical.anchor = value
         widget.contentNodeVertical.pivot = value
