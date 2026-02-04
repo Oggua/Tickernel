@@ -1,4 +1,5 @@
 local colorPreset = {
+    transparent = 0x00000000,
     black = 0x000000FF,
     darker = 0x333333FF,
     dark = 0x666666FF,

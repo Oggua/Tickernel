@@ -1,11 +1,12 @@
 local ui = require("ui.ui")
-local widget = require("ui.widgets.widget")
-local sliderWidget = require("ui.widgets.sliderWidget")
+local widget = require("engine.widgets.widget")
+local sliderWidget = require("engine.widgets.sliderWidget")
 local colorPreset = require("ui.colorPreset")
 local mainPanel = {}
 
 function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, settingsButtonCallback, quitButtonCallback)
-    mainPanel.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
+    local panel = {}
+    panel.backgroundImage = ui.loadImage(pTknGfxContext, "/textures/pokemon2k.astc")
     local mainPanelRootNodeLayout = {
         horizontal = {
             type = ui.layoutType.relative,
@@ -38,9 +39,9 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         color = nil,
         active = true,
     }
-    mainPanel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.black, 0, mainPanelRootNodeFitMode, mainPanel.backgroundImage, mainPanelRootNodeUv, nil)
+    panel.rootNode = ui.addImageNode(pTknGfxContext, parent, 1, "mainPanelRoot", mainPanelRootNodeLayout.horizontal, mainPanelRootNodeLayout.vertical, rootTransform, colorPreset.black, 0, mainPanelRootNodeFitMode, panel.backgroundImage, mainPanelRootNodeUv, nil)
 
-    local startButtonWidget = widget.addButtonWidget(pTknGfxContext, "startButton", mainPanel.rootNode, 1, {
+    local startButtonWidget = widget.addButtonWidget(pTknGfxContext, "startButton", panel.rootNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -54,7 +55,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         offset = 0,
     }, "Start Game", startButtonCallback)
 
-    local settingButtonWidget = widget.addButtonWidget(pTknGfxContext, "settingButton", mainPanel.rootNode, 2, {
+    local settingButtonWidget = widget.addButtonWidget(pTknGfxContext, "settingButton", panel.rootNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -68,7 +69,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         offset = 96,
     }, "Settings", settingsButtonCallback)
 
-    local quitButtonWidget = widget.addButtonWidget(pTknGfxContext, "quitButton", mainPanel.rootNode, 3, {
+    local quitButtonWidget = widget.addButtonWidget(pTknGfxContext, "quitButton", panel.rootNode, 3, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -82,7 +83,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         offset = 192,
     }, "Quit Game", quitButtonCallback)
 
-    local customSliderWidget = widget.addSliderWidget(pTknGfxContext, "customSlider", mainPanel.rootNode, 4, {
+    local customSliderWidget = widget.addSliderWidget(pTknGfxContext, "customSlider", panel.rootNode, 4, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -99,7 +100,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
     end)
     -- sliderWidget.setHandleLength(customSliderWidget, 0.2)
 
-    local sv = widget.addScrollViewWidget(pTknGfxContext, "customScrollView", mainPanel.rootNode, 5, {
+    local sv = widget.addScrollViewWidget(pTknGfxContext, "customScrollView", panel.rootNode, 5, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -114,14 +115,14 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
     }, function(value)
         -- print("ScrollView value changed to: " .. tostring(value))
     end)
-    return mainPanel
+    return panel
 end
 
-function mainPanel.destroy(mainPanel, pTknGfxContext)
-    ui.removeNode(pTknGfxContext, mainPanel.rootNode)
-    mainPanel.rootNode = nil
-    ui.unloadImage(pTknGfxContext, mainPanel.backgroundImage)
-    mainPanel.backgroundImage = nil
+function mainPanel.destroy(panel, pTknGfxContext)
+    ui.removeNode(pTknGfxContext, panel.rootNode)
+    panel.rootNode = nil
+    ui.unloadImage(pTknGfxContext, panel.backgroundImage)
+    panel.backgroundImage = nil
 end
 
 return mainPanel

@@ -12,8 +12,9 @@ layout(set = PIPELINE_DESCRIPTOR_SET, binding = 0) uniform sampler2D imageTextur
 
 void main() {
     vec4 texColor = texture(imageTexture, uv);
-    outColor = texColor * color;
-    if(outColor.a < alphaThreshold) {
+    if(texColor.a < alphaThreshold) {
         discard;
     }
+    outColor = texColor * color;
+
 }

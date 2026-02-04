@@ -608,4 +608,15 @@ if not tkn.tknSetStencilReference then
     end
 end
 
+if not tkn.tknClearAttachments then
+    ---Clear attachments in a render pass
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknFrame lightuserdata Frame pointer
+    ---@param clearAttachments table Array of VkClearAttachment
+    ---@param clearRects table Array of VkClearRect
+    function tkn.tknClearAttachments(pTknGfxContext, pTknFrame, clearAttachments, clearRects)
+        error("tkn.tknClearAttachments: C binding not loaded")
+    end
+end
+
 return tkn

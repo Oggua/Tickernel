@@ -13,9 +13,9 @@ layout(set = PIPELINE_DESCRIPTOR_SET, binding = 0) uniform sampler2D fontTexture
 void main() {
     // R8 format: read R channel as alpha
     float alpha = texture(fontTexture, uv).r;
-
-    outColor = vec4(color.rgb, color.a * alpha);
-    if(outColor.a < alphaThreshold) {
+    if(alpha < alphaThreshold) {
         discard;
     }
+    outColor = vec4(color.rgb, color.a * alpha);
+
 }

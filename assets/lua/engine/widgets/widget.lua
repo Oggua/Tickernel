@@ -2,10 +2,11 @@ local ui = require("ui.ui")
 local input = require("input")
 local uiDefault = require("atlas.uiDefault")
 local colorPreset = require("ui.colorPreset")
-local buttonWidget = require("ui.widgets.buttonWidget")
-local sliderWidget = require("ui.widgets.sliderWidget")
-local toggleWidget = require("ui.widgets.toggleWidget")
-local scrollViewWidget = require("ui.widgets.scrollViewWidget")
+local buttonWidget = require("engine.widgets.buttonWidget")
+local sliderWidget = require("engine.widgets.sliderWidget")
+local toggleWidget = require("engine.widgets.toggleWidget")
+local scrollViewWidget = require("engine.widgets.scrollViewWidget")
+local dragWidget = require("engine.widgets.dragWidget")
 local widget = {}
 
 function widget.setup(pTknGfxContext, assetsPath)
@@ -92,6 +93,15 @@ end
 function widget.addScrollViewWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
     local newScrollViewWidget = scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.color.background, widget.image, widget.imageFitMode, widget.imageUv, widget.color.foreground, widget.cornerRadius * 2, widget.updateDragWidgetColor, onValueChange)
     return newScrollViewWidget
+end
+
+function widget.addDragWidget(pTknGfxContext, name, parent, index, horizontal, vertical)
+    local newDragWidget = dragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, widget.image, widget.imageFitMode, widget.imageUv, widget.color.background, widget.updateDragWidgetColor)
+    return newDragWidget
+end
+
+function widget.removeDragWidget(pTknGfxContext, dragWidgetToRemove)
+    dragWidget.removeWidget(pTknGfxContext, dragWidgetToRemove)
 end
 
 return widget

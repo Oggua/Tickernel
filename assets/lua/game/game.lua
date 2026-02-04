@@ -2,11 +2,12 @@ local game = {}
 local mainScene = require("game.mainScene")
 local ui = require("ui.ui")
 
-function game.start(pTknGfxContext, assetsPath)
+function game.start(pTknGfxContext, assetsPath, gameRootNode)
     game.assetsPath = assetsPath
     game.currentScene = mainScene
     game.nextScene = mainScene
-    game.currentScene.start(game, pTknGfxContext, assetsPath)
+    game.gameRootNode = gameRootNode
+    game.currentScene.start(game, pTknGfxContext)
 end
 
 function game.stop()

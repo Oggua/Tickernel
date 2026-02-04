@@ -207,12 +207,18 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
     end
 
     if node.pTknInstance and instanceDirty then
-        local instances = {
+        tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, {
             model = rect.model,
             color = {tkn.rgbaToAbgr(tknMath.multiplyColors(rect.color, node.color))},
             alphaThreshold = node.alphaThreshold,
-        }
-        tkn.tknUpdateInstancePtr(pTknGfxContext, node.pTknInstance, ui.instanceFormat, instances)
+        })
+        if node.mask then
+            tkn.tknUpdateInstancePtr(pTknGfxContext, node.pClearMaskTknInstance, ui.instanceFormat, {
+                model = rect.model,
+                color = {tkn.rgbaToAbgr(colorPreset.transparent)},
+                alphaThreshold = node.alphaThreshold,
+            })
+        end
     end
 
     if node.transform.activeDirty or parentActiveDirty then
@@ -536,8 +542,15 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
 
     -- Cleanup: restore stencil state after processing children
     if node.pTknDrawCall and node.rect.active and node.mask then
-        -- Exiting a mask-creating node: restore write mask state
-        -- If parent exists and is masked, keep write disabled; otherwise enable
+        -- Clear stencil by writing back to parent level value
+        -- compareMask selects only the parent level bits for comparison
+        local parentMaskBit = maskIndex > 1 and ((1 << (maskIndex - 1)) - 1) or 0
+        print("Clearing mask level " .. tostring(maskIndex) .. "parentMaskBit=" .. tostring(parentMaskBit))
+        tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
+        tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
+        tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+        tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pClearMaskTknDrawCall)
+        -- Restore write mask state after clearing
         if maskIndex > 1 then
             -- Still inside a parent mask, keep write disabled
             tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)

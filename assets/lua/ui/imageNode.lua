@@ -62,14 +62,21 @@ end
 
 function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, mask, node)
     local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
-    -- Create instance buffer (mat3 + color)
-    local instances = {
+    local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {tkn.rgbaToAbgr(colorPreset.white)},
         alphaThreshold = alphaThreshold,
-    }
-    local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
+    })
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, pTknInstance)
+
+    if mask then
+        node.pClearMaskTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, {
+            model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+            color = {tkn.rgbaToAbgr(colorPreset.transparent)},
+            alphaThreshold = alphaThreshold,
+        })
+        node.pClearMaskTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, image.pTknMaterial, pTknMesh, node.pClearMaskTknInstance)
+    end
 
     node.type = "imageNode"
     node.color = color
@@ -78,12 +85,37 @@ function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, ima
     node.uv = uv
     node.alphaThreshold = alphaThreshold
     node.pTknMesh = pTknMesh
-    node.mask = mask
     node.pTknInstance = pTknInstance
     node.pTknDrawCall = pTknDrawCall
+    node.instanceFormat = instanceFormat
+    node.pTknPipeline = pTknPipeline
+    node.mask = mask
+end
+
+function imageNode.setMask(pTknGfxContext, node, mask)
+    if mask == mask then
+        return
+    else
+        if mask then
+            node.pClearMaskTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, node.instanceFormat.pTknVertexInputLayout, node.instanceFormat, {
+                model = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+                color = {tkn.rgbaToAbgr(colorPreset.transparent)},
+                alphaThreshold = node.alphaThreshold,
+            })
+            node.pClearMaskTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, node.pTknPipeline, node.image.pTknMaterial, node.pTknMesh, node.pClearMaskTknInstance)
+        else
+            tkn.tknDestroyDrawCallPtr(pTknGfxContext, node.pClearMaskTknDrawCall)
+            tkn.tknDestroyInstancePtr(pTknGfxContext, node.pClearMaskTknInstance)
+        end
+        node.mask = mask
+    end
 end
 
 function imageNode.teardownNode(pTknGfxContext, node)
+    if node.mask then
+        tkn.tknDestroyDrawCallPtr(pTknGfxContext, node.pClearMaskTknDrawCall)
+        tkn.tknDestroyInstancePtr(pTknGfxContext, node.pClearMaskTknInstance)
+    end
     tkn.tknDestroyDrawCallPtr(pTknGfxContext, node.pTknDrawCall)
     tkn.tknDestroyInstancePtr(pTknGfxContext, node.pTknInstance)
     tkn.tknDestroyMeshPtr(pTknGfxContext, node.pTknMesh)

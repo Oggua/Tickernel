@@ -1,7 +1,7 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
-local sliderWidget = require("ui.widgets.sliderWidget")
+local sliderWidget = require("engine.widgets.sliderWidget")
 local scrollViewWidget = {}
 
 function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleWidth, animate, onValueChange)

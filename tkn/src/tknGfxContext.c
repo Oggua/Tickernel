@@ -1059,3 +1059,8 @@ void tknSetStencilReference(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, 
 {
     vkCmdSetStencilReference(pTknFrame->vkCommandBuffer, faceMask, reference);
 }
+
+void tknClearAttachments(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, uint32_t clearAttachmentCount, const VkClearAttachment *pClearAttachments, uint32_t clearRectCount, const VkClearRect *pClearRects)
+{
+    vkCmdClearAttachments(pTknFrame->vkCommandBuffer, clearAttachmentCount, pClearAttachments, clearRectCount, pClearRects);
+}
