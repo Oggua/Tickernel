@@ -22,13 +22,26 @@ function textNode.update(pTknGfxContext)
     end
 end
 
-function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, pTknSampler, pTknPipeline)
-    local path = textNode.assetsPath .. relativePath
-    local font = textNode.pathToFont[path]
+function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, pTknSampler, pTknPipeline, bold)
+    -- Support both string and table for relativePath
+    local fontPaths = {}
+    local pathKey = ""
+    
+    if type(relativePath) == "table" then
+        for i, p in ipairs(relativePath) do
+            fontPaths[i] = textNode.assetsPath .. p
+        end
+        pathKey = table.concat(fontPaths, "|")
+    else
+        fontPaths[1] = textNode.assetsPath .. relativePath
+        pathKey = fontPaths[1]
+    end
+    
+    local font = textNode.pathToFont[pathKey]
     if font then
         if fontSize > font.fontSize then
             tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
-            local pTknFont, pTknImage, ascender, descender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
+            local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength)
             local inputBindings = {{
                 vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 pTknImage = pTknImage,
@@ -40,15 +53,15 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
             font.atlasLength = atlasLength
             font.pTknFont = pTknFont
             font.pTknImage = pTknImage
-            font.ascender = ascender
-            font.descender = descender
+            font.maxAscender = maxAscender
+            font.minDescender = minDescender
             font.dirty = true
             return font
         else
             return font
         end
     else
-        local pTknFont, pTknImage, ascender, descender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, path, fontSize, atlasLength)
+        local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength)
         local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -58,17 +71,17 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
         }}
         tkn.tknUpdateMaterialPtr(pTknGfxContext, pTknMaterial, inputBindings)
         local font = {
-            path = path,
+            path = pathKey,
             fontSize = fontSize,
             atlasLength = atlasLength,
             pTknFont = pTknFont,
             pTknImage = pTknImage,
             pTknMaterial = pTknMaterial,
             dirty = false,
-            ascender = ascender,
-            descender = descender,
+            maxAscender = maxAscender,
+            minDescender = minDescender,
         }
-        textNode.pathToFont[path] = font
+        textNode.pathToFont[pathKey] = font
         return font
     end
 end
@@ -138,7 +151,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         local sizeScale = node.size / font.fontSize
         local scaleX = sizeScale / screenWidth * 2
         local scaleY = sizeScale / screenHeight * 2
-        local lineHeight = (font.ascender - font.descender) * sizeScale / screenHeight * 2
+        local lineHeight = (font.maxAscender - font.minDescender) * sizeScale / screenHeight * 2
         local atlasScale = 1 / font.atlasLength
 
         -- Bold offset in pixels (converted to NDC)
@@ -211,7 +224,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         }
         local indices = {}
         local charIndex = 0
-        local penY = top + (rectHeight - totalHeight) * node.alignV + (font.ascender * sizeScale / screenHeight * 2)
+        local penY = top + (rectHeight - totalHeight) * node.alignV + (font.maxAscender * sizeScale / screenHeight * 2)
 
         for lineIdx, line in ipairs(lines) do
             -- Calculate starting X position based on horizontal alignment

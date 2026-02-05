@@ -16,10 +16,10 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         pivot = 0,
         length = 64,
         offset = 0,
-    }, "Add Tab", function()
+    }, "\xEE\xB1\x9F Add Tab", function()
         print("Add Tab button clicked")
     end)
-    
+
 end
 
 function editorPanel.destroy(pTknGfxContext)

@@ -41,7 +41,7 @@ function widget.setup(pTknGfxContext, assetsPath)
 
     widget.image, widget.imageFitMode, widget.imageUv, widget.cornerRadius = uiDefault.getSprite(uiDefault.cornerRadiusPreset.small)
 
-    widget.font = ui.loadFont(pTknGfxContext, "/fonts/Monaco.ttf", 32, 2048)
+    widget.font = ui.loadFont(pTknGfxContext, {"/fonts/Monaco.ttf", "/fonts/RemixIcon.ttf"}, 32, 2048)
     widget.smallFontSize = 18
     widget.normalFontSize = 24
     widget.largeFontSize = 32

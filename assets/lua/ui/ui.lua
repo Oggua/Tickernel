@@ -226,7 +226,7 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
         node.rect.active = parentRectActive and node.transform.active
         node.transform.activeDirty = false
         parentActiveDirty = true
-        print("Node " .. tostring(node.name) .. " active state changed to " .. tostring(node.rect.active))
+        -- print("Node " .. tostring(node.name) .. " active state changed to " .. tostring(node.rect.active))
     end
 
     for i = 1, #node.children do

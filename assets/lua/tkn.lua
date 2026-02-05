@@ -490,13 +490,17 @@ if not tkn.tknDestroyTknFontLibraryPtr then
 end
 
 if not tkn.tknCreateTknFontPtr then
-    ---Create a font from a file
+    ---Create a font from one or more font files
     ---@param pTknFontLibrary lightuserdata TknFontLibrary pointer
-    ---@param fontPath string Path to font file
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param fontPaths table Array of font file paths (string)
     ---@param fontSize integer Font size in pixels
     ---@param atlasLength integer Size of text atlas
-    ---@return lightuserdata TknFont pointer ascender and descender
-    function tkn.tknCreateTknFontPtr(pTknFontLibrary, fontPath, fontSize, atlasLength)
+    ---@return lightuserdata TknFont pointer
+    ---@return lightuserdata pTknImage
+    ---@return integer maxAscender (unified across all fonts)
+    ---@return integer minDescender (unified across all fonts)
+    function tkn.tknCreateTknFontPtr(pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength)
         error("tkn.tknCreateTknFontPtr: C binding not loaded")
     end
 end

@@ -56,7 +56,28 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         verticalScale = 1,
         color = nil,
         active = true,
-    }, "Engine Editor", widget.font, widget.normalFontSize, widget.color.foreground, 0, 0, 0.5, true)
+    }, "Editor", widget.font, widget.normalFontSize, widget.color.foreground, 0, 0, 0.5, false)
+
+    ui.addTextNode(pTknGfxContext, editorTopBarPanel.editorDragWidget.backgroundNode, 2, "editorToggleText", {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 48,
+        maxOffset = 0,
+        offset = 0,
+    }, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }, {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+        color = nil,
+        active = true,
+    }, "\xEE\xB1\x9F", widget.font, widget.normalFontSize, widget.color.foreground, 0, 1, 0.5, false)
+
     return editorTopBarPanel
 end
 

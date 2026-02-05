@@ -83,7 +83,7 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         color = nil,
         active = true,
     }
-    widget.textNode = ui.addTextNode(pTknGfxContext, widget.backgroundNode, 1, "buttonText", textHorizontal, textVertical, textTransform, text, font, fontSize, fontColor, 0, 0.5, 0.5, true)
+    widget.textNode = ui.addTextNode(pTknGfxContext, widget.backgroundNode, 1, "buttonText", textHorizontal, textVertical, textTransform, text, font, fontSize, fontColor, 0, 0.5, 0.5, false)
     return widget
 end
 

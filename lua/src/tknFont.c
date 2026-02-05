@@ -18,9 +18,38 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
         pTknChar = pTknChar->pNext;
     }
 
-    assertFTError(FT_Load_Char(pTknFont->ftFace, unicode, FT_LOAD_RENDER));
-    FT_GlyphSlot glyph = pTknFont->ftFace->glyph;
-    FT_Bitmap *ftBitmap = &glyph->bitmap;
+    // Try each font in order until one can render this character
+    FT_GlyphSlot glyph = NULL;
+    FT_Bitmap *ftBitmap = NULL;
+    uint32_t foundFontIndex = pTknFont->fontCount - 1;  // Default to last font for fallback
+
+    for (uint32_t i = 0; i < pTknFont->fontCount; i++)
+    {
+        // Check if character actually exists in this font (not just a fallback .notdef)
+        FT_UInt glyphIndex = FT_Get_Char_Index(pTknFont->ftFaces[i], unicode);
+        if (glyphIndex == 0)
+        {
+            // Character not found in this font, try next one
+            printf("[TknFont] Character U+%04X not found in font %u\n", unicode, i);
+            continue;
+        }
+        
+        foundFontIndex = i;
+        break;
+    }
+    
+    // Load from found font (or last font as fallback for replacement char)
+    FT_Error err = FT_Load_Char(pTknFont->ftFaces[foundFontIndex], unicode, FT_LOAD_RENDER);
+    if (err == 0)
+    {
+        glyph = pTknFont->ftFaces[foundFontIndex]->glyph;
+        ftBitmap = &glyph->bitmap;
+    }
+
+    if (!glyph || !ftBitmap)
+    {
+        return NULL;
+    }
 
     if (pTknFont->penX + ftBitmap->width > pTknFont->atlasLength)
     {
@@ -165,8 +194,13 @@ void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext)
     tknFree(sizes);
 }
 
-TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, const char *fontPath, uint32_t fontSize, uint32_t atlasLength)
+TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, uint32_t fontPathCount, const char **fontPaths, uint32_t fontSize, uint32_t atlasLength)
 {
+    if (fontPathCount == 0 || !fontPaths)
+    {
+        return NULL;
+    }
+
     TknFont *pTknFont = tknMalloc(sizeof(TknFont));
 
     uint32_t charsPerRow = atlasLength / fontSize;
@@ -200,22 +234,47 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGf
     pTknFont->pDirtyTknChar = NULL;
     pTknFont->pNext = NULL;
 
-    assertFTError(FT_New_Face(pTknFontLibrary->ftLibrary, fontPath, 0, &pTknFont->ftFace));
-    assertFTError(FT_Set_Pixel_Sizes(pTknFont->ftFace, 0, fontSize));
+    // Allocate face array
+    pTknFont->ftFaces = tknMalloc(sizeof(FT_Face) * fontPathCount);
+    pTknFont->fontCount = fontPathCount;
 
-    // Debug: print font metrics (converted to pixels)
-    int32_t ascenderPixel = (int32_t)((int64_t)pTknFont->ftFace->ascender * fontSize / pTknFont->ftFace->units_per_EM);
-    int32_t descenderPixel = (int32_t)((int64_t)pTknFont->ftFace->descender * fontSize / pTknFont->ftFace->units_per_EM);
-    int32_t heightPixel = (int32_t)((int64_t)pTknFont->ftFace->height * fontSize / pTknFont->ftFace->units_per_EM);
-    printf("[TknFont] Loaded font: %s (size: %u)\n", fontPath, fontSize);
-    printf("  ascender: %d px, descender: %d px, height: %d px\n", ascenderPixel, descenderPixel, heightPixel);
-    printf("  (raw units: %hd, %hd, %hd with units_per_EM: %u)\n", 
-           pTknFont->ftFace->ascender, pTknFont->ftFace->descender, pTknFont->ftFace->height,
-           pTknFont->ftFace->units_per_EM);
+    // Calculate unified line height first
+    int32_t maxAscender = INT32_MIN;
+    int32_t minDescender = INT32_MAX;
 
-    // Store ascender and descender for Lua
-    pTknFont->ascender = ascenderPixel;
-    pTknFont->descender = descenderPixel;
+    for (uint32_t i = 0; i < fontPathCount; i++)
+    {
+        FT_Face tempFace;
+        assertFTError(FT_New_Face(pTknFontLibrary->ftLibrary, fontPaths[i], 0, &tempFace));
+        assertFTError(FT_Set_Pixel_Sizes(tempFace, 0, fontSize));
+
+        int32_t ascenderPixel = (int32_t)((int64_t)tempFace->ascender * fontSize / tempFace->units_per_EM);
+        int32_t descenderPixel = (int32_t)((int64_t)tempFace->descender * fontSize / tempFace->units_per_EM);
+
+        if (ascenderPixel > maxAscender)
+            maxAscender = ascenderPixel;
+        if (descenderPixel < minDescender)
+            minDescender = descenderPixel;
+
+        printf("[TknFont] Pre-scan[%u]: %s (size: %u) -> ascender: %d, descender: %d\n",
+               i, fontPaths[i], fontSize, ascenderPixel, descenderPixel);
+
+        FT_Done_Face(tempFace);
+    }
+
+    pTknFont->maxAscender = maxAscender;
+    pTknFont->minDescender = minDescender;
+    printf("[TknFont] Unified metrics: maxAscender=%d, minDescender=%d, lineHeight=%d\n",
+           pTknFont->maxAscender, pTknFont->minDescender, pTknFont->maxAscender - pTknFont->minDescender);
+
+    // Load all fonts
+    for (uint32_t i = 0; i < fontPathCount; i++)
+    {
+        assertFTError(FT_New_Face(pTknFontLibrary->ftLibrary, fontPaths[i], 0, &pTknFont->ftFaces[i]));
+        assertFTError(FT_Set_Pixel_Sizes(pTknFont->ftFaces[i], 0, fontSize));
+
+        printf("[TknFont] Loaded[%u]: %s (size: %u)\n", i, fontPaths[i], fontSize);
+    }
 
     pTknFont->pNext = pTknFontLibrary->pTknFont;
     pTknFontLibrary->pTknFont = pTknFont;
@@ -260,7 +319,13 @@ void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, TknGf
         }
     }
 
-    FT_Done_Face(pTknFont->ftFace);
+    // Destroy all faces
+    for (uint32_t i = 0; i < pTknFont->fontCount; i++)
+    {
+        FT_Done_Face(pTknFont->ftFaces[i]);
+    }
+
+    tknFree(pTknFont->ftFaces);
     tknFree(pTknFont->tknCharPtrs);
     tknDestroyImagePtr(pTknGfxContext, pTknFont->pTknImage);
     tknFree(pTknFont);
