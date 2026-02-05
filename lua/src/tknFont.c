@@ -198,7 +198,6 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGf
     pTknFont->maxRowHeight = 0;
     pTknFont->tknCharCount = 0;
     pTknFont->pDirtyTknChar = NULL;
-    pTknFont->tknCharCount = 0;
     pTknFont->pNext = NULL;
 
     assertFTError(FT_New_Face(pTknFontLibrary->ftLibrary, fontPath, 0, &pTknFont->ftFace));

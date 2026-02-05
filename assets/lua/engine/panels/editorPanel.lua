@@ -8,17 +8,18 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
-        length = 32,
+        length = 128,
         offset = 0,
     }, {
         type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
+        anchor = 0,
+        pivot = 0,
         length = 64,
         offset = 0,
-    }, "+", function()
+    }, "Add Tab", function()
         print("Add Tab button clicked")
     end)
+    
 end
 
 function editorPanel.destroy(pTknGfxContext)

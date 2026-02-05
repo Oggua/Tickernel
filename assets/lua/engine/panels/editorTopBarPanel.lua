@@ -35,11 +35,7 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         offset = 0,
     }
     editorTopBarPanel.editorToggleWidget = widget.addToggleWidget(pTknGfxContext, "editorToggle", editorTopBarPanel.editorDragWidget.backgroundNode, 1, editorToggleHorizontal, editorToggleVertical, function(isToggled)
-        print("Editor Toggle:", isToggled)
-        print("editorRootNode active before:", editorRootNode.transform.active)
         ui.setNodeTransformActive(editorRootNode, isToggled)
-        print("editorRootNode active after:", editorRootNode.transform.active)
-        print("editorRootNode activeDirty:", editorRootNode.transform.activeDirty)
     end)
 
     ui.addTextNode(pTknGfxContext, editorTopBarPanel.editorDragWidget.backgroundNode, 2, "editorToggleText", {
