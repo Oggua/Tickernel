@@ -496,11 +496,12 @@ if not tkn.tknCreateTknFontPtr then
     ---@param fontPaths table Array of font file paths (string)
     ---@param fontSize integer Font size in pixels
     ---@param atlasLength integer Size of text atlas
+    ---@param boldStrengths? table Array of bold strengths in 26.6 format (0 = no bold)
     ---@return lightuserdata TknFont pointer
     ---@return lightuserdata pTknImage
     ---@return integer maxAscender (unified across all fonts)
     ---@return integer minDescender (unified across all fonts)
-    function tkn.tknCreateTknFontPtr(pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength)
+    function tkn.tknCreateTknFontPtr(pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength, boldStrengths)
         error("tkn.tknCreateTknFontPtr: C binding not loaded")
     end
 end

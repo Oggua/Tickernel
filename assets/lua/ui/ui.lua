@@ -191,13 +191,10 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
     end
 
     local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
-    if boundsDirty or screenSizeDirty then
-        -- Update mesh if bounds changed
-        if node.type == "imageNode" then
-            imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
-        elseif node.type == "textNode" then
-            textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
-        end
+    if node.type == "imageNode" then
+        imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
+    elseif node.type == "textNode" then
+        textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     end
 
     -- TODO Mark dirty for alphaThreshold and node's color
@@ -614,8 +611,8 @@ function ui.unloadImage(pTknGfxContext, image)
     imageNode.unloadImage(pTknGfxContext, image)
 end
 
-function ui.loadFont(pTknGfxContext, path, fontSize, atlasLength)
-    return textNode.loadFont(pTknGfxContext, path, fontSize, atlasLength, ui.pTknSampler, ui.renderPass.pTextPipeline)
+function ui.loadFont(pTknGfxContext, path, fontSize, atlasLength, boldStrengths)
+    return textNode.loadFont(pTknGfxContext, path, fontSize, atlasLength, ui.pTknSampler, ui.renderPass.pTextPipeline, boldStrengths)
 end
 function ui.unloadFont(pTknGfxContext, font)
     textNode.unloadFont(pTknGfxContext, font)
@@ -653,6 +650,11 @@ end
 
 function ui.removeNode(pTknGfxContext, node)
     removeNodeInternal(pTknGfxContext, node)
+end
+
+function ui.setTextContent(node, textString)
+    assert(node.type == "textNode", "ui.setTextContent: node is not a textNode")
+    textNode.setTextContent(node, textString)
 end
 
 function ui.rectContainsPoint(rect, xNdc, yNdc)

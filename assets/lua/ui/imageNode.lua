@@ -93,7 +93,7 @@ function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, ima
 end
 
 function imageNode.setMask(pTknGfxContext, node, mask)
-    if mask == mask then
+    if mask == node.mask then
         return
     else
         if mask then

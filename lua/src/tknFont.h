@@ -2,6 +2,7 @@
 #include "lualib.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_OUTLINE_H
 
 typedef struct TknChar
 {
@@ -21,8 +22,9 @@ typedef struct TknChar
 
 typedef struct TknFont
 {
-    FT_Face *ftFaces;      // Array of font faces
-    uint32_t fontCount;    // Number of fonts
+    FT_Face *ftFaces;               // Array of font faces
+    FT_Pos *fontBoldStrengths;      // Bold strength for each font (0 = no bold)
+    uint32_t fontCount;             // Number of fonts
     uint32_t tknCharCapacity;
     uint32_t tknCharCount;
     TknChar **tknCharPtrs;
@@ -50,5 +52,5 @@ void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pT
 TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode);
 void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext);
 
-TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, uint32_t fontPathCount, const char **fontPaths, uint32_t fontSize, uint32_t atlasLength);
+TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, uint32_t fontPathCount, const char **fontPaths, uint32_t fontSize, uint32_t atlasLength, const FT_Pos *boldStrengths);
 void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, TknGfxContext *pTknGfxContext);

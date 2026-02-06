@@ -1,7 +1,7 @@
 local ui = require("ui.ui")
 local input = require("input")
 local buttonWidget = {}
-function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, onClick)
+function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, callbacks)
     local widget = {}
     local buttonTransform = {
         rotation = 0,
@@ -10,7 +10,7 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         color = nil,
         active = true,
     }
-
+ 
     local processInput = function(node, xNdc, yNdc, inputState)
         if animate then
             animate(node, xNdc, yNdc, inputState)
@@ -19,8 +19,8 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
-                if onClick then
-                    onClick()
+                if callbacks then
+                    callbacks()
                 end
                 return false
             else
@@ -87,11 +87,11 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     return widget
 end
 
-function buttonWidget.removeWidget(pTknGfxContext, buttonWidget)
-    ui.removeNode(pTknGfxContext, buttonWidget.buttonNode)
-    buttonWidget.buttonNode = nil
-    buttonWidget.backgroundNode = nil
-    buttonWidget.textNode = nil
+function buttonWidget.removeWidget(pTknGfxContext, widget)
+    ui.removeNode(pTknGfxContext, widget.buttonNode)
+    widget.buttonNode = nil
+    widget.backgroundNode = nil
+    widget.textNode = nil
 end
 
 return buttonWidget

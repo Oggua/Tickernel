@@ -1,6 +1,6 @@
 local ui = require("ui.ui")
 local input = require("input")
-local widget = require("engine.widgets.widget")
+local widgetConfig = require("engine.widgets.widgetConfig")
 local editorTopBarPanel = {}
 
 function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNode)
@@ -13,12 +13,12 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
     }
     local editorDragVertical = {
         type = ui.layoutType.anchored,
-        anchor = 0,
+        anchor = 0.5,
         pivot = 0.5,
         length = 64,
         offset = 0,
     }
-    editorTopBarPanel.editorDragWidget = widget.addDragWidget(pTknGfxContext, "editorDrag", editorTopBarNode, 1, editorDragHorizontal, editorDragVertical)
+    editorTopBarPanel.editorDragWidget = widgetConfig.addDragWidget(pTknGfxContext, "editorDrag", editorTopBarNode, 1, editorDragHorizontal, editorDragVertical)
 
     local editorToggleHorizontal = {
         type = ui.layoutType.anchored,
@@ -34,14 +34,15 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         length = 32,
         offset = 0,
     }
-    editorTopBarPanel.editorToggleWidget = widget.addToggleWidget(pTknGfxContext, "editorToggle", editorTopBarPanel.editorDragWidget.backgroundNode, 1, editorToggleHorizontal, editorToggleVertical, function(isToggled)
+    editorTopBarPanel.editorToggleWidget = widgetConfig.addToggleWidget(pTknGfxContext, "editorToggle", editorTopBarPanel.editorDragWidget.backgroundNode, 1, editorToggleHorizontal, editorToggleVertical, function(isToggled)
         ui.setNodeTransformActive(editorRootNode, isToggled)
+        ui.setTextContent(editorTopBarPanel.editorToggleTextNode, "" .. (isToggled and "Hide" or "Show") .. " Editor \xEE\xB1\xA0")
     end)
 
-    ui.addTextNode(pTknGfxContext, editorTopBarPanel.editorDragWidget.backgroundNode, 2, "editorToggleText", {
+    editorTopBarPanel.editorToggleTextNode = ui.addTextNode(pTknGfxContext, editorTopBarPanel.editorDragWidget.backgroundNode, 2, "editorToggleText", {
         type = ui.layoutType.relative,
         pivot = 0.5,
-        minOffset = 48,
+        minOffset = 40,
         maxOffset = 0,
         offset = 0,
     }, {
@@ -56,34 +57,13 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         verticalScale = 1,
         color = nil,
         active = true,
-    }, "Editor", widget.font, widget.normalFontSize, widget.color.foreground, 0, 0, 0.5, false)
-
-    ui.addTextNode(pTknGfxContext, editorTopBarPanel.editorDragWidget.backgroundNode, 2, "editorToggleText", {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 48,
-        maxOffset = 0,
-        offset = 0,
-    }, {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }, {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }, "\xEE\xB1\x9F", widget.font, widget.normalFontSize, widget.color.foreground, 0, 1, 0.5, false)
-
+    }, "Show Editor \xEE\xB1\xA0", widgetConfig.font, widgetConfig.normalFontSize, widgetConfig.color.lighter, 0, 0.5, 0.5, false)
     return editorTopBarPanel
 end
 
 function editorTopBarPanel.destroy(pTknGfxContext)
-    widget.removeToggleWidget(pTknGfxContext, editorTopBarPanel.editorToggleWidget)
-    widget.removeDragWidget(pTknGfxContext, editorTopBarPanel.editorDragWidget)
+    widgetConfig.removeToggleWidget(pTknGfxContext, editorTopBarPanel.editorToggleWidget)
+    widgetConfig.removeDragWidget(pTknGfxContext, editorTopBarPanel.editorDragWidget)
 
 end
 

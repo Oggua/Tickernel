@@ -39,10 +39,23 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
     }
     
     // Load from found font (or last font as fallback for replacement char)
-    FT_Error err = FT_Load_Char(pTknFont->ftFaces[foundFontIndex], unicode, FT_LOAD_RENDER);
+    // Load with FT_LOAD_DEFAULT to get outline without pre-rendering
+    FT_Error err = FT_Load_Char(pTknFont->ftFaces[foundFontIndex], unicode, FT_LOAD_DEFAULT);
     if (err == 0)
     {
         glyph = pTknFont->ftFaces[foundFontIndex]->glyph;
+        
+        // Apply embolden to outline if strength is set for this font
+        if (pTknFont->fontBoldStrengths[foundFontIndex] > 0)
+        {
+            if (glyph->outline.n_points > 0)
+            {
+                FT_Outline_Embolden(&glyph->outline, pTknFont->fontBoldStrengths[foundFontIndex]);
+            }
+        }
+        
+        // Now render the (possibly emboldened) outline to bitmap
+        FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
         ftBitmap = &glyph->bitmap;
     }
 
@@ -194,7 +207,7 @@ void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext)
     tknFree(sizes);
 }
 
-TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, uint32_t fontPathCount, const char **fontPaths, uint32_t fontSize, uint32_t atlasLength)
+TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, uint32_t fontPathCount, const char **fontPaths, uint32_t fontSize, uint32_t atlasLength, const FT_Pos *boldStrengths)
 {
     if (fontPathCount == 0 || !fontPaths)
     {
@@ -236,7 +249,18 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGf
 
     // Allocate face array
     pTknFont->ftFaces = tknMalloc(sizeof(FT_Face) * fontPathCount);
+    pTknFont->fontBoldStrengths = tknMalloc(sizeof(FT_Pos) * fontPathCount);
     pTknFont->fontCount = fontPathCount;
+    
+    // Copy bold strengths (or zero if not provided)
+    if (boldStrengths)
+    {
+        memcpy(pTknFont->fontBoldStrengths, boldStrengths, sizeof(FT_Pos) * fontPathCount);
+    }
+    else
+    {
+        memset(pTknFont->fontBoldStrengths, 0, sizeof(FT_Pos) * fontPathCount);
+    }
 
     // Calculate unified line height first
     int32_t maxAscender = INT32_MIN;
@@ -326,6 +350,7 @@ void destroyTknFontPtr(TknFontLibrary *pTknFontLibrary, TknFont *pTknFont, TknGf
     }
 
     tknFree(pTknFont->ftFaces);
+    tknFree(pTknFont->fontBoldStrengths);
     tknFree(pTknFont->tknCharPtrs);
     tknDestroyImagePtr(pTknGfxContext, pTknFont->pTknImage);
     tknFree(pTknFont);

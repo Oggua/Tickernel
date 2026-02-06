@@ -1,7 +1,7 @@
 local ui = require("ui.ui")
 local uiDefault = {}
 
-function uiDefault.setup(pTknGfxContext)
+function uiDefault.load(pTknGfxContext)
     uiDefault.image = ui.loadImage(pTknGfxContext, "/textures/uiDefault.astc")
     uiDefault.cornerRadiusPreset = {
         none = "none",
@@ -66,7 +66,7 @@ function uiDefault.setup(pTknGfxContext)
 
 end
 
-function uiDefault.teardown(pTknGfxContext)
+function uiDefault.unload(pTknGfxContext)
     ui.unloadImage(pTknGfxContext, uiDefault.image)
     uiDefault.image = nil
     uiDefault.cornerRadiusPresetToRadius = nil

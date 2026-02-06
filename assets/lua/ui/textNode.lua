@@ -22,11 +22,11 @@ function textNode.update(pTknGfxContext)
     end
 end
 
-function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, pTknSampler, pTknPipeline, bold)
+function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, pTknSampler, pTknPipeline, boldStrengths)
     -- Support both string and table for relativePath
     local fontPaths = {}
     local pathKey = ""
-    
+
     if type(relativePath) == "table" then
         for i, p in ipairs(relativePath) do
             fontPaths[i] = textNode.assetsPath .. p
@@ -36,12 +36,12 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
         fontPaths[1] = textNode.assetsPath .. relativePath
         pathKey = fontPaths[1]
     end
-    
+
     local font = textNode.pathToFont[pathKey]
     if font then
         if fontSize > font.fontSize then
             tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
-            local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength)
+            local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength, boldStrengths)
             local inputBindings = {{
                 vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 pTknImage = pTknImage,
@@ -61,7 +61,7 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
             return font
         end
     else
-        local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength)
+        local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength, boldStrengths)
         local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
         local inputBindings = {{
             vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -108,6 +108,7 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, alpha
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, instances)
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
     node.text = textString
+    node.textDirty = true
     node.font = font
     node.size = size
     node.color = color
@@ -138,10 +139,16 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.alignV = 0
     node.bold = false
     node.type = nil
+    node.textDirty = nil
+end
+
+function textNode.setTextContent(node, textString)
+    node.text = textString
+    node.textDirty = true
 end
 
 function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
-    if boundsDirty or screenSizeDirty or node.font.dirty then
+    if boundsDirty or screenSizeDirty or node.font.dirty or node.textDirty then
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local rectWidth = rect.horizontal.max - rect.horizontal.min
