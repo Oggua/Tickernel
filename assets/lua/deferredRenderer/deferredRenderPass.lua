@@ -3,7 +3,7 @@ local geometryPipeline = require("deferredRenderer.geometryPipeline")
 local lightingPipeline = require("deferredRenderer.lightingPipeline")
 local deferredRenderPass = {}
 
-function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
+function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, pDepthStencilAttachment, pSwapchainAttachment)
     -- Vertex format for voxel meshes
     deferredRenderPass.vertexFormat = {{
         name = "position",
@@ -85,12 +85,10 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
         count = 1,
     }}
 
-    local depthVkFormat = tkn.tknGetSupportedFormat(pTknGfxContext, {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-    deferredRenderPass.pDepthStencilAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
     deferredRenderPass.pAlbedoAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
     deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
-    deferredRenderPass.pSwapchainAttachment = tkn.tknGetSwapchainAttachmentPtr(pTknGfxContext)
-    local pAttachments = {deferredRenderPass.pDepthStencilAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, deferredRenderPass.pSwapchainAttachment}
+
+    local pAttachments = {pDepthStencilAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, pSwapchainAttachment}
 
     local depthAttachmentDescription = {
         samples = VK_SAMPLE_COUNT_1_BIT,
@@ -121,7 +119,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     };
     local swapchainAttachmentDescription = {
         samples = VK_SAMPLE_COUNT_1_BIT,
-        loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -134,7 +132,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     local vkClearValues = {{
         depth = 1.0,
         stencil = 0,
-    }, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}};
+    }, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}, {0.15, 0.28, 0.20, 1.0}};
 
     local geometrySubpassDescription = {
         pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -259,8 +257,6 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex)
     deferredRenderPass.pLightingMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline)
 
     local pLightingDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline, deferredRenderPass.pLightingMaterial, nil, nil)
-
-    return renderPassIndex
 end
 
 function deferredRenderPass.teardown(pTknGfxContext)
@@ -285,7 +281,6 @@ function deferredRenderPass.teardown(pTknGfxContext)
 
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pNormalAttachment)
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pAlbedoAttachment)
-    tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, deferredRenderPass.pDepthStencilAttachment)
 
     -- Destroy vertex input layouts
     tkn.tknDestroyVertexInputLayoutPtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout)

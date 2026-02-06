@@ -1,8 +1,10 @@
 local game = {}
 local mainScene = require("game.mainScene")
 local ui = require("ui.ui")
-
-function game.start(pTknGfxContext, assetsPath, gameRootNode)
+local tkn = require("tkn")
+local deferredRenderPass = require("deferredRenderer/deferredRenderPass")
+function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment, renderPassIndex, assetsPath, gameRootNode)
+    deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, pDepthStencilAttachment, pSwapchainAttachment)
     game.assetsPath = assetsPath
     game.currentScene = mainScene
     game.nextScene = mainScene
@@ -17,6 +19,7 @@ end
 function game.stopGfx(pTknGfxContext)
     game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
+    deferredRenderPass.teardown(pTknGfxContext)
 end
 
 -- Returns: nil = quit, self = continue, other scene = switch
@@ -49,8 +52,11 @@ function game.switchScene(nextScene)
 end
 
 function game.recordFrame(pTknGfxContext, pTknFrame)
-    -- Game rendering logic here
+    tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, deferredRenderPass.pTknRenderPass)
+    tkn.tknNextSubpassPtr(pTknGfxContext, pTknFrame)
+
     game.currentScene.recordFrame(game, pTknGfxContext, pTknFrame)
+    tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
 end
 
 return game

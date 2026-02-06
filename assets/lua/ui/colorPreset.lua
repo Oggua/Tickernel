@@ -7,8 +7,8 @@ local colorPreset = {
     lighter = 0xCCCCCCFF,
     white = 0xFFFFFFFF,
     semiDarker = 0x000000CC,
-    semiDark = 0x1A1A1ACC,
-    semiLight = 0xCCCCCCCC,
+    semiDark = 0x282828CC,
+    semiLight = 0xD4CCC2CC,
     semiLighter = 0xFFFFFFCC,
 }
 return colorPreset

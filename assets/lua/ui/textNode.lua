@@ -92,7 +92,7 @@ function textNode.unloadFont(pTknGfxContext, font)
     tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
 end
 
-function textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH, alignV, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, node)
+function textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, horizontalAlign, verticalAlign, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, node)
     local maxChars = #textString
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
@@ -113,8 +113,8 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, alpha
     node.size = size
     node.color = color
     node.alphaThreshold = alphaThreshold
-    node.alignH = alignH
-    node.alignV = alignV
+    node.horizontalAlign = horizontalAlign
+    node.verticalAlign = verticalAlign
     node.bold = bold
     node.pTknMaterial = pTknMaterial
     node.pTknMesh = pTknMesh
@@ -135,8 +135,8 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.text = ""
     node.size = 0
     node.color = colorPreset.white
-    node.alignH = 0
-    node.alignV = 0
+    node.horizontalAlign = 0
+    node.verticalAlign = 0
     node.bold = false
     node.type = nil
     node.textDirty = nil
@@ -231,11 +231,11 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         }
         local indices = {}
         local charIndex = 0
-        local penY = top + (rectHeight - totalHeight) * node.alignV + (font.maxAscender * sizeScale / screenHeight * 2)
+        local penY = top + (rectHeight - totalHeight) * node.verticalAlign + (font.maxAscender * sizeScale / screenHeight * 2)
 
         for lineIdx, line in ipairs(lines) do
             -- Calculate starting X position based on horizontal alignment
-            local startX = left + (rectWidth - line.width) * node.alignH
+            local startX = left + (rectWidth - line.width) * node.horizontalAlign
 
             for _, char in ipairs(line.chars) do
                 local charLeft = startX + char.penX + char.bearingXNDC

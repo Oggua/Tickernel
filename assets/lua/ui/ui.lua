@@ -304,7 +304,7 @@ local function removeNodeRecursive(pTknGfxContext, node)
     node.rect = nil
 end
 
-function ui.setNodeOrienation(node, orientationKey, orientation)
+function ui.setNodeOrientation(node, orientationKey, orientation)
     if orientation.type == ui.layoutType.anchored then
         node[orientationKey].type = ui.layoutType.anchored
         node[orientationKey].anchor = orientation.anchor
@@ -318,7 +318,7 @@ function ui.setNodeOrienation(node, orientationKey, orientation)
         node[orientationKey].maxOffset = orientation.maxOffset
         node[orientationKey].offset = orientation.offset
     else
-        error("ui.setNodeOrienation: unknown layout type " .. tostring(orientation.type))
+        error("ui.setNodeOrientation: unknown layout type " .. tostring(orientation.type))
     end
     node[orientationKey].dirty = true
 end
@@ -349,8 +349,8 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
         vertical = {},
         transform = {},
     }
-    ui.setNodeOrienation(node, "horizontal", horizontal)
-    ui.setNodeOrienation(node, "vertical", vertical)
+    ui.setNodeOrientation(node, "horizontal", horizontal)
+    ui.setNodeOrientation(node, "vertical", vertical)
     ui.setNodeTransformModel(node, transform.rotation, transform.horizontalScale, transform.verticalScale)
     ui.setNodeTransformColor(node, transform.color)
     ui.setNodeTransformActive(node, transform.active)
@@ -642,9 +642,9 @@ function ui.setImageOrTextNodeColor(node, color)
     node.colorDirty = true
 end
 
-function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alphaThreshold, alignH, alignV, bold)
+function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alphaThreshold, horizontalAlign, verticalAlign, bold)
     local node = ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
-    textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, alignH or 0, alignV or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
+    textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, horizontalAlign or 0, verticalAlign or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
     return node
 end
 

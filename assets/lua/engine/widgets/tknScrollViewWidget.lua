@@ -1,15 +1,17 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local tknSliderWidget = require("engine.widgets.tknSliderWidget")
+local tknImageNode = require("engine.widgets.tknImageNode")
 local tknScrollViewWidget = {}
 
-function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleWidth, animate, onValueChange)
+function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
     local widget = {}
     local startX, startY = nil, nil
     local processInput = function(node, xNdc, yNdc, inputState)
-        if animate then
-            animate(node, xNdc, yNdc, inputState)
+        if tknWidgetConfig.updateDragWidgetColor then
+            tknWidgetConfig.updateDragWidgetColor(node, xNdc, yNdc, inputState)
         end
         if inputState == input.inputState.down then
             if startX == nil or startY == nil then
@@ -33,15 +35,16 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
             return false
         end
     end
-    widget.scrollViewNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, {
+    local defaultTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
         color = nil,
         active = true,
-    })
+    }
+    widget.scrollViewNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, defaultTransform)
 
-    widget.scrollViewBackgroundNode = ui.addImageNode(pTknGfxContext, widget.scrollViewNode, 1, "scrollViewBackground", {
+    widget.scrollViewBackgroundNode = tknImageNode.addNode(pTknGfxContext, "scrollViewBackground", widget.scrollViewNode, 1, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
@@ -53,13 +56,7 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         minOffset = 0,
         maxOffset = 0,
         offset = 0,
-    }, {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }, backgroundColor, 0.1, imageFitMode, image, imageUv, true)
+    }, defaultTransform, tknWidgetConfig.color.semiDark, true)
 
     local contentNodeHorizontal = {
         type = ui.layoutType.anchored,
@@ -76,55 +73,46 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         offset = 0,
     }
 
-    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", contentNodeHorizontal, contentNodeVertical, {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    })
-
-    -- Save references for later modification
-    widget.contentNodeHorizontal = contentNodeHorizontal
-    widget.contentNodeVertical = contentNodeVertical
+    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", contentNodeHorizontal, contentNodeVertical, defaultTransform)
 
     local onRightSliderValueChange = function(value)
-        widget.contentNodeVertical.anchor = value
-        widget.contentNodeVertical.pivot = value
-        ui.setNodeOrienation(widget.contentNode, "vertical", widget.contentNodeVertical)
+        widget.contentNode.vertical.anchor = value
+        widget.contentNode.vertical.pivot = value
+        ui.setNodeOrientation(widget.contentNode, "vertical", widget.contentNode.vertical)
     end
     widget.rightSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
-        length = handleWidth,
+        length = tknWidgetConfig.defaultSliderWidth,
         offset = 0,
     }, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
-        maxOffset = -handleWidth,
+        maxOffset = -tknWidgetConfig.defaultSliderWidth,
         offset = 0,
-    }, backgroundColor, image, imageFitMode, imageUv, handleColor, 0, tknSliderWidget.direction.vertical, animate, onRightSliderValueChange)
+    }, tknSliderWidget.direction.vertical, 0, onRightSliderValueChange)
 
     local onBottomSliderValueChange = function(value)
-        widget.contentNodeHorizontal.anchor = value
-        widget.contentNodeHorizontal.pivot = value
-        ui.setNodeOrienation(widget.contentNode, "horizontal", widget.contentNodeHorizontal)
+        widget.contentNode.horizontal.anchor = value
+        widget.contentNode.horizontal.pivot = value
+        ui.setNodeOrientation(widget.contentNode, "horizontal", widget.contentNode.horizontal)
     end
     widget.bottomSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
-        maxOffset = -handleWidth,
+        maxOffset = -tknWidgetConfig.defaultSliderWidth,
         offset = 0,
     }, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
-        length = handleWidth,
+        length = tknWidgetConfig.defaultSliderWidth,
         offset = 0,
-    }, backgroundColor, image, imageFitMode, imageUv, handleColor, 0, tknSliderWidget.direction.horizontal, animate, onBottomSliderValueChange)
+    }, tknSliderWidget.direction.horizontal, 0, onBottomSliderValueChange)
+    
     widget.postUpdateGfxCallback = function()
         local contentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
         local contentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min

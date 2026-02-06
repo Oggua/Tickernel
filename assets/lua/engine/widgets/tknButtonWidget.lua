@@ -1,26 +1,29 @@
 local ui = require("ui.ui")
 local input = require("input")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
+local tknImageNode = require("engine.widgets.tknImageNode")
 local tknButtonWidget = {}
-function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, callbacks)
+
+function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onClick)
+
     local widget = {}
-    local buttonTransform = {
+    local defaultTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
         color = nil,
         active = true,
     }
- 
     local processInput = function(node, xNdc, yNdc, inputState)
-        if animate then
-            animate(node, xNdc, yNdc, inputState)
+        if tknWidgetConfig.updateClickWidgetColor then
+            tknWidgetConfig.updateClickWidgetColor(node, xNdc, yNdc, inputState)
         end
         if ui.rectContainsPoint(node.rect, xNdc, yNdc) then
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
-                if callbacks then
-                    callbacks()
+                if onClick then
+                    onClick()
                 end
                 return false
             else
@@ -36,7 +39,7 @@ function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizont
             end
         end
     end
-    widget.buttonNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, buttonTransform)
+    widget.buttonNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, defaultTransform)
     -- Directly use horizontal/vertical for background node, no need for extra layout object
     local backgroundHorizontal = {
         type = ui.layoutType.relative,
@@ -52,38 +55,7 @@ function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         maxOffset = 0,
         offset = 0,
     }
-    local backgroundTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.buttonNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, imageColor, 0, imageFitMode, image, imageUv, nil)
-
-    -- Directly use horizontal/vertical for text node, no need for extra layout object
-    local textHorizontal = {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }
-    local textVertical = {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }
-    local textTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.textNode = ui.addTextNode(pTknGfxContext, widget.backgroundNode, 1, "buttonText", textHorizontal, textVertical, textTransform, text, font, fontSize, fontColor, 0, 0.5, 0.5, false)
+    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "buttonBackground", widget.buttonNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false)
     return widget
 end
 
@@ -91,7 +63,6 @@ function tknButtonWidget.removeWidget(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.buttonNode)
     widget.buttonNode = nil
     widget.backgroundNode = nil
-    widget.textNode = nil
 end
 
 return tknButtonWidget

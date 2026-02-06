@@ -1,12 +1,14 @@
 local ui = require("ui.ui")
 local input = require("input")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
+local tknImageNode = require("engine.widgets.tknImageNode")
 local tknDragWidget = {}
 
-function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, animate)
+function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical)
     local widget = {}
     local processInput = function(node, xNdc, yNdc, inputState)
-        if animate then
-            animate(node, xNdc, yNdc, inputState)
+        if tknWidgetConfig.updateDragWidgetColor then
+            tknWidgetConfig.updateDragWidgetColor(node, xNdc, yNdc, inputState)
         end
         if inputState == input.inputState.down then
             -- Convert NDC to anchor or offset depending on layout type
@@ -38,8 +40,8 @@ function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal
                 local offsetY = (relPosY - parentVertical.pivot) * parentHeightNdc
                 node.vertical.offset = offsetY
             end
-            ui.setNodeOrienation(node, "horizontal", node.horizontal)
-            ui.setNodeOrienation(node, "vertical", node.vertical)
+            ui.setNodeOrientation(node, "horizontal", node.horizontal)
+            ui.setNodeOrientation(node, "vertical", node.vertical)
             return true
         elseif inputState == input.inputState.up then
 
@@ -48,14 +50,14 @@ function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal
             return false
         end
     end
-    local dragTransform = {
+    local defaultTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
         color = nil,
         active = true,
     }
-    widget.dragNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, dragTransform)
+    widget.dragNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, defaultTransform)
 
     -- Background image node
     local backgroundHorizontal = {
@@ -72,15 +74,8 @@ function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal
         maxOffset = 0,
         offset = 0,
     }
-    local backgroundTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.dragNode, 1, "dragBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, imageColor, 0, imageFitMode, image, imageUv, nil)
 
+    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "dragBackground", widget.dragNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false)
     return widget
 end
 
@@ -88,9 +83,6 @@ function tknDragWidget.removeWidget(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.dragNode)
     widget.dragNode = nil
     widget.backgroundNode = nil
-    widget.isDragging = nil
-    widget.dragOffsetX = nil
-    widget.dragOffsetY = nil
 end
 
 return tknDragWidget

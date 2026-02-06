@@ -1,70 +1,70 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
-local colorPreset = require("ui.colorPreset")
+local tknButtonWidget = require("engine.widgets.tknButtonWidget")
+local tknDragWidget = require("engine.widgets.tknDragWidget")
+local tknTextNode = require("engine.widgets.tknTextNode")
+local tknToggleWidget = require("engine.widgets.tknToggleWidget")
 local editorTopBarPanel = {}
 
 function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNode)
-    local editorDragHorizontal = {
+    local defualtTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+        color = nil,
+        active = true,
+    }
+    editorTopBarPanel.dragWidget = tknDragWidget.addWidget(pTknGfxContext, "editorDragWidget", editorTopBarNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
         length = 256,
         offset = 0,
-    }
-    local editorDragVertical = {
+    }, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = 64,
+        length = tknWidgetConfig.defaultButtonHeight,
         offset = 0,
-    }
-    editorTopBarPanel.editorDragWidget = tknWidgetConfig.addDragWidget(pTknGfxContext, "editorDrag", editorTopBarNode, 1, editorDragHorizontal, editorDragVertical)
+    })
 
-    local editorToggleHorizontal = {
+    tknTextNode.addNode(pTknGfxContext, "editorDragText", editorTopBarPanel.dragWidget.backgroundNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0,
-        pivot = 0,
+        pivot = 1,
         length = 32,
-        offset = 8,
-    }
-    local editorToggleVertical = {
-        type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
-        length = 32,
-        offset = 0,
-    }
-    editorTopBarPanel.editorToggleWidget = tknWidgetConfig.addToggleWidget(pTknGfxContext, "editorToggle", editorTopBarPanel.editorDragWidget.backgroundNode, 1, editorToggleHorizontal, editorToggleVertical, function(isToggled)
-        ui.setNodeTransformActive(editorRootNode, isToggled)
-        ui.setTextContent(editorTopBarPanel.editorToggleTextNode, "" .. (isToggled and "Hide" or "Show") .. " Editor \xEE\xB1\xA0")
-    end)
-
-    editorTopBarPanel.editorToggleTextNode = ui.addTextNode(pTknGfxContext, editorTopBarPanel.editorDragWidget.backgroundNode, 2, "editorToggleText", {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 40,
-        maxOffset = 0,
-        offset = 0,
+        offset = -tknWidgetConfig.defaultPadding,
     }, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
         maxOffset = 0,
         offset = 0,
+    }, defualtTransform, "\xEE\xB1\xA0", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 1, 0.5, false)
+
+    editorTopBarPanel.toggleWidget = tknToggleWidget.addWidget(pTknGfxContext, "editorToggleWidget", editorTopBarPanel.dragWidget.backgroundNode, 2, {
+        type = ui.layoutType.anchored,
+        anchor = 0,
+        pivot = 0,
+        length = tknWidgetConfig.defaultToggleHeight,
+        offset = tknWidgetConfig.defaultPadding,
     }, {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }, "Show Editor \xEE\xB1\xA0", tknWidgetConfig.font, tknWidgetConfig.normalFontSize, colorPreset.semiLighter, 0, 0.5, 0.5, false)
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = tknWidgetConfig.defaultToggleHeight,
+        offset = 0,
+    }, function(isToggled)
+        ui.setNodeTransformActive(editorRootNode, isToggled)
+    end)
     return editorTopBarPanel
 end
 
 function editorTopBarPanel.destroy(pTknGfxContext)
-    tknWidgetConfig.removeToggleWidget(pTknGfxContext, editorTopBarPanel.editorToggleWidget)
-    tknWidgetConfig.removeDragWidget(pTknGfxContext, editorTopBarPanel.editorDragWidget)
+    tknDragWidget.removeWidget(pTknGfxContext, editorTopBarPanel.dragWidget)
+    -- tknWidgetConfig.removeToggleWidget(pTknGfxContext, editorTopBarPanel.editorToggleWidget)
+    -- tknWidgetConfig.removeDragWidget(pTknGfxContext, editorTopBarPanel.editorDragWidget)
 
 end
 

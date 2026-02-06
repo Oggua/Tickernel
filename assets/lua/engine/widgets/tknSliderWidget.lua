@@ -1,6 +1,8 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
+local tknImageNode = require("engine.widgets.tknImageNode")
 local tknSliderWidget = {
     direction = {
         horizontal = "horizontal",
@@ -8,12 +10,12 @@ local tknSliderWidget = {
     },
 }
 
-function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleLength, direction, animate, onValueChange)
+function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, direction, handleLength, onValueChange)
     local widget = {}
     widget.direction = direction
     widget.onValueChange = onValueChange
 
-    local sliderTransform = {
+    local defaultTransform = {
         rotation = 0,
         horizontalScale = 1,
         verticalScale = 1,
@@ -22,8 +24,8 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
     }
 
     local processInput = function(node, xNdc, yNdc, inputState)
-        if animate then
-            animate(node, xNdc, yNdc, inputState)
+        if tknWidgetConfig.updateDragWidgetColor then
+            tknWidgetConfig.updateDragWidgetColor(node, xNdc, yNdc, inputState)
         end
         if inputState == input.inputState.down then
             if widget and widget.handleNode then
@@ -68,8 +70,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
             return false
         end
     end
-
-    widget.sliderNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, sliderTransform)
+    widget.sliderNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, defaultTransform)
 
     -- Directly use horizontal/vertical for background node, no need for extra layout object
     local backgroundHorizontal = {
@@ -86,15 +87,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         maxOffset = 0,
         offset = 0,
     }
-
-    local backgroundTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.backgroundNode = ui.addImageNode(pTknGfxContext, widget.sliderNode, 1, "buttonBackground", backgroundHorizontal, backgroundVertical, backgroundTransform, backgroundColor, 0, imageFitMode, image, imageUv, nil)
+    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "sliderBackground", widget.sliderNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false)
 
     local handleParentHorizontal = {
         type = ui.layoutType.relative,
@@ -171,23 +164,9 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         }
     end
 
-    local handleParentTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.handleParent = ui.addNode(pTknGfxContext, widget.backgroundNode, 1, "handleParent", handleParentHorizontal, handleParentVertical, handleParentTransform)
+    widget.handleParent = ui.addNode(pTknGfxContext, widget.backgroundNode, 1, "handleParent", handleParentHorizontal, handleParentVertical, defaultTransform)
 
-    local handleTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.handleNode = ui.addImageNode(pTknGfxContext, widget.handleParent, 1, "sliderHandle", handleHorizontal, handleVertical, handleTransform, handleColor, 0, imageFitMode, image, imageUv, nil)
+    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "sliderHandle", widget.handleParent, 1, handleHorizontal, handleVertical, defaultTransform, tknWidgetConfig.color.semiLighter, false)
     return widget
 end
 
@@ -195,10 +174,10 @@ function tknSliderWidget.setValue(widget, value)
     value = tknMath.clamp(value, 0, 1)
     if widget.direction == tknSliderWidget.direction.horizontal then
         widget.handleNode.horizontal.anchor = value
-        ui.setNodeOrienation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
+        ui.setNodeOrientation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
     elseif widget.direction == tknSliderWidget.direction.vertical then
         widget.handleNode.vertical.anchor = value
-        ui.setNodeOrienation(widget.handleNode, "vertical", widget.handleNode.vertical)
+        ui.setNodeOrientation(widget.handleNode, "vertical", widget.handleNode.vertical)
     else
         error("Invalid slider direction: " .. tostring(widget.direction))
     end
@@ -228,14 +207,14 @@ function tknSliderWidget.setHandleLength(widget, handleLength)
         widget.handleNode.horizontal.length = handleLength
         widget.handleParent.horizontal.minOffset = handleParentOffset
         widget.handleParent.horizontal.maxOffset = -handleParentOffset
-        ui.setNodeOrienation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
-        ui.setNodeOrienation(widget.handleParent, "horizontal", widget.handleParent.horizontal)
+        ui.setNodeOrientation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
+        ui.setNodeOrientation(widget.handleParent, "horizontal", widget.handleParent.horizontal)
     elseif widget.direction == tknSliderWidget.direction.vertical then
         widget.handleNode.vertical.length = handleLength
         widget.handleParent.vertical.minOffset = handleParentOffset
         widget.handleParent.vertical.maxOffset = -handleParentOffset
-        ui.setNodeOrienation(widget.handleNode, "vertical", widget.handleNode.vertical)
-        ui.setNodeOrienation(widget.handleParent, "vertical", widget.handleParent.vertical)
+        ui.setNodeOrientation(widget.handleNode, "vertical", widget.handleNode.vertical)
+        ui.setNodeOrientation(widget.handleParent, "vertical", widget.handleParent.vertical)
     else
         error("Invalid slider direction: " .. tostring(widget.direction))
     end
