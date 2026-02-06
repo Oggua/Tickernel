@@ -1,9 +1,9 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
-local toggleWidget = {}
+local tknToggleWidget = {}
 
-function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleScale, handleColor, animate, onValueChange)
+function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleScale, handleColor, animate, onValueChange)
     local widget = {}
     widget.isToggled = false
     local processInput = function(node, xNdc, yNdc, inputState)
@@ -93,11 +93,11 @@ function toggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     return widget
 end
 
-function toggleWidget.removeWidget(pTknGfxContext, toggleWidget)
-    ui.removeNode(pTknGfxContext, toggleWidget.toggleNode)
-    toggleWidget.toggleNode = nil
-    toggleWidget.backgroundNode = nil
-    toggleWidget.handleNode = nil
+function tknToggleWidget.removeWidget(pTknGfxContext, widget)
+    ui.removeNode(pTknGfxContext, widget.toggleNode)
+    widget.toggleNode = nil
+    widget.backgroundNode = nil
+    widget.handleNode = nil
 end
 
-return toggleWidget
+return tknToggleWidget

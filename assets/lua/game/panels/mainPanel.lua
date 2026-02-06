@@ -1,6 +1,6 @@
 local ui = require("ui.ui")
-local widgetConfig = require("engine.widgets.widgetConfig")
-local sliderWidget = require("engine.widgets.sliderWidget")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
+local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 local colorPreset = require("ui.colorPreset")
 local mainPanel = {}
 
@@ -26,7 +26,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         active = true,
     })
 
-    local startButtonWidget = widgetConfig.addButtonWidget(pTknGfxContext, "startButton", panel.rootNode, 1, {
+    local startButtonWidget = tknWidgetConfig.addButtonWidget(pTknGfxContext, "startButton", panel.rootNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -40,7 +40,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         offset = 0,
     }, "Start Game", startButtonCallback)
 
-    local settingButtonWidget = widgetConfig.addButtonWidget(pTknGfxContext, "settingButton", panel.rootNode, 2, {
+    local settingButtonWidget = tknWidgetConfig.addButtonWidget(pTknGfxContext, "settingButton", panel.rootNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -54,7 +54,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         offset = 96,
     }, "Settings", settingsButtonCallback)
 
-    local quitButtonWidget = widgetConfig.addButtonWidget(pTknGfxContext, "quitButton", panel.rootNode, 3, {
+    local quitButtonWidget = tknWidgetConfig.addButtonWidget(pTknGfxContext, "quitButton", panel.rootNode, 3, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -68,7 +68,7 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         offset = 192,
     }, "Quit Game", quitButtonCallback)
 
-    local customSliderWidget = widgetConfig.addSliderWidget(pTknGfxContext, "customSlider", panel.rootNode, 4, {
+    local customSliderWidget = tknWidgetConfig.addSliderWidget(pTknGfxContext, "customSlider", panel.rootNode, 4, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -80,12 +80,12 @@ function mainPanel.create(pTknGfxContext, game, parent, startButtonCallback, set
         pivot = 0.5,
         length = 512,
         offset = 288,
-    }, 64, sliderWidget.direction.vertical, function(value)
+    }, 64, tknSliderWidget.direction.vertical, function(value)
         -- print("Slider value changed to: " .. tostring(value))
     end)
     -- sliderWidget.setHandleLength(customSliderWidget, 0.2)
 
-    local sv = widgetConfig.addScrollViewWidget(pTknGfxContext, "customScrollView", panel.rootNode, 5, {
+    local sv = tknWidgetConfig.addScrollViewWidget(pTknGfxContext, "customScrollView", panel.rootNode, 5, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,

@@ -1,8 +1,8 @@
 local ui = require("ui.ui")
 local input = require("input")
-local dragWidget = {}
+local tknDragWidget = {}
 
-function dragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, animate)
+function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, animate)
     local widget = {}
     local processInput = function(node, xNdc, yNdc, inputState)
         if animate then
@@ -84,13 +84,13 @@ function dragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, v
     return widget
 end
 
-function dragWidget.removeWidget(pTknGfxContext, dragWidget)
-    ui.removeNode(pTknGfxContext, dragWidget.dragNode)
-    dragWidget.dragNode = nil
-    dragWidget.backgroundNode = nil
-    dragWidget.isDragging = nil
-    dragWidget.dragOffsetX = nil
-    dragWidget.dragOffsetY = nil
+function tknDragWidget.removeWidget(pTknGfxContext, widget)
+    ui.removeNode(pTknGfxContext, widget.dragNode)
+    widget.dragNode = nil
+    widget.backgroundNode = nil
+    widget.isDragging = nil
+    widget.dragOffsetX = nil
+    widget.dragOffsetY = nil
 end
 
-return dragWidget
+return tknDragWidget

@@ -1,10 +1,10 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
-local sliderWidget = require("engine.widgets.sliderWidget")
-local scrollViewWidget = {}
+local tknSliderWidget = require("engine.widgets.tknSliderWidget")
+local tknScrollViewWidget = {}
 
-function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleWidth, animate, onValueChange)
+function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleWidth, animate, onValueChange)
     local widget = {}
     local startX, startY = nil, nil
     local processInput = function(node, xNdc, yNdc, inputState)
@@ -20,8 +20,8 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
             local currentY = yNdc
             local deltaX = currentX - startX
             local deltaY = currentY - startY
-            sliderWidget.setValue(widget.rightSliderWidget, widget.rightSliderWidget.handleNode.vertical.anchor - deltaY)
-            sliderWidget.setValue(widget.bottomSliderWidget, widget.bottomSliderWidget.handleNode.horizontal.anchor - deltaX)
+            tknSliderWidget.setValue(widget.rightSliderWidget, widget.rightSliderWidget.handleNode.vertical.anchor - deltaY)
+            tknSliderWidget.setValue(widget.bottomSliderWidget, widget.bottomSliderWidget.handleNode.horizontal.anchor - deltaX)
             startX = currentX
             startY = currentY
             return true
@@ -93,7 +93,7 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         widget.contentNodeVertical.pivot = value
         ui.setNodeOrienation(widget.contentNode, "vertical", widget.contentNodeVertical)
     end
-    widget.rightSliderWidget = sliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
+    widget.rightSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
@@ -105,14 +105,14 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         minOffset = 0,
         maxOffset = -handleWidth,
         offset = 0,
-    }, backgroundColor, image, imageFitMode, imageUv, handleColor, 0, sliderWidget.direction.vertical, animate, onRightSliderValueChange)
+    }, backgroundColor, image, imageFitMode, imageUv, handleColor, 0, tknSliderWidget.direction.vertical, animate, onRightSliderValueChange)
 
     local onBottomSliderValueChange = function(value)
         widget.contentNodeHorizontal.anchor = value
         widget.contentNodeHorizontal.pivot = value
         ui.setNodeOrienation(widget.contentNode, "horizontal", widget.contentNodeHorizontal)
     end
-    widget.bottomSliderWidget = sliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
+    widget.bottomSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
@@ -124,7 +124,7 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         pivot = 1,
         length = handleWidth,
         offset = 0,
-    }, backgroundColor, image, imageFitMode, imageUv, handleColor, 0, sliderWidget.direction.horizontal, animate, onBottomSliderValueChange)
+    }, backgroundColor, image, imageFitMode, imageUv, handleColor, 0, tknSliderWidget.direction.horizontal, animate, onBottomSliderValueChange)
     widget.postUpdateGfxCallback = function()
         local contentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
         local contentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min
@@ -132,21 +132,21 @@ function scrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizon
         local viewHeight = widget.scrollViewBackgroundNode.rect.vertical.max - widget.scrollViewBackgroundNode.rect.vertical.min
         local horizontalLength = tknMath.clamp(viewWidth / contentWidth, 0.0, 1.0) * (widget.bottomSliderWidget.sliderNode.rect.horizontal.max - widget.bottomSliderWidget.sliderNode.rect.horizontal.min)
         local verticalLength = tknMath.clamp(viewHeight / contentHeight, 0.0, 1.0) * (widget.rightSliderWidget.sliderNode.rect.vertical.max - widget.rightSliderWidget.sliderNode.rect.vertical.min)
-        sliderWidget.setHandleLength(widget.bottomSliderWidget, horizontalLength)
-        sliderWidget.setHandleLength(widget.rightSliderWidget, verticalLength)
+        tknSliderWidget.setHandleLength(widget.bottomSliderWidget, horizontalLength)
+        tknSliderWidget.setHandleLength(widget.rightSliderWidget, verticalLength)
     end
     ui.addPostUpdateGfxCallback(widget.postUpdateGfxCallback)
     return widget
 end
 
-function scrollViewWidget.removeWidget(pTknGfxContext, widget)
+function tknScrollViewWidget.removeWidget(pTknGfxContext, widget)
     ui.removePostUpdateGfxCallback(widget.postUpdateGfxCallback)
     widget.postUpdateGfxCallback = nil
-    sliderWidget.removeWidget(pTknGfxContext, widget.bottomSliderWidget)
-    sliderWidget.removeWidget(pTknGfxContext, widget.rightSliderWidget)
+    tknSliderWidget.removeWidget(pTknGfxContext, widget.bottomSliderWidget)
+    tknSliderWidget.removeWidget(pTknGfxContext, widget.rightSliderWidget)
     ui.removeNode(pTknGfxContext, widget.scrollViewNode)
     widget.scrollViewNode = nil
     widget.scrollViewBackgroundNode = nil
 end
 
-return scrollViewWidget
+return tknScrollViewWidget

@@ -1,10 +1,10 @@
 local ui = require("ui.ui")
 local input = require("input")
-local buttonWidget = require("engine.widgets.buttonWidget")
-local dropdownWidget = {}
-function dropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, callbacks)
+local tknButtonWidget = require("engine.widgets.tknButtonWidget")
+local tknDropdownWidget = {}
+function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, callbacks)
     local widget = {}
-    widget.buttonWidget = buttonWidget.addWidget(pTknGfxContext, "dropdownButton", parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, function()
+    widget.buttonWidget = tknButtonWidget.addWidget(pTknGfxContext, "dropdownButton", parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, function()
 
     end)
 
@@ -31,8 +31,8 @@ function dropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizonta
     return widget
 end
 
-function dropdownWidget.removeWidget(pTknGfxContext, widget)
+function tknDropdownWidget.removeWidget(pTknGfxContext, widget)
 
 end
 
-return dropdownWidget
+return tknDropdownWidget

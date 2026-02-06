@@ -1,11 +1,11 @@
 local ui = require("ui.ui")
 local input = require("input")
-local widgetConfig = require("engine.widgets.widgetConfig")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local editorPanel = {}
 
 function editorPanel.create(pTknGfxContext, editorRootNode)
     local buttonHeight = 48
-    editorPanel.addTabButtonWidget = widgetConfig.addButtonWidget(pTknGfxContext, "addTabButton", editorRootNode, 1, {
+    editorPanel.addTabButtonWidget = tknWidgetConfig.addButtonWidget(pTknGfxContext, "addTabButton", editorRootNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
@@ -40,7 +40,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         color = nil,
         active = true,
     }
-    editorPanel.dropdownBackgroundNode = widgetConfig.addBackgroundImageNode(pTknGfxContext, editorPanel.addTabButtonWidget.buttonNode, 1, "dropdownBackground", {
+    editorPanel.dropdownBackgroundNode = tknWidgetConfig.addBackgroundImageNode(pTknGfxContext, editorPanel.addTabButtonWidget.buttonNode, 1, "dropdownBackground", {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
@@ -54,7 +54,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         offset = 0,
     }, defualtTransform)
     for i, buttonConfig in ipairs(buttonConfigs) do
-        widgetConfig.addButtonWidget(pTknGfxContext, buttonConfig.name, editorPanel.dropdownBackgroundNode, i, {
+        tknWidgetConfig.addButtonWidget(pTknGfxContext, buttonConfig.name, editorPanel.dropdownBackgroundNode, i, {
             type = ui.layoutType.relative,
             pivot = 0.5,
             minOffset = 0,
@@ -71,7 +71,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
 end
 
 function editorPanel.destroy(pTknGfxContext)
-    widgetConfig.removeButtonWidget(pTknGfxContext, editorPanel.addTabButtonWidget)
+    tknWidgetConfig.removeButtonWidget(pTknGfxContext, editorPanel.addTabButtonWidget)
 end
 
 return editorPanel

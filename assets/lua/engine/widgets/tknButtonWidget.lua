@@ -1,7 +1,7 @@
 local ui = require("ui.ui")
 local input = require("input")
-local buttonWidget = {}
-function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, callbacks)
+local tknButtonWidget = {}
+function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, image, imageFitMode, imageUv, imageColor, font, text, fontSize, fontColor, animate, callbacks)
     local widget = {}
     local buttonTransform = {
         rotation = 0,
@@ -87,11 +87,11 @@ function buttonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     return widget
 end
 
-function buttonWidget.removeWidget(pTknGfxContext, widget)
+function tknButtonWidget.removeWidget(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.buttonNode)
     widget.buttonNode = nil
     widget.backgroundNode = nil
     widget.textNode = nil
 end
 
-return buttonWidget
+return tknButtonWidget

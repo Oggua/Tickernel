@@ -1,14 +1,14 @@
 local ui = require("ui.ui")
 local input = require("input")
 local tknMath = require("tknMath")
-local sliderWidget = {
+local tknSliderWidget = {
     direction = {
         horizontal = "horizontal",
         vertical = "vertical",
     },
 }
 
-function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleLength, direction, animate, onValueChange)
+function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, backgroundColor, image, imageFitMode, imageUv, handleColor, handleLength, direction, animate, onValueChange)
     local widget = {}
     widget.direction = direction
     widget.onValueChange = onValueChange
@@ -35,7 +35,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                 local inv10 = -m10 / det
                 local inv11 = m00 / det
                 local value
-                if widget.direction == sliderWidget.direction.horizontal then
+                if widget.direction == tknSliderWidget.direction.horizontal then
                     local lx = inv00 * (xNdc - tx) + inv01 * (yNdc - ty)
                     local rx = widget.handleParent.rect.horizontal
                     local length = (rx.max - rx.min)
@@ -48,7 +48,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                     end
 
                 else
-                    assert(widget.direction == sliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
+                    assert(widget.direction == tknSliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
                     local ly = inv10 * (xNdc - tx) + inv11 * (yNdc - ty)
                     local ry = widget.handleParent.rect.vertical
                     local length = (ry.max - ry.min)
@@ -61,7 +61,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
                     end
 
                 end
-                sliderWidget.setValue(widget, value)
+                tknSliderWidget.setValue(widget, value)
             end
             return true
         else
@@ -125,7 +125,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
         offset = 0,
     }
 
-    if widget.direction == sliderWidget.direction.horizontal then
+    if widget.direction == tknSliderWidget.direction.horizontal then
         local handleParentOffset
         if math.type(handleLength) == "integer" then
             handleParentOffset = handleLength // 2
@@ -148,7 +148,7 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
             offset = 0,
         }
     else
-        assert(widget.direction == sliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
+        assert(widget.direction == tknSliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
         local handleParentOffset
         if math.type(handleLength) == "integer" then
             handleParentOffset = handleLength // 2
@@ -191,12 +191,12 @@ function sliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal,
     return widget
 end
 
-function sliderWidget.setValue(widget, value)
+function tknSliderWidget.setValue(widget, value)
     value = tknMath.clamp(value, 0, 1)
-    if widget.direction == sliderWidget.direction.horizontal then
+    if widget.direction == tknSliderWidget.direction.horizontal then
         widget.handleNode.horizontal.anchor = value
         ui.setNodeOrienation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
-    elseif widget.direction == sliderWidget.direction.vertical then
+    elseif widget.direction == tknSliderWidget.direction.vertical then
         widget.handleNode.vertical.anchor = value
         ui.setNodeOrienation(widget.handleNode, "vertical", widget.handleNode.vertical)
     else
@@ -207,7 +207,7 @@ function sliderWidget.setValue(widget, value)
     end
 end
 
-function sliderWidget.removeWidget(pTknGfxContext, widget)
+function tknSliderWidget.removeWidget(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.sliderNode)
     widget.sliderNode = nil
     widget.backgroundNode = nil
@@ -217,20 +217,20 @@ function sliderWidget.removeWidget(pTknGfxContext, widget)
     widget.onValueChange = nil
 end
 
-function sliderWidget.setHandleLength(widget, handleLength)
+function tknSliderWidget.setHandleLength(widget, handleLength)
     local handleParentOffset
     if math.type(handleLength) == "integer" then
         handleParentOffset = handleLength // 2
     else
         handleParentOffset = handleLength / 2
     end
-    if widget.direction == sliderWidget.direction.horizontal then
+    if widget.direction == tknSliderWidget.direction.horizontal then
         widget.handleNode.horizontal.length = handleLength
         widget.handleParent.horizontal.minOffset = handleParentOffset
         widget.handleParent.horizontal.maxOffset = -handleParentOffset
         ui.setNodeOrienation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
         ui.setNodeOrienation(widget.handleParent, "horizontal", widget.handleParent.horizontal)
-    elseif widget.direction == sliderWidget.direction.vertical then
+    elseif widget.direction == tknSliderWidget.direction.vertical then
         widget.handleNode.vertical.length = handleLength
         widget.handleParent.vertical.minOffset = handleParentOffset
         widget.handleParent.vertical.maxOffset = -handleParentOffset
@@ -241,4 +241,4 @@ function sliderWidget.setHandleLength(widget, handleLength)
     end
 end
 
-return sliderWidget
+return tknSliderWidget
