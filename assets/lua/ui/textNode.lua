@@ -142,7 +142,7 @@ function textNode.teardownNode(pTknGfxContext, node)
     node.textDirty = nil
 end
 
-function textNode.setTextContent(node, textString)
+function textNode.setTextString(node, textString)
     node.text = textString
     node.textDirty = true
 end

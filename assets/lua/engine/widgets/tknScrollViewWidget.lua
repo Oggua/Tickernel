@@ -6,7 +6,7 @@ local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknScrollViewWidget = {}
 
-function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
+function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, contentNodeHorizontal, contentNodeVertical)
     local widget = {}
     local startX, startY = nil, nil
     local processInput = function(node, xNdc, yNdc, inputState)
@@ -56,22 +56,7 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         minOffset = 0,
         maxOffset = 0,
         offset = 0,
-    }, defaultTransform, tknWidgetConfig.color.semiDark, true)
-
-    local contentNodeHorizontal = {
-        type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
-        length = 1920,
-        offset = 0,
-    }
-    local contentNodeVertical = {
-        type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
-        length = 1080,
-        offset = 0,
-    }
+    }, defaultTransform, tknWidgetConfig.color.semiDark, true, true)
 
     widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", contentNodeHorizontal, contentNodeVertical, defaultTransform)
 
@@ -112,7 +97,7 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         length = tknWidgetConfig.defaultSliderWidth,
         offset = 0,
     }, tknSliderWidget.direction.horizontal, 0, onBottomSliderValueChange)
-    
+
     widget.postUpdateGfxCallback = function()
         local contentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
         local contentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min

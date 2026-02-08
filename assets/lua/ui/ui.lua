@@ -648,13 +648,18 @@ function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertica
     return node
 end
 
+function ui.setTextString(node, textString)
+    assert(node.type == "textNode", "ui.setTextString: node is not a textNode")
+    textNode.setTextString(node, textString)
+end
+
 function ui.removeNode(pTknGfxContext, node)
     removeNodeInternal(pTknGfxContext, node)
 end
 
 function ui.setTextContent(node, textString)
     assert(node.type == "textNode", "ui.setTextContent: node is not a textNode")
-    textNode.setTextContent(node, textString)
+    textNode.setTextString(node, textString)
 end
 
 function ui.rectContainsPoint(rect, xNdc, yNdc)

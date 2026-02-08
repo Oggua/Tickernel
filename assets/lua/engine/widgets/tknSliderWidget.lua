@@ -87,7 +87,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         maxOffset = 0,
         offset = 0,
     }
-    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "sliderBackground", widget.sliderNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false)
+    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "sliderBackground", widget.sliderNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false, true)
 
     local handleParentHorizontal = {
         type = ui.layoutType.relative,
@@ -166,7 +166,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
 
     widget.handleParent = ui.addNode(pTknGfxContext, widget.backgroundNode, 1, "handleParent", handleParentHorizontal, handleParentVertical, defaultTransform)
 
-    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "sliderHandle", widget.handleParent, 1, handleHorizontal, handleVertical, defaultTransform, tknWidgetConfig.color.semiLighter, false)
+    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "sliderHandle", widget.handleParent, 1, handleHorizontal, handleVertical, defaultTransform, tknWidgetConfig.color.semiLighter, false, true)
     return widget
 end
 

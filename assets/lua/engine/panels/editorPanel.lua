@@ -1,77 +1,83 @@
 local ui = require("ui.ui")
 local input = require("input")
--- local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
+local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
+local tknDropdownWidget = require("engine.widgets.tknDropdownWidget")
+local tknButtonWidget = require("engine.widgets.tknButtonWidget")
+local tknTextNode = require("engine.widgets.tknTextNode")
+local tknImageNode = require("engine.widgets.tknImageNode")
+
+local uiInspectorPanel = require("engine.panels.uiInspectorPanel")
 local editorPanel = {}
 
 function editorPanel.create(pTknGfxContext, editorRootNode)
-    -- local buttonHeight = 48
-    -- editorPanel.addTabButtonWidget = tknWidgetConfig.addButtonWidget(pTknGfxContext, "addTabButton", editorRootNode, 1, {
-    --     type = ui.layoutType.anchored,
-    --     anchor = 0,
-    --     pivot = 0,
-    --     length = 512,
-    --     offset = 0,
-    -- }, {
-    --     type = ui.layoutType.anchored,
-    --     anchor = 0,
-    --     pivot = 0,
-    --     length = buttonHeight,
-    --     offset = 0,
-    -- }, "\xEE\xA8\x8E Add Tab", function()
-    --     print("Add Tab button clicked")
-    -- end)
+    local panel = {}
+    local relativeOrientation = {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }
+    local defaultTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+        color = nil,
+        active = true,
+    }
 
-    -- local buttonConfigs = {{
-    --     name = "Add UI Inspector",
-    --     func = function()
-    --         print("Add UI Inspector selected")
-    --     end,
-    -- }, {
-    --     name = "Add Entity Inspector",
-    --     func = function()
-    --         print("Add Entity Inspector selected")
-    --     end,
-    -- }}
+    local dropdownItems = {{
+        name = "\xef\x8b\x86 UI Inspector",
+        onSelect = function()
 
-    -- local defualtTransform = {
-    --     rotation = 0,
-    --     horizontalScale = 1,
-    --     verticalScale = 1,
-    --     color = nil,
-    --     active = true,
-    -- }
-    -- editorPanel.dropdownBackgroundNode = tknWidgetConfig.addBackgroundImageNode(pTknGfxContext, editorPanel.addTabButtonWidget.buttonNode, 1, "dropdownBackground", {
-    --     type = ui.layoutType.relative,
-    --     pivot = 0.5,
-    --     minOffset = 0,
-    --     maxOffset = 0,
-    --     offset = 0,
-    -- }, {
-    --     type = ui.layoutType.anchored,
-    --     anchor = 1,
-    --     pivot = 0,
-    --     length = #buttonConfigs * buttonHeight,
-    --     offset = 0,
-    -- }, defualtTransform)
-    -- for i, buttonConfig in ipairs(buttonConfigs) do
-    --     tknWidgetConfig.addButtonWidget(pTknGfxContext, buttonConfig.name, editorPanel.dropdownBackgroundNode, i, {
-    --         type = ui.layoutType.relative,
-    --         pivot = 0.5,
-    --         minOffset = 0,
-    --         maxOffset = 0,
-    --         offset = 0,
-    --     }, {
-    --         type = ui.layoutType.anchored,
-    --         anchor = 0,
-    --         pivot = 0,
-    --         length = buttonHeight,
-    --         offset = ((i - 1) * buttonHeight),
-    --     }, buttonConfig.name, buttonConfig.func)
-    -- end
+        end,
+    }, {
+        name = "\xee\xb5\x95 Asset Browser",
+        onSelect = function()
+            print("Add Asset Browser selected")
+        end,
+    }, {
+        name = "\xef\x98\x99 Game Inspector",
+        onSelect = function()
+            print("Add Game Inspector selected")
+        end,
+    }, {
+        name = "\xef\x87\xb9 Console",
+        onSelect = function()
+            print("Add Console selected")
+        end,
+    }}
+    panel.topBarBackgroundNode = tknImageNode.addNode(pTknGfxContext, "editorPanelBackgroundNode", editorRootNode, 1, relativeOrientation, {
+        type = ui.layoutType.anchored,
+        anchor = 0,
+        pivot = 0,
+        length = tknWidgetConfig.defaultDropdownHeight + (2 * tknWidgetConfig.defaultSpacing),
+        offset = 0,
+    }, defaultTransform, tknWidgetConfig.color.semiDarker, false, false)
+    panel.topBarDropdownWidget = tknDropdownWidget.addWidget(pTknGfxContext, "editorPanelDropdownWidget", panel.topBarBackgroundNode, 1, {
+        type = ui.layoutType.anchored,
+        anchor = 0,
+        pivot = 0,
+        length = 512,
+        offset = tknWidgetConfig.defaultSpacing,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = tknWidgetConfig.defaultDropdownHeight,
+        offset = 0,
+    }, dropdownItems)
+
+    panel.uiInspectorPanel = uiInspectorPanel.create(pTknGfxContext, editorRootNode, #editorRootNode.children + 1)
+
+    return panel
 end
 
-function editorPanel.destroy(pTknGfxContext)
-    -- tknWidgetConfig.removeButtonWidget(pTknGfxContext, editorPanel.addTabButtonWidget)
+function editorPanel.destroy(pTknGfxContext, panel)
+    if panel.topBarDropdownWidget then
+        tknDropdownWidget.removeWidget(pTknGfxContext, panel.topBarDropdownWidget)
+        panel.topBarDropdownWidget = nil
+    end
 end
 
 return editorPanel

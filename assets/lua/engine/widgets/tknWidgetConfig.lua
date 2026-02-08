@@ -7,10 +7,10 @@ local tknWidgetConfig = {}
 function tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     -- Color presets
     tknWidgetConfig.color = {
+        semiDarker = colorPreset.semiDarker,
         semiDark = colorPreset.semiDark,
         semiLight = colorPreset.semiLight,
         semiLighter = colorPreset.semiLighter,
-        semiDarker = colorPreset.semiDarker,
     }
 
     tknWidgetConfig.updateClickWidgetColor = function(node, xNdc, yNdc, inputState)
@@ -35,19 +35,25 @@ function tknWidgetConfig.setup(pTknGfxContext, assetsPath)
 
     uiDefault.load(pTknGfxContext, assetsPath)
 
-    tknWidgetConfig.image, tknWidgetConfig.imageFitMode, tknWidgetConfig.imageUv, tknWidgetConfig.cornerRadius = uiDefault.getSprite(uiDefault.cornerRadiusPreset.small)
+    -- Rounded square sprite preset (use small radius variant)
+    tknWidgetConfig.roundedImage, tknWidgetConfig.roundedImageFitMode, tknWidgetConfig.roundedImageUv, tknWidgetConfig.roundedCornerRadius = uiDefault.getSprite(uiDefault.cornerRadiusPreset.small)
+    -- Extra preset: sharp square (no radius)
+    tknWidgetConfig.squareImage, tknWidgetConfig.squareImageFitMode, tknWidgetConfig.squareImageUv, tknWidgetConfig.squareCornerRadius = uiDefault.getSprite(uiDefault.cornerRadiusPreset.none)
 
     tknWidgetConfig.font = ui.loadFont(pTknGfxContext, {"/fonts/Monaco.ttf", "/fonts/RemixIcon.ttf"}, 32, 2048, {32, 0})
-    tknWidgetConfig.smallFontSize = 18
-    tknWidgetConfig.normalFontSize = 24
-    tknWidgetConfig.largeFontSize = 32
+    tknWidgetConfig.smallFontSize = 16
+    tknWidgetConfig.normalFontSize = 22
+    tknWidgetConfig.largeFontSize = 28
 
     tknWidgetConfig.defaultAlphaThreshold = 0.02
     tknWidgetConfig.defaultSliderWidth = 32
-    tknWidgetConfig.defaultToggleHandleScale = 0.8
-    tknWidgetConfig.defaultButtonHeight = 48
+    tknWidgetConfig.defaultToggleHandleScale = 0.6
+    tknWidgetConfig.defaultSmallButtonHeight = 32
+    tknWidgetConfig.defaultNormalButtonHeight = 48
+    tknWidgetConfig.defaultDropdownHeight = 48
     tknWidgetConfig.defaultToggleHeight = 32
-    tknWidgetConfig.defaultPadding = 8
+    tknWidgetConfig.defaultDragEdgeWidth = 8
+    tknWidgetConfig.defaultSpacing = 8
 end
 
 function tknWidgetConfig.teardown(pTknGfxContext)
@@ -59,18 +65,24 @@ function tknWidgetConfig.teardown(pTknGfxContext)
     tknWidgetConfig.defaultAlphaThreshold = nil
     tknWidgetConfig.defaultSliderWidth = nil
     tknWidgetConfig.defaultToggleHandleScale = nil
-    tknWidgetConfig.defaultButtonHeight = nil
+    tknWidgetConfig.defaultNormalButtonHeight = nil
     tknWidgetConfig.defaultToggleHeight = nil
-    tknWidgetConfig.defaultPadding = nil
+    tknWidgetConfig.defaultDropdownHeight = nil
+    tknWidgetConfig.defaultDragEdgeWidth = nil
+    tknWidgetConfig.defaultSpacing = nil
 
     tknWidgetConfig.font = nil
     tknWidgetConfig.smallFontSize = nil
     tknWidgetConfig.normalFontSize = nil
     tknWidgetConfig.largeFontSize = nil
-    tknWidgetConfig.image = nil
-    tknWidgetConfig.imageFitMode = nil
-    tknWidgetConfig.imageUv = nil
-    tknWidgetConfig.cornerRadius = nil
+    tknWidgetConfig.roundedImage = nil
+    tknWidgetConfig.roundedImageFitMode = nil
+    tknWidgetConfig.roundedImageUv = nil
+    tknWidgetConfig.roundedCornerRadius = nil
+    tknWidgetConfig.squareImage = nil
+    tknWidgetConfig.squareImageFitMode = nil
+    tknWidgetConfig.squareImageUv = nil
+    tknWidgetConfig.squareCornerRadius = nil
     tknWidgetConfig.color = nil
 
     uiDefault.unload(pTknGfxContext)

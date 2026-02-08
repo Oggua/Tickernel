@@ -12,6 +12,7 @@ function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizont
 
     local widget = {}
     widget.isToggled = false
+    widget.onValueChange = onValueChange
     local processInput = function(node, xNdc, yNdc, inputState)
         if tknWidgetConfig.updateClickWidgetColor then
             tknWidgetConfig.updateClickWidgetColor(node, xNdc, yNdc, inputState)
@@ -63,7 +64,7 @@ function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         maxOffset = 0,
         offset = 0,
     }
-    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "buttonBackground", widget.toggleNode, 1, defaultRelativeHorizontal, defaultRelativeVertical, defaultTransform, tknWidgetConfig.color.semiDark, false)
+    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "buttonBackground", widget.toggleNode, 1, defaultRelativeHorizontal, defaultRelativeVertical, defaultTransform, tknWidgetConfig.color.semiDark, false, true)
 
     local handleTransform = {
         rotation = 0,
@@ -72,14 +73,14 @@ function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         color = nil,
         active = false,
     }
-    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "toggleHandle", widget.toggleNode, 2, defaultRelativeHorizontal, defaultRelativeVertical, handleTransform, tknWidgetConfig.color.semiLighter, false)
+    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "toggleHandle", widget.toggleNode, 2, defaultRelativeHorizontal, defaultRelativeVertical, handleTransform, tknWidgetConfig.color.semiLighter, false, true)
 
     tknTextNode.addNode(pTknGfxContext, "toggleLabel", widget.toggleNode, 3, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 0,
         length = 256,
-        offset = tknWidgetConfig.defaultPadding,
+        offset = tknWidgetConfig.defaultSpacing,
     }, {
         type = ui.layoutType.relative,
         pivot = 0.5,
@@ -98,4 +99,13 @@ function tknToggleWidget.removeWidget(pTknGfxContext, widget)
     widget.handleNode = nil
 end
 
+function tknToggleWidget.setToggle(widget, isToggled)
+    if isToggled ~= widget.isToggled then
+        widget.isToggled = isToggled
+        ui.setNodeTransformActive(widget.handleNode, widget.isToggled)
+        if widget.onValueChange then
+            widget.onValueChange(widget.isToggled)
+        end
+    end
+end
 return tknToggleWidget

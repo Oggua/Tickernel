@@ -8,6 +8,7 @@ local tknToggleWidget = require("engine.widgets.tknToggleWidget")
 local editorTopBarPanel = {}
 
 function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNode)
+    local panel = {}
     local defualtTransform = {
         rotation = 0,
         horizontalScale = 1,
@@ -15,7 +16,7 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         color = nil,
         active = true,
     }
-    editorTopBarPanel.dragWidget = tknDragWidget.addWidget(pTknGfxContext, "editorDragWidget", editorTopBarNode, 1, {
+    panel.dragWidget = tknDragWidget.addWidget(pTknGfxContext, "editorDragWidget", editorTopBarNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -25,16 +26,16 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = tknWidgetConfig.defaultButtonHeight,
+        length = tknWidgetConfig.defaultNormalButtonHeight,
         offset = 0,
     })
 
-    tknTextNode.addNode(pTknGfxContext, "editorDragText", editorTopBarPanel.dragWidget.backgroundNode, 1, {
+    tknTextNode.addNode(pTknGfxContext, "editorDragText", panel.dragWidget.backgroundNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 1,
         length = 32,
-        offset = -tknWidgetConfig.defaultPadding,
+        offset = -tknWidgetConfig.defaultSpacing,
     }, {
         type = ui.layoutType.relative,
         pivot = 0.5,
@@ -43,12 +44,12 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         offset = 0,
     }, defualtTransform, "\xEE\xB1\xA0", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 1, 0.5, false)
 
-    editorTopBarPanel.toggleWidget = tknToggleWidget.addWidget(pTknGfxContext, "editorToggleWidget", editorTopBarPanel.dragWidget.backgroundNode, 2, {
+    panel.toggleWidget = tknToggleWidget.addWidget(pTknGfxContext, "editorToggleWidget", panel.dragWidget.backgroundNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
         length = tknWidgetConfig.defaultToggleHeight,
-        offset = tknWidgetConfig.defaultPadding,
+        offset = tknWidgetConfig.defaultSpacing,
     }, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
@@ -58,13 +59,16 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
     }, function(isToggled)
         ui.setNodeTransformActive(editorRootNode, isToggled)
     end)
-    return editorTopBarPanel
+    tknToggleWidget.setToggle(panel.toggleWidget, true)
+
+    
+    return panel
 end
 
-function editorTopBarPanel.destroy(pTknGfxContext)
-    tknDragWidget.removeWidget(pTknGfxContext, editorTopBarPanel.dragWidget)
-    -- tknWidgetConfig.removeToggleWidget(pTknGfxContext, editorTopBarPanel.editorToggleWidget)
-    -- tknWidgetConfig.removeDragWidget(pTknGfxContext, editorTopBarPanel.editorDragWidget)
+function editorTopBarPanel.destroy(pTknGfxContext, panel)
+    tknToggleWidget.removeWidget(pTknGfxContext, panel.toggleWidget)
+    tknDragWidget.removeWidget(pTknGfxContext, panel.dragWidget)
+    -- tknWidgetConfig.removeDragWidget(pTknGfxContext, panel.dragWidget)
 
 end
 

@@ -58,8 +58,8 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     ui.setup(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, assetsPath, 1)
     tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     addCoreNodes(pTknGfxContext)
-    editorTopBarPanel.create(pTknGfxContext, tknEngine.editorRootNode, tknEngine.editorTopBarNode)
-    editorPanel.create(pTknGfxContext, tknEngine.editorRootNode)
+    tknEngine.editorTopBarPanel = editorTopBarPanel.create(pTknGfxContext, tknEngine.editorRootNode, tknEngine.editorTopBarNode)
+    tknEngine.editorPanel = editorPanel.create(pTknGfxContext, tknEngine.editorRootNode)
     game.start(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, 0, assetsPath, tknEngine.gameRootNode)
 end
 
@@ -67,12 +67,12 @@ function tknEngine.stop(pTknGfxContext)
     game.stop()
     tkn.tknWaitRenderFence(pTknGfxContext)
     game.stopGfx(pTknGfxContext)
-    editorPanel.destroy(pTknGfxContext)
-    editorTopBarPanel.destroy(pTknGfxContext)
+    editorPanel.destroy(pTknGfxContext, tknEngine.editorPanel)
+    editorTopBarPanel.destroy(pTknGfxContext, tknEngine.editorTopBarPanel)
     removeCoreNodes(pTknGfxContext)
     tknWidgetConfig.teardown(pTknGfxContext)
     ui.teardown(pTknGfxContext)
-   
+
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, tknEngine.pDepthStencilAttachment)
     tknEngine.pDepthStencilAttachment = nil
     tknEngine.pSwapchainAttachment = nil

@@ -5,7 +5,6 @@ local tknImageNode = require("engine.widgets.tknImageNode")
 local tknButtonWidget = {}
 
 function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onClick)
-
     local widget = {}
     local defaultTransform = {
         rotation = 0,
@@ -55,7 +54,7 @@ function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         maxOffset = 0,
         offset = 0,
     }
-    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "buttonBackground", widget.buttonNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false)
+    widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "buttonBackground", widget.buttonNode, 1, backgroundHorizontal, backgroundVertical, defaultTransform, tknWidgetConfig.color.semiDark, false, true)
     return widget
 end
 
