@@ -54,7 +54,7 @@ local function calculateOrientation(node, key, screenLength)
     return rectMin, rectMax, offsetToParentNdc
 end
 
-local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, screenHeight, screenWidthDirty, screenHeightDirty, parentHorizontalDirty, parentVerticalDirty, parentModelDirty, parentColorDirty, parentActiveDirty)
+local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, screenHeight, screenWidthDirty, screenHeightDirty, parentHorizontalDirty, parentVerticalDirty, parentModelDirty, parentColorDirty, parentActiveDirty)
     if node.rect == nil then
         node.rect = {
             horizontal = {
@@ -228,7 +228,7 @@ local function updateNodeGfxRecursive(pTknGfxContext, ui, node, screenWidth, scr
 
     for i = 1, #node.children do
         local child = node.children[i]
-        updateNodeGfxRecursive(pTknGfxContext, ui, child, screenWidth, screenHeight, screenWidthDirty, screenHeightDirty, parentHorizontalDirty, parentVerticalDirty, parentModelDirty, parentColorDirty, parentActiveDirty)
+        updateNodeGfxRecursively(pTknGfxContext, ui, child, screenWidth, screenHeight, screenWidthDirty, screenHeightDirty, parentHorizontalDirty, parentVerticalDirty, parentModelDirty, parentColorDirty, parentActiveDirty)
     end
 end
 
@@ -273,9 +273,9 @@ local function getActiveInteractableInputNode(node, xNdc, yNdc, inputState)
 
 end
 
-local function removeNodeRecursive(pTknGfxContext, node)
+local function removeNodeRecursively(pTknGfxContext, node)
     for i = #node.children, 1, -1 do
-        removeNodeRecursive(pTknGfxContext, node.children[i])
+        removeNodeRecursively(pTknGfxContext, node.children[i])
     end
 
     if node.type == "imageNode" then
@@ -373,7 +373,7 @@ end
 local function removeNodeInternal(pTknGfxContext, node)
     local needUpdateTopNode = isTopNode(node)
     local parent = node.parent
-    removeNodeRecursive(pTknGfxContext, node)
+    removeNodeRecursively(pTknGfxContext, node)
     if needUpdateTopNode then
         if parent == nil then
             ui.topNode = nil
@@ -478,7 +478,7 @@ end
 
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
     textNode.update(pTknGfxContext)
-    updateNodeGfxRecursive(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
+    updateNodeGfxRecursively(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
 

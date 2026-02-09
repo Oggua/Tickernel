@@ -10,7 +10,7 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
     local widget = {}
     widget.selectedIndex = 1
     widget.items = items
-    widget.buttonWidget = tknButtonWidget.addWidget(pTknGfxContext, name .. "buttonNode", parent, index, horizontal, vertical, function()
+    widget.buttonWidget = tknButtonWidget.addWidget(pTknGfxContext, name .. "buttonNode", parent, index, horizontal, vertical, function(widget)
         ui.setNodeTransformActive(widget.backgroundNode, not widget.backgroundNode.transform.active)
     end)
     local paddedRelativeOrientation = {
@@ -57,7 +57,7 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 0,
-        length = tknWidgetConfig.defaultSpacing + (#widget.items * (tknWidgetConfig.defaultNormalButtonHeight + tknWidgetConfig.defaultSpacing)),
+        length = tknWidgetConfig.defaultSpacing + (#widget.items * (tknWidgetConfig.largeInteractableWidth + tknWidgetConfig.defaultSpacing)),
         offset = 0,
     }, inactiveTransform, tknWidgetConfig.color.semiDarker, false, true)
 
@@ -67,9 +67,9 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
             type = ui.layoutType.anchored,
             anchor = 0,
             pivot = 0,
-            length = tknWidgetConfig.defaultNormalButtonHeight,
-            offset = tknWidgetConfig.defaultSpacing + ((i - 1) * (tknWidgetConfig.defaultNormalButtonHeight + tknWidgetConfig.defaultSpacing)),
-        }, function()
+            length = tknWidgetConfig.largeInteractableWidth,
+            offset = tknWidgetConfig.defaultSpacing + ((i - 1) * (tknWidgetConfig.largeInteractableWidth + tknWidgetConfig.defaultSpacing)),
+        }, function(widget)
             ui.setNodeTransformActive(widget.backgroundNode, false)
             ui.setTextString(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
             if widget.selectedIndex ~= i then

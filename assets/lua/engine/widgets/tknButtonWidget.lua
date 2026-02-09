@@ -22,7 +22,7 @@ function tknButtonWidget.addWidget(pTknGfxContext, name, parent, index, horizont
                 return true
             elseif inputState == input.inputState.up then
                 if onClick then
-                    onClick()
+                    onClick(widget)
                 end
                 return false
             else

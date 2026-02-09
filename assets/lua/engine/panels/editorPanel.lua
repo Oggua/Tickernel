@@ -51,7 +51,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
-        length = tknWidgetConfig.defaultDropdownHeight + (2 * tknWidgetConfig.defaultSpacing),
+        length = tknWidgetConfig.largeInteractableWidth + (2 * tknWidgetConfig.defaultSpacing),
         offset = 0,
     }, defaultTransform, tknWidgetConfig.color.semiDarker, false, false)
     panel.topBarDropdownWidget = tknDropdownWidget.addWidget(pTknGfxContext, "editorPanelDropdownWidget", panel.topBarBackgroundNode, 1, {
@@ -64,7 +64,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = tknWidgetConfig.defaultDropdownHeight,
+        length = tknWidgetConfig.largeInteractableWidth,
         offset = 0,
     }, dropdownItems)
 

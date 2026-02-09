@@ -6,12 +6,9 @@ local tknImageNode = require("engine.widgets.tknImageNode")
 local tknTextNode = require("engine.widgets.tknTextNode")
 local tknToggleWidget = {}
 
-function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, onValueChange)
-    -- Lazy load tknWidgetConfig to avoid circular dependency
-    local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
-
+function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, handleScale, onValueChange)
     local widget = {}
-    widget.isToggled = false
+    widget.isOn = false
     widget.onValueChange = onValueChange
     local processInput = function(node, xNdc, yNdc, inputState)
         if tknWidgetConfig.updateClickWidgetColor then
@@ -21,10 +18,10 @@ function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizont
             if inputState == input.inputState.down then
                 return true
             elseif inputState == input.inputState.up then
-                widget.isToggled = not widget.isToggled
-                ui.setNodeTransformActive(widget.handleNode, widget.isToggled)
+                widget.isOn = not widget.isOn
+                ui.setNodeTransformActive(widget.handleNode, widget.isOn)
                 if onValueChange then
-                    onValueChange(widget.isToggled)
+                    onValueChange(widget, widget.isOn)
                 end
                 return false
             else
@@ -68,26 +65,26 @@ function tknToggleWidget.addWidget(pTknGfxContext, name, parent, index, horizont
 
     local handleTransform = {
         rotation = 0,
-        horizontalScale = tknWidgetConfig.defaultToggleHandleScale,
-        verticalScale = tknWidgetConfig.defaultToggleHandleScale,
+        horizontalScale = handleScale,
+        verticalScale = handleScale,
         color = nil,
         active = false,
     }
-    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "toggleHandle", widget.toggleNode, 2, defaultRelativeHorizontal, defaultRelativeVertical, handleTransform, tknWidgetConfig.color.semiLighter, false, true)
+    widget.handleNode = tknImageNode.addNode(pTknGfxContext, "toggleHandle", widget.backgroundNode, 1, defaultRelativeHorizontal, defaultRelativeVertical, handleTransform, tknWidgetConfig.color.semiLighter, false, true)
 
-    tknTextNode.addNode(pTknGfxContext, "toggleLabel", widget.toggleNode, 3, {
-        type = ui.layoutType.anchored,
-        anchor = 1,
-        pivot = 0,
-        length = 256,
-        offset = tknWidgetConfig.defaultSpacing,
-    }, {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }, defaultTransform, "Active Editor", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
+    -- tknTextNode.addNode(pTknGfxContext, "toggleLabel", widget.toggleNode, 3, {
+    --     type = ui.layoutType.anchored,
+    --     anchor = 1,
+    --     pivot = 0,
+    --     length = 256,
+    --     offset = tknWidgetConfig.defaultSpacing,
+    -- }, {
+    --     type = ui.layoutType.relative,
+    --     pivot = 0.5,
+    --     minOffset = 0,
+    --     maxOffset = 0,
+    --     offset = 0,
+    -- }, defaultTransform, "Active Editor", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
 
     return widget
 end
@@ -99,12 +96,12 @@ function tknToggleWidget.removeWidget(pTknGfxContext, widget)
     widget.handleNode = nil
 end
 
-function tknToggleWidget.setToggle(widget, isToggled)
-    if isToggled ~= widget.isToggled then
-        widget.isToggled = isToggled
-        ui.setNodeTransformActive(widget.handleNode, widget.isToggled)
+function tknToggleWidget.setIsOn(widget, isOn)
+    if isOn ~= widget.isOn then
+        widget.isOn = isOn
+        ui.setNodeTransformActive(widget.handleNode, widget.isOn)
         if widget.onValueChange then
-            widget.onValueChange(widget.isToggled)
+            widget.onValueChange(widget.isOn)
         end
     end
 end

@@ -7,10 +7,15 @@ local tknWidgetConfig = {}
 function tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     -- Color presets
     tknWidgetConfig.color = {
+        darker = colorPreset.darker,
         semiDarker = colorPreset.semiDarker,
         semiDark = colorPreset.semiDark,
         semiLight = colorPreset.semiLight,
         semiLighter = colorPreset.semiLighter,
+        inverseSemiDarker = colorPreset.inverseSemiDarker,
+        inverseSemiDark = colorPreset.inverseSemiDark,
+        inverseSemiLighter = colorPreset.inverseSemiLighter,
+        inverseSemiLight = colorPreset.inverseSemiLight,
     }
 
     tknWidgetConfig.updateClickWidgetColor = function(node, xNdc, yNdc, inputState)
@@ -45,29 +50,52 @@ function tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     tknWidgetConfig.normalFontSize = 22
     tknWidgetConfig.largeFontSize = 28
 
+    tknWidgetConfig.smallInteractableWidth = 32
+    tknWidgetConfig.largeInteractableWidth = 48
+
     tknWidgetConfig.defaultAlphaThreshold = 0.02
-    tknWidgetConfig.defaultSliderWidth = 32
     tknWidgetConfig.defaultToggleHandleScale = 0.6
-    tknWidgetConfig.defaultSmallButtonHeight = 32
-    tknWidgetConfig.defaultNormalButtonHeight = 48
-    tknWidgetConfig.defaultDropdownHeight = 48
-    tknWidgetConfig.defaultToggleHeight = 32
     tknWidgetConfig.defaultDragEdgeWidth = 8
     tknWidgetConfig.defaultSpacing = 8
+
+    tknWidgetConfig.fullRelativeOrientation = {
+        type = ui.layoutType.relative,
+        pivot = 0,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }
+    tknWidgetConfig.paddedRelativeOrientation = {
+        type = ui.layoutType.relative,
+        pivot = 0,
+        minOffset = tknWidgetConfig.defaultSpacing,
+        maxOffset = -tknWidgetConfig.defaultSpacing,
+        offset = 0,
+    }
+    tknWidgetConfig.defaultTransform = {
+        rotation = 0,
+        horizontalScale = 1,
+        verticalScale = 1,
+        color = nil,
+        active = true,
+    }
 end
 
 function tknWidgetConfig.teardown(pTknGfxContext)
+    tknWidgetConfig.fullRelativeOrientation = nil
+    tknWidgetConfig.paddedRelativeOrientation = nil
+    tknWidgetConfig.defaultTransform = nil
+
     ui.unloadFont(pTknGfxContext, tknWidgetConfig.font)
     tknWidgetConfig.smallFontSize = nil
     tknWidgetConfig.normalFontSize = nil
     tknWidgetConfig.largeFontSize = nil
 
+    tknWidgetConfig.largeInteractableWidth = nil
+    tknWidgetConfig.smallInteractableWidth = nil
+
     tknWidgetConfig.defaultAlphaThreshold = nil
-    tknWidgetConfig.defaultSliderWidth = nil
     tknWidgetConfig.defaultToggleHandleScale = nil
-    tknWidgetConfig.defaultNormalButtonHeight = nil
-    tknWidgetConfig.defaultToggleHeight = nil
-    tknWidgetConfig.defaultDropdownHeight = nil
     tknWidgetConfig.defaultDragEdgeWidth = nil
     tknWidgetConfig.defaultSpacing = nil
 

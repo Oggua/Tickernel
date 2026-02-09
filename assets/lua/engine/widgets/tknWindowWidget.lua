@@ -10,6 +10,14 @@ local tknTextNode = require("engine.widgets.tknTextNode")
 local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknWindowWidget = {}
 
+local function createUINodeView(widget, node)
+
+end
+
+local function createUITreeView()
+
+end
+
 function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, title)
     local widget = {}
     local defaultTransform = {
@@ -141,7 +149,7 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
-        length = tknWidgetConfig.defaultSmallButtonHeight + tknWidgetConfig.defaultSpacing * 2,
+        length = tknWidgetConfig.smallInteractableWidth + tknWidgetConfig.defaultSpacing * 2,
         offset = 0,
     }, defaultTransform, tknWidgetConfig.color.semiDarker, false, true)
 
@@ -151,73 +159,48 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
-        length = tknWidgetConfig.defaultSmallButtonHeight,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = -tknWidgetConfig.defaultSpacing,
     }, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = tknWidgetConfig.defaultSmallButtonHeight,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
-    }, function()
+    }, function(widget)
         ui.setNodeTransformActive(widget.dragWidget.backgroundNode, false)
     end)
     tknTextNode.addNode(pTknGfxContext, "closeButtonTextNode", widget.closeButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xee\xae\x98", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
-    --  tknWidgetConfig.color.semiDark, tknWidgetConfig.color.semiLight, tknWidgetConfig.color.semiDark, "\xee\xae\x98", tknWidgetConfig.normalFontSize)
 
     widget.fullScreenButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "fullScreenButtonWidget", titleBackgroundNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
-        length = tknWidgetConfig.defaultSmallButtonHeight,
-        offset = -tknWidgetConfig.defaultSpacing * 2 - tknWidgetConfig.defaultSmallButtonHeight,
+        length = tknWidgetConfig.smallInteractableWidth,
+        offset = -tknWidgetConfig.defaultSpacing * 2 - tknWidgetConfig.smallInteractableWidth,
     }, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = tknWidgetConfig.defaultSmallButtonHeight,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
-    }, function()
+    }, function(widget)
     end)
     tknTextNode.addNode(pTknGfxContext, "fullScreenButtonTextNode", widget.fullScreenButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xef\x93\x8e", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
-    -- tknWidgetConfig.color.semiDark, tknWidgetConfig.color.semiLight, tknWidgetConfig.color.semiDark, "", tknWidgetConfig.normalFontSize
 
     widget.contentParentNode = ui.addNode(pTknGfxContext, innerParentNode, 2, "contentParentNode", relativeOrientation, {
         type = ui.layoutType.relative,
         pivot = 0.5,
-        minOffset = tknWidgetConfig.defaultSmallButtonHeight + tknWidgetConfig.defaultSpacing * 2,
+        minOffset = tknWidgetConfig.smallInteractableWidth + tknWidgetConfig.defaultSpacing * 2,
         maxOffset = 0,
         offset = 0,
     }, defaultTransform)
 
-    widget.uiDetailScrollView = tknScrollViewWidget.addWidget(pTknGfxContext, "uiDetailScrollView", widget.contentParentNode, 1, relativeOrientation, {
-        type = ui.layoutType.anchored,
-        anchor = 0,
-        pivot = 0,
-        length = 512,
-        offset = 0,
-    }, relativeOrientation, {
-        type = ui.layoutType.anchored,
-        anchor = 0,
-        pivot = 0,
-        length = 1024,
-        offset = 0,
-    })
-
-    widget.uiTreeScrollView = tknScrollViewWidget.addWidget(pTknGfxContext, "uiTreeScrollView", widget.contentParentNode, 1, relativeOrientation, {
-        type = ui.layoutType.relative,
-        pivot = 0,
-        minOffset = 512,
-        maxOffset = 0,
-        offset = 0,
-    }, relativeOrientation, {
-        type = ui.layoutType.anchored,
-        anchor = 0,
-        pivot = 0,
-        length = 1024,
-        offset = 0,
-    })
     return widget
+end
+
+function tknWindowWidget.updateWidget()
+
 end
 
 function tknWindowWidget.removeWidget(pTknGfxContext, widget)

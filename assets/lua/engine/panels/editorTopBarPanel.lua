@@ -26,7 +26,7 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = tknWidgetConfig.defaultNormalButtonHeight,
+        length = tknWidgetConfig.largeInteractableWidth,
         offset = 0,
     })
 
@@ -48,20 +48,19 @@ function editorTopBarPanel.create(pTknGfxContext, editorRootNode, editorTopBarNo
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
-        length = tknWidgetConfig.defaultToggleHeight,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = tknWidgetConfig.defaultSpacing,
     }, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
-        length = tknWidgetConfig.defaultToggleHeight,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
-    }, function(isToggled)
-        ui.setNodeTransformActive(editorRootNode, isToggled)
+    }, tknWidgetConfig.defaultToggleHandleScale, function(widget, isOn)
+        ui.setNodeTransformActive(editorRootNode, isOn)
     end)
-    tknToggleWidget.setToggle(panel.toggleWidget, true)
+    -- tknToggleWidget.setIsOn(panel.toggleWidget, true)
 
-    
     return panel
 end
 

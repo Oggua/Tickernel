@@ -69,13 +69,13 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
-        length = tknWidgetConfig.defaultSliderWidth,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
     }, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
-        maxOffset = -tknWidgetConfig.defaultSliderWidth,
+        maxOffset = -tknWidgetConfig.smallInteractableWidth,
         offset = 0,
     }, tknSliderWidget.direction.vertical, 0, onRightSliderValueChange)
 
@@ -88,13 +88,13 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
-        maxOffset = -tknWidgetConfig.defaultSliderWidth,
+        maxOffset = -tknWidgetConfig.smallInteractableWidth,
         offset = 0,
     }, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
-        length = tknWidgetConfig.defaultSliderWidth,
+        length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
     }, tknSliderWidget.direction.horizontal, 0, onBottomSliderValueChange)
 
