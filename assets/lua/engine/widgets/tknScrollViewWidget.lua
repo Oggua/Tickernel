@@ -63,7 +63,7 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
     local onRightSliderValueChange = function(value)
         widget.contentNode.vertical.anchor = value
         widget.contentNode.vertical.pivot = value
-        ui.setNodeOrientation(widget.contentNode, "vertical", widget.contentNode.vertical)
+        ui.setNodeOrientation(widget.contentNode, ui.orientationType.vertical, widget.contentNode.vertical)
     end
     widget.rightSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
         type = ui.layoutType.anchored,
@@ -77,12 +77,12 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         minOffset = 0,
         maxOffset = -tknWidgetConfig.smallInteractableWidth,
         offset = 0,
-    }, tknSliderWidget.direction.vertical, 0, onRightSliderValueChange)
+    }, ui.orientationType.vertical, 0, onRightSliderValueChange)
 
     local onBottomSliderValueChange = function(value)
         widget.contentNode.horizontal.anchor = value
         widget.contentNode.horizontal.pivot = value
-        ui.setNodeOrientation(widget.contentNode, "horizontal", widget.contentNode.horizontal)
+        ui.setNodeOrientation(widget.contentNode, ui.orientationType.horizontal, widget.contentNode.horizontal)
     end
     widget.bottomSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
         type = ui.layoutType.relative,
@@ -96,7 +96,7 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
         pivot = 1,
         length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
-    }, tknSliderWidget.direction.horizontal, 0, onBottomSliderValueChange)
+    }, ui.orientationType.horizontal, 0, onBottomSliderValueChange)
 
     widget.postUpdateGfxCallback = function()
         local contentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min

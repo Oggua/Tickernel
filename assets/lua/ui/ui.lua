@@ -77,7 +77,7 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
     local modelDirty = false
     local boundsDirty = false
     if node.horizontal.dirty or screenWidthDirty or parentHorizontalDirty then
-        local rectHorizontalMin, rectHorizontalMax, offsetToParentX = calculateOrientation(node, "horizontal", screenWidth)
+        local rectHorizontalMin, rectHorizontalMax, offsetToParentX = calculateOrientation(node, ui.orientationType.horizontal, screenWidth)
         if rect.horizontal.min ~= rectHorizontalMin or rect.horizontal.max ~= rectHorizontalMax then
             rect.horizontal.min = rectHorizontalMin
             rect.horizontal.max = rectHorizontalMax
@@ -91,12 +91,13 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
             modelDirty = true
             parentHorizontalDirty = true
         end
+        node.horizontal.dirty = false
     else
         -- parentHorizontalDirty = false
     end
 
     if node.vertical.dirty or screenHeightDirty or parentVerticalDirty then
-        local rectVerticalMin, rectVerticalMax, offsetToParentY = calculateOrientation(node, "vertical", screenHeight)
+        local rectVerticalMin, rectVerticalMax, offsetToParentY = calculateOrientation(node, ui.orientationType.vertical, screenHeight)
         if rect.vertical.min ~= rectVerticalMin or rect.vertical.max ~= rectVerticalMax then
             rect.vertical.min = rectVerticalMin
             rect.vertical.max = rectVerticalMax
@@ -110,6 +111,7 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
             modelDirty = true
             parentVerticalDirty = true
         end
+        node.vertical.dirty = false
     else
         -- parentVerticalDirty = false
     end
@@ -190,12 +192,14 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
         node.colorDirty = false
     end
 
+    local t = os.clock()
     local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
     if node.type == "imageNode" then
         imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     elseif node.type == "textNode" then
         textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     end
+    print("Update node " .. tostring(node.name) .. " mesh time: " .. (os.clock() - t) * 1000 .. " ms")
 
     -- TODO Mark dirty for alphaThreshold and node's color
     if node.alphaThresholdDirty then
@@ -223,7 +227,6 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
         node.rect.active = parentRectActive and node.transform.active
         node.transform.activeDirty = false
         parentActiveDirty = true
-        -- print("Node " .. tostring(node.name) .. " active state changed to " .. tostring(node.rect.active))
     end
 
     for i = 1, #node.children do
@@ -349,8 +352,8 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
         vertical = {},
         transform = {},
     }
-    ui.setNodeOrientation(node, "horizontal", horizontal)
-    ui.setNodeOrientation(node, "vertical", vertical)
+    ui.setNodeOrientation(node, ui.orientationType.horizontal, horizontal)
+    ui.setNodeOrientation(node, ui.orientationType.vertical, vertical)
     ui.setNodeTransformModel(node, transform.rotation, transform.horizontalScale, transform.verticalScale)
     ui.setNodeTransformColor(node, transform.color)
     ui.setNodeTransformActive(node, transform.active)
@@ -394,6 +397,16 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment,
     ui.layoutType = {
         anchored = "anchored",
         relative = "relative",
+    }
+    ui.orientationType = {
+        horizontal = "horizontal",
+        vertical = "vertical",
+    }
+    ui.nodeType = {
+        node = "node",
+        imageNode = "imageNode",
+        textNode = "textNode",
+        interactableNode = "interactableNode",
     }
     -- Vertex format: position + uv (no color)
     ui.vertexFormat = {{
@@ -477,15 +490,6 @@ function ui.teardown(pTknGfxContext)
 end
 
 function ui.update(pTknGfxContext, screenWidth, screenHeight)
-    textNode.update(pTknGfxContext)
-    updateNodeGfxRecursively(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
-    ui.screenWidth = screenWidth
-    ui.screenHeight = screenHeight
-
-    for _, callback in ipairs(ui.postUpdateGfxCallbacks) do
-        callback()
-    end
-
     if ui.currentInteractableNode then
         local canInteract = ui.currentInteractableNode.processInput(ui.currentInteractableNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
         if canInteract then
@@ -497,6 +501,17 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
         if input.getMouseState(input.mouseCode.left) == input.inputState.down then
             ui.currentInteractableNode = getActiveInteractableInputNode(ui.rootNode, input.mousePositionNDC.x, input.mousePositionNDC.y, input.getMouseState(input.mouseCode.left))
         end
+    end
+
+    textNode.update(pTknGfxContext)
+    local t = os.clock()
+    updateNodeGfxRecursively(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
+    ui.screenWidth = screenWidth
+    ui.screenHeight = screenHeight
+    print("UI update time: " .. (os.clock() - t) * 1000 .. " ms")
+
+    for _, callback in ipairs(ui.postUpdateGfxCallbacks) do
+        callback()
     end
 end
 
@@ -692,6 +707,10 @@ function ui.removePostUpdateGfxCallback(callback)
             return
         end
     end
+end
+
+function ui.measureText(font, textString, size, rectWidth, screenWidth, screenHeight)
+    return textNode.measureText(font, textString, size, rectWidth, screenWidth, screenHeight)
 end
 
 return ui

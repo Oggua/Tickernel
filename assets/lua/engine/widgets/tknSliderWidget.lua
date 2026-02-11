@@ -3,16 +3,11 @@ local input = require("input")
 local tknMath = require("tknMath")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local tknImageNode = require("engine.widgets.tknImageNode")
-local tknSliderWidget = {
-    direction = {
-        horizontal = "horizontal",
-        vertical = "vertical",
-    },
-}
+local tknSliderWidget = {}
 
-function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, direction, handleLength, onValueChange)
+function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, orientationType, handleLength, onValueChange)
     local widget = {}
-    widget.direction = direction
+    widget.orientationType = orientationType
     widget.onValueChange = onValueChange
 
     local defaultTransform = {
@@ -37,7 +32,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
                 local inv10 = -m10 / det
                 local inv11 = m00 / det
                 local value
-                if widget.direction == tknSliderWidget.direction.horizontal then
+                if widget.orientationType == ui.orientationType.horizontal then
                     local lx = inv00 * (xNdc - tx) + inv01 * (yNdc - ty)
                     local rx = widget.handleParent.rect.horizontal
                     local length = (rx.max - rx.min)
@@ -50,7 +45,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
                     end
 
                 else
-                    assert(widget.direction == tknSliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
+                    assert(widget.orientationType == ui.orientationType.vertical, "Invalid slider direction: " .. tostring(widget.orientationType))
                     local ly = inv10 * (xNdc - tx) + inv11 * (yNdc - ty)
                     local ry = widget.handleParent.rect.vertical
                     local length = (ry.max - ry.min)
@@ -118,7 +113,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         offset = 0,
     }
 
-    if widget.direction == tknSliderWidget.direction.horizontal then
+    if widget.orientationType == ui.orientationType.horizontal then
         local handleParentOffset
         if math.type(handleLength) == "integer" then
             handleParentOffset = handleLength // 2
@@ -141,7 +136,7 @@ function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizont
             offset = 0,
         }
     else
-        assert(widget.direction == tknSliderWidget.direction.vertical, "Invalid slider direction: " .. tostring(widget.direction))
+        assert(widget.orientationType == ui.orientationType.vertical, "Invalid slider direction: " .. tostring(widget.orientationType))
         local handleParentOffset
         if math.type(handleLength) == "integer" then
             handleParentOffset = handleLength // 2
@@ -172,14 +167,14 @@ end
 
 function tknSliderWidget.setValue(widget, value)
     value = tknMath.clamp(value, 0, 1)
-    if widget.direction == tknSliderWidget.direction.horizontal then
+    if widget.orientationType == ui.orientationType.horizontal then
         widget.handleNode.horizontal.anchor = value
-        ui.setNodeOrientation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
-    elseif widget.direction == tknSliderWidget.direction.vertical then
+        ui.setNodeOrientation(widget.handleNode, ui.orientationType.horizontal, widget.handleNode.horizontal)
+    elseif widget.orientationType == ui.orientationType.vertical then
         widget.handleNode.vertical.anchor = value
-        ui.setNodeOrientation(widget.handleNode, "vertical", widget.handleNode.vertical)
+        ui.setNodeOrientation(widget.handleNode, ui.orientationType.vertical, widget.handleNode.vertical)
     else
-        error("Invalid slider direction: " .. tostring(widget.direction))
+        error("Invalid slider direction: " .. tostring(widget.orientationType))
     end
     if widget.onValueChange then
         widget.onValueChange(value)
@@ -192,7 +187,7 @@ function tknSliderWidget.removeWidget(pTknGfxContext, widget)
     widget.backgroundNode = nil
     widget.handleParent = nil
     widget.handleNode = nil
-    widget.direction = nil
+    widget.orientationType = nil
     widget.onValueChange = nil
 end
 
@@ -203,20 +198,20 @@ function tknSliderWidget.setHandleLength(widget, handleLength)
     else
         handleParentOffset = handleLength / 2
     end
-    if widget.direction == tknSliderWidget.direction.horizontal then
+    if widget.orientationType == ui.orientationType.horizontal then
         widget.handleNode.horizontal.length = handleLength
         widget.handleParent.horizontal.minOffset = handleParentOffset
         widget.handleParent.horizontal.maxOffset = -handleParentOffset
-        ui.setNodeOrientation(widget.handleNode, "horizontal", widget.handleNode.horizontal)
-        ui.setNodeOrientation(widget.handleParent, "horizontal", widget.handleParent.horizontal)
-    elseif widget.direction == tknSliderWidget.direction.vertical then
+        ui.setNodeOrientation(widget.handleNode, ui.orientationType.horizontal, widget.handleNode.horizontal)
+        ui.setNodeOrientation(widget.handleParent, ui.orientationType.horizontal, widget.handleParent.horizontal)
+    elseif widget.orientationType == ui.orientationType.vertical then
         widget.handleNode.vertical.length = handleLength
         widget.handleParent.vertical.minOffset = handleParentOffset
         widget.handleParent.vertical.maxOffset = -handleParentOffset
-        ui.setNodeOrientation(widget.handleNode, "vertical", widget.handleNode.vertical)
-        ui.setNodeOrientation(widget.handleParent, "vertical", widget.handleParent.vertical)
+        ui.setNodeOrientation(widget.handleNode, ui.orientationType.vertical, widget.handleNode.vertical)
+        ui.setNodeOrientation(widget.handleParent, ui.orientationType.vertical, widget.handleParent.vertical)
     else
-        error("Invalid slider direction: " .. tostring(widget.direction))
+        error("Invalid slider direction: " .. tostring(widget.orientationType))
     end
 end
 

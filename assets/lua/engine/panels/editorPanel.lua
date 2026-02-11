@@ -11,25 +11,17 @@ local editorPanel = {}
 
 function editorPanel.create(pTknGfxContext, editorRootNode)
     local panel = {}
-    local relativeOrientation = {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
+    panel.topBarBackgroundNode = tknImageNode.addNode(pTknGfxContext, "editorPanelBackgroundNode", editorRootNode, 1, tknWidgetConfig.fullRelativeOrientation, {
+        type = ui.layoutType.anchored,
+        anchor = 0,
+        pivot = 0,
+        length = tknWidgetConfig.largeInteractableWidth + (2 * tknWidgetConfig.defaultSpacing),
         offset = 0,
-    }
-    local defaultTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
+    }, tknWidgetConfig.defaultTransform, tknWidgetConfig.color.semiDarker, false, false)
 
     local dropdownItems = {{
         name = "\xef\x8b\x86 UI Inspector",
         onSelect = function()
-
         end,
     }, {
         name = "\xee\xb5\x95 Asset Browser",
@@ -47,13 +39,6 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
             print("Add Console selected")
         end,
     }}
-    panel.topBarBackgroundNode = tknImageNode.addNode(pTknGfxContext, "editorPanelBackgroundNode", editorRootNode, 1, relativeOrientation, {
-        type = ui.layoutType.anchored,
-        anchor = 0,
-        pivot = 0,
-        length = tknWidgetConfig.largeInteractableWidth + (2 * tknWidgetConfig.defaultSpacing),
-        offset = 0,
-    }, defaultTransform, tknWidgetConfig.color.semiDarker, false, false)
     panel.topBarDropdownWidget = tknDropdownWidget.addWidget(pTknGfxContext, "editorPanelDropdownWidget", panel.topBarBackgroundNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0,

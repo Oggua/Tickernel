@@ -525,12 +525,12 @@ if not tkn.tknFlushTknFontPtr then
     end
 end
 
-if not tkn.tknLoadTknChar then
+if not tkn.tknLoadChar then
     ---Load a character into font atlas
     ---@param pTknFont lightuserdata TknFont pointer
     ---@param unicode integer Unicode codepoint to load
-    function tkn.tknLoadTknChar(pTknFont, unicode)
-        error("tkn.tknLoadTknChar: C binding not loaded")
+    function tkn.tknLoadChar(pTknFont, unicode)
+        error("tkn.tknLoadChar: C binding not loaded")
     end
 end
 

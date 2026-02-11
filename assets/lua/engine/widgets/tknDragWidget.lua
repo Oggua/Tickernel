@@ -62,8 +62,8 @@ function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal
                 node.vertical.offset = offsetToParentY - (anchorToParentNorm - node.parent.vertical.pivot) * parentHeightNdc
             end
 
-            ui.setNodeOrientation(node, "horizontal", node.horizontal)
-            ui.setNodeOrientation(node, "vertical", node.vertical)
+            ui.setNodeOrientation(node, ui.orientationType.horizontal, node.horizontal)
+            ui.setNodeOrientation(node, ui.orientationType.vertical, node.vertical)
             return true
         elseif inputState == input.inputState.up then
             dragState.active = false

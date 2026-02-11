@@ -11,20 +11,20 @@ typedef struct TknChar
     uint32_t width, height;
     int32_t bearingX, bearingY;
     uint32_t advance;
-    
+
     // Cached bitmap data for batch upload
     unsigned char *bitmapBuffer;
     uint32_t bitmapSize;
-    
+
     struct TknChar *pNext;
     struct TknChar *pNextDirty;
 } TknChar;
 
 typedef struct TknFont
 {
-    FT_Face *ftFaces;               // Array of font faces
-    FT_Pos *fontBoldStrengths;      // Bold strength for each font (0 = no bold)
-    uint32_t fontCount;             // Number of fonts
+    FT_Face *ftFaces;          // Array of font faces
+    FT_Pos *fontBoldStrengths; // Bold strength for each font (0 = no bold)
+    uint32_t fontCount;        // Number of fonts
     uint32_t tknCharCapacity;
     uint32_t tknCharCount;
     TknChar **tknCharPtrs;
@@ -34,9 +34,9 @@ typedef struct TknFont
     uint32_t atlasLength;
     uint32_t penX, penY;
     uint32_t maxRowHeight;
-    int32_t maxAscender;     // in pixels (after conversion from font units)
-    int32_t minDescender;    // in pixels (after conversion from font units)
-    
+    int32_t maxAscender;  // in pixels (after conversion from font units)
+    int32_t minDescender; // in pixels (after conversion from font units)
+
     struct TknFont *pNext;
 } TknFont;
 
@@ -49,7 +49,7 @@ typedef struct
 TknFontLibrary *createTknFontLibraryPtr();
 void destroyTknFontLibraryPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext);
 
-TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode);
+TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode, bool *pHasLoaded);
 void flushTknFontPtr(TknFont *pTknFont, TknGfxContext *pTknGfxContext);
 
 TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGfxContext, uint32_t fontPathCount, const char **fontPaths, uint32_t fontSize, uint32_t atlasLength, const FT_Pos *boldStrengths);

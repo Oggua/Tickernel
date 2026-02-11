@@ -3,49 +3,19 @@ local ui = require("ui.ui")
 local game = require("game.game")
 local input = require("input")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
-local editorTopBarPanel = require("engine.panels.editorTopBarPanel")
 local editorPanel = require("engine.panels.editorPanel")
 local tknEngine = {}
 
+local function formatDuration(seconds)
+    return string.format("%.3f ms", seconds * 1000)
+end
+
 local function addCoreNodes(pTknGfxContext)
-    local defaultTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-
-    local fullScreenHorizontal = {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }
-    local fullScreenVertical = {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }
-    tknEngine.gameRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "TickernelEngine", fullScreenHorizontal, fullScreenVertical, defaultTransform)
-
-    local editorTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = false,
-    }
-    tknEngine.editorRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 2, "Editor", fullScreenHorizontal, fullScreenVertical, editorTransform)
-
-    tknEngine.editorTopBarNode = ui.addNode(pTknGfxContext, ui.rootNode, 3, "EditorTopBar", fullScreenHorizontal, fullScreenVertical, defaultTransform)
+    tknEngine.gameRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "TickernelEngine", tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform)
+    tknEngine.editorRootNode = ui.addNode(pTknGfxContext, ui.rootNode, 2, "Editor", tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform)
 end
 
 local function removeCoreNodes(pTknGfxContext)
-    ui.removeNode(pTknGfxContext, tknEngine.editorTopBarNode)
     ui.removeNode(pTknGfxContext, tknEngine.editorRootNode)
     ui.removeNode(pTknGfxContext, tknEngine.gameRootNode)
 end
@@ -58,7 +28,7 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     ui.setup(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, assetsPath, 1)
     tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     addCoreNodes(pTknGfxContext)
-    tknEngine.editorTopBarPanel = editorTopBarPanel.create(pTknGfxContext, tknEngine.editorRootNode, tknEngine.editorTopBarNode)
+
     tknEngine.editorPanel = editorPanel.create(pTknGfxContext, tknEngine.editorRootNode)
     game.start(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, 0, assetsPath, tknEngine.gameRootNode)
 end
@@ -68,7 +38,7 @@ function tknEngine.stop(pTknGfxContext)
     tkn.tknWaitRenderFence(pTknGfxContext)
     game.stopGfx(pTknGfxContext)
     editorPanel.destroy(pTknGfxContext, tknEngine.editorPanel)
-    editorTopBarPanel.destroy(pTknGfxContext, tknEngine.editorTopBarPanel)
+
     removeCoreNodes(pTknGfxContext)
     tknWidgetConfig.teardown(pTknGfxContext)
     ui.teardown(pTknGfxContext)
@@ -82,7 +52,6 @@ function tknEngine.update(pTknGfxContext, width, height)
     -- print("Lua update")
     game.update()
     tkn.tknWaitRenderFence(pTknGfxContext)
-    -- print("Lua updateGfx")
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)
     return shouldQuit

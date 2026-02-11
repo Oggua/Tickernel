@@ -10,7 +10,7 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
     local widget = {}
     widget.selectedIndex = 1
     widget.items = items
-    widget.buttonWidget = tknButtonWidget.addWidget(pTknGfxContext, name .. "buttonNode", parent, index, horizontal, vertical, function(widget)
+    widget.buttonWidget = tknButtonWidget.addWidget(pTknGfxContext, name .. "buttonNode", parent, index, horizontal, vertical, function(buttonWidget)
         ui.setNodeTransformActive(widget.backgroundNode, not widget.backgroundNode.transform.active)
     end)
     local paddedRelativeOrientation = {
@@ -27,24 +27,10 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
         maxOffset = tknWidgetConfig.defaultSpacing,
         offset = 0,
     }
-    local relativeOrientation = {
-        type = ui.layoutType.relative,
-        pivot = 0.5,
-        minOffset = 0,
-        maxOffset = 0,
-        offset = 0,
-    }
-    local defaultTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
 
-    widget.dropdownTextNode = tknTextNode.addNode(pTknGfxContext, name .. "buttonTextNode", widget.buttonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, widget.items[widget.selectedIndex].name, tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 0, 0.5, false)
+    widget.dropdownTextNode = tknTextNode.addNode(pTknGfxContext, name .. "buttonTextNode", widget.buttonWidget.backgroundNode, 1, paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, widget.items[widget.selectedIndex].name, tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 0, 0.5, false)
 
-    widget.dropdownArrowTextNode = tknTextNode.addNode(pTknGfxContext, "arrowTextNode", widget.buttonWidget.backgroundNode, 2, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xef\x8c\xa6", tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 1, 0.5, false)
+    widget.dropdownArrowTextNode = tknTextNode.addNode(pTknGfxContext, "arrowTextNode", widget.buttonWidget.backgroundNode, 2, paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "\xef\x8c\xa6", tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 1, 0.5, false)
 
     local inactiveTransform = {
         rotation = 0,
@@ -69,18 +55,22 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
             pivot = 0,
             length = tknWidgetConfig.largeInteractableWidth,
             offset = tknWidgetConfig.defaultSpacing + ((i - 1) * (tknWidgetConfig.largeInteractableWidth + tknWidgetConfig.defaultSpacing)),
-        }, function(widget)
+        }, function(buttonWidget)
             ui.setNodeTransformActive(widget.backgroundNode, false)
-            ui.setTextString(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
-            if widget.selectedIndex ~= i then
-                widget.selectedIndex = i
+            local index = i
+            if widget.selectedIndex ~= index then
+                widget.selectedIndex = index
+                ui.setTextString(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
                 if item.onSelect then
                     item.onSelect()
                 end
             end
         end)
-        tknTextNode.addNode(pTknGfxContext, name .. "itemTextNode" .. i, itemButtonWidget.backgroundNode, 1, paddedRelativeOrientation, paddedRelativeOrientation, defaultTransform, item.name, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
+        tknTextNode.addNode(pTknGfxContext, name .. "itemTextNode" .. i, itemButtonWidget.backgroundNode, 1, paddedRelativeOrientation, paddedRelativeOrientation, tknWidgetConfig.defaultTransform, item.name, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
         table.insert(widget.itemButtonWidgets, itemButtonWidget)
+    end
+
+    if widget.items[widget.selectedIndex] and widget.items[widget.selectedIndex].onSelect then
         widget.items[widget.selectedIndex].onSelect()
     end
 

@@ -1668,26 +1668,26 @@ static int luaCreateTknFontPtr(lua_State *pLuaState)
 {
     // Parameters: lib, gfx, fontPaths, fontSize, atlasLength, [boldStrengths]
     int argc = lua_gettop(pLuaState);
-    
+
     if (argc < 5)
     {
         return 0;
     }
-    
+
     TknFontLibrary *pTknFontLibrary = (TknFontLibrary *)lua_touserdata(pLuaState, 1);
     TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, 2);
     int pathsIdx = 3;
     uint32_t fontSize = (uint32_t)lua_tointeger(pLuaState, 4);
     uint32_t atlasLength = (uint32_t)lua_tointeger(pLuaState, 5);
-    
+
     // Extract fontPaths from table
     lua_pushvalue(pLuaState, pathsIdx);
     int pathsTableIdx = lua_gettop(pLuaState);
-    
+
     lua_len(pLuaState, pathsTableIdx);
     uint32_t fontPathCount = (uint32_t)lua_tointeger(pLuaState, -1);
     lua_pop(pLuaState, 1);
-    
+
     const char **fontPaths = (const char **)tknMalloc(sizeof(const char *) * fontPathCount);
     for (uint32_t i = 0; i < fontPathCount; i++)
     {
@@ -1695,13 +1695,13 @@ static int luaCreateTknFontPtr(lua_State *pLuaState)
         fontPaths[i] = lua_tostring(pLuaState, -1);
         lua_pop(pLuaState, 1);
     }
-    
+
     // Extract boldStrengths from table if provided
     FT_Pos *boldStrengths = NULL;
-    if (argc > 5)  // boldStrengths provided
+    if (argc > 5) // boldStrengths provided
     {
         boldStrengths = (FT_Pos *)tknMalloc(sizeof(FT_Pos) * fontPathCount);
-        
+
         for (uint32_t i = 0; i < fontPathCount; i++)
         {
             lua_rawgeti(pLuaState, 6, i + 1);
@@ -1709,13 +1709,13 @@ static int luaCreateTknFontPtr(lua_State *pLuaState)
             lua_pop(pLuaState, 1);
         }
     }
-    
+
     TknFont *pTknFont = createTknFontPtr(pTknFontLibrary, pTknGfxContext, fontPathCount, fontPaths, fontSize, atlasLength, boldStrengths);
-    
+
     tknFree(fontPaths);
     tknFree(boldStrengths);
     lua_pop(pLuaState, 1); // pop pathsTableIdx
-    
+
     lua_pushlightuserdata(pLuaState, pTknFont);
     lua_pushlightuserdata(pLuaState, pTknFont->pTknImage);
     lua_pushinteger(pLuaState, pTknFont->maxAscender);
@@ -1744,11 +1744,12 @@ static int luaLoadTknChar(lua_State *pLuaState)
 {
     TknFont *pTknFont = (TknFont *)lua_touserdata(pLuaState, -2);
     uint32_t unicode = (uint32_t)lua_tointeger(pLuaState, -1);
-
-    TknChar *pTknChar = loadTknChar(pTknFont, unicode);
+    bool hasLoaded;
+    TknChar *pTknChar = loadTknChar(pTknFont, unicode, &hasLoaded);
     if (pTknChar)
     {
         lua_pushlightuserdata(pLuaState, pTknChar);
+        lua_pushboolean(pLuaState, hasLoaded);
         lua_pushinteger(pLuaState, pTknChar->x);
         lua_pushinteger(pLuaState, pTknChar->y);
         lua_pushinteger(pLuaState, pTknChar->width);
@@ -1757,7 +1758,7 @@ static int luaLoadTknChar(lua_State *pLuaState)
         lua_pushinteger(pLuaState, pTknChar->bearingY);
         lua_pushinteger(pLuaState, pTknChar->advance);
 
-        return 8;
+        return 9;
     }
     else
     {
@@ -2015,7 +2016,7 @@ void bindFunctions(lua_State *pLuaState)
         {"tknCreateTknFontPtr", luaCreateTknFontPtr},
         {"tknDestroyTknFontPtr", luaDestroyTknFontPtr},
         {"tknFlushTknFontPtr", luaFlushTknFontPtr},
-        {"tknLoadTknChar", luaLoadTknChar},
+        {"tknLoadChar", luaLoadTknChar},
         {"tknWaitRenderFence", luaWaitRenderFence},
         {"tknBeginRenderPassPtr", luaBeginRenderPassPtr},
         {"tknEndRenderPassPtr", luaEndRenderPassPtr},

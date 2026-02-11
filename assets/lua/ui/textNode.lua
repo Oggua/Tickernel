@@ -93,7 +93,7 @@ function textNode.unloadFont(pTknGfxContext, font)
 end
 
 function textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, horizontalAlign, verticalAlign, bold, pTknMaterial, vertexFormat, instanceFormat, pTknPipeline, node)
-    local maxChars = #textString
+    local maxChars = math.max(#textString, 1)
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
     local indicesPerChar = bold and 24 or 6
@@ -147,6 +147,52 @@ function textNode.setTextString(node, textString)
     node.textDirty = true
 end
 
+function textNode.measureText(font, text, size, rectWidth, screenWidth, screenHeight)
+    local sizeScale = size / font.fontSize
+    local scaleX = sizeScale / screenWidth * 2
+    local lineHeight = (font.maxAscender - font.minDescender) * sizeScale / screenHeight * 2
+
+    local lineCount = 1
+    local penX = 0
+    local maxLineWidth = 0
+
+    for pos, code in utf8.codes(text) do
+        if code == 10 then -- \n
+            if penX > maxLineWidth then
+                maxLineWidth = penX
+            end
+            lineCount = lineCount + 1
+            penX = 0
+        else
+            local pTknChar, hasLoaded, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadChar(font.pTknFont, code)
+            if not hasLoaded then
+                font.dirty = true
+            end
+            if pTknChar then
+                local widthNDC = width * scaleX
+                local bearingXNDC = bearingX * scaleX
+                local advanceNDC = advance * scaleX
+
+                if penX + bearingXNDC + widthNDC > rectWidth and penX > 0 then
+                    if penX > maxLineWidth then
+                        maxLineWidth = penX
+                    end
+                    lineCount = lineCount + 1
+                    penX = 0
+                end
+
+                penX = penX + advanceNDC
+            end
+        end
+    end
+
+    if penX > maxLineWidth then
+        maxLineWidth = penX
+    end
+
+    return lineCount * lineHeight
+end
+
 function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     if boundsDirty or screenSizeDirty or node.font.dirty or node.textDirty then
         local rect = node.rect
@@ -167,40 +213,21 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
 
         -- Local coordinate bounds (already relative to pivot)
         local left = rect.horizontal.min
-        local right = rect.horizontal.max
         local top = rect.vertical.min
-        local bottom = rect.vertical.max
 
-        -- First pass: calculate line widths and total text bounds
-        local lines = {{
-            chars = {},
-            width = 0,
-        }}
-        local currentLine = lines[1]
-        local penX = 0
-
-        for pos, code in utf8.codes(node.text) do
-            local pTknChar, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadTknChar(font.pTknFont, code)
-
-            if pTknChar then
-                local widthNDC = width * scaleX
-                local heightNDC = height * scaleY
-                local bearingXNDC = bearingX * scaleX
-                local bearingYNDC = bearingY * scaleY
-                local advanceNDC = advance * scaleX
-
-                -- Word wrap check (use local width)
-                if penX + bearingXNDC + widthNDC > rectWidth and #currentLine.chars > 0 then
-                    currentLine.width = penX
-                    currentLine = {
-                        chars = {},
-                        width = 0,
-                    }
-                    table.insert(lines, currentLine)
-                    penX = 0
+        local glyphCache = {}
+        local function getGlyph(code)
+            local glyph = glyphCache[code]
+            if glyph == nil then
+                local pTknChar, hasLoaded, x, y, width, height, bearingX, bearingY, advance = tkn.tknLoadChar(font.pTknFont, code)
+                if not hasLoaded then
+                    font.dirty = true
                 end
-
-                table.insert(currentLine.chars, {
+                if not pTknChar then
+                    glyphCache[code] = false
+                    return nil
+                end
+                glyph = {
                     x = x,
                     y = y,
                     width = width,
@@ -208,22 +235,51 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
                     bearingX = bearingX,
                     bearingY = bearingY,
                     advance = advance,
-                    widthNDC = widthNDC,
-                    heightNDC = heightNDC,
-                    bearingXNDC = bearingXNDC,
-                    bearingYNDC = bearingYNDC,
-                    advanceNDC = advanceNDC,
-                    penX = penX,
-                })
+                }
+                glyphCache[code] = glyph
+            elseif glyph == false then
+                return nil
+            end
+            return glyph
+        end
 
-                penX = penX + advanceNDC
+        -- First pass: calculate line widths
+        local lineWidths = {}
+        local lineIndex = 1
+        local penX = 0
+        local lineCharCount = 0
+
+        lineWidths[1] = 0
+
+        for _, code in utf8.codes(node.text) do
+            if code == 10 then -- \n
+                lineWidths[lineIndex] = penX
+                lineIndex = lineIndex + 1
+                penX = 0
+                lineCharCount = 0
+            else
+                local glyph = getGlyph(code)
+                if glyph then
+                    local widthNDC = glyph.width * scaleX
+                    local bearingXNDC = glyph.bearingX * scaleX
+                    local advanceNDC = glyph.advance * scaleX
+
+                    if penX + bearingXNDC + widthNDC > rectWidth and lineCharCount > 0 then
+                        lineWidths[lineIndex] = penX
+                        lineIndex = lineIndex + 1
+                        penX = 0
+                        lineCharCount = 0
+                    end
+
+                    penX = penX + advanceNDC
+                    lineCharCount = lineCharCount + 1
+                end
             end
         end
 
-        currentLine.width = penX
+        lineWidths[lineIndex] = penX
+        local lineCount = lineIndex
 
-        -- Calculate starting Y position based on vertical alignment
-        local totalHeight = #lines * lineHeight
         -- Second pass: generate vertices with alignment
         local vertices = {
             position = {},
@@ -231,69 +287,86 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         }
         local indices = {}
         local charIndex = 0
-        local penY = top + (rectHeight - totalHeight) * node.verticalAlign + (font.maxAscender * sizeScale / screenHeight * 2)
 
-        for lineIdx, line in ipairs(lines) do
-            -- Calculate starting X position based on horizontal alignment
-            local startX = left + (rectWidth - line.width) * node.horizontalAlign
+        local function addQuad(l, r, t, b, u0, v0, u1, v1)
+            local pos = vertices.position
+            pos[#pos + 1], pos[#pos + 2] = l, t
+            pos[#pos + 1], pos[#pos + 2] = r, t
+            pos[#pos + 1], pos[#pos + 2] = r, b
+            pos[#pos + 1], pos[#pos + 2] = l, b
 
-            for _, char in ipairs(line.chars) do
-                local charLeft = startX + char.penX + char.bearingXNDC
-                local charRight = charLeft + char.widthNDC
-                local charTop = penY - char.bearingYNDC
-                local charBottom = charTop + char.heightNDC
+            local uv = vertices.uv
+            uv[#uv + 1], uv[#uv + 2] = u0, v0
+            uv[#uv + 1], uv[#uv + 2] = u1, v0
+            uv[#uv + 1], uv[#uv + 2] = u1, v1
+            uv[#uv + 1], uv[#uv + 2] = u0, v1
 
-                -- Uv coordinates
-                local u0, v0 = char.x * atlasScale, char.y * atlasScale
-                local u1, v1 = (char.x + char.width) * atlasScale, (char.y + char.height) * atlasScale
+            local base = charIndex * 4
+            local idx = indices
+            idx[#idx + 1], idx[#idx + 2], idx[#idx + 3] = base, base + 1, base + 2
+            idx[#idx + 1], idx[#idx + 2], idx[#idx + 3] = base + 2, base + 3, base
 
-                -- Helper function to add a character quad
-                local function addCharQuad(offsetX, offsetY)
-                    local l, r = charLeft + offsetX, charRight + offsetX
-                    local t, b = charTop + offsetY, charBottom + offsetY
-
-                    -- Vertices (positions)
-                    local pos = vertices.position
-                    pos[#pos + 1], pos[#pos + 2] = l, t
-                    pos[#pos + 1], pos[#pos + 2] = r, t
-                    pos[#pos + 1], pos[#pos + 2] = r, b
-                    pos[#pos + 1], pos[#pos + 2] = l, b
-
-                    -- Uvs
-                    local uv = vertices.uv
-                    uv[#uv + 1], uv[#uv + 2] = u0, v0
-                    uv[#uv + 1], uv[#uv + 2] = u1, v0
-                    uv[#uv + 1], uv[#uv + 2] = u1, v1
-                    uv[#uv + 1], uv[#uv + 2] = u0, v1
-
-                    -- Indices
-                    local base = charIndex * 4
-                    local idx = indices
-                    idx[#idx + 1], idx[#idx + 2], idx[#idx + 3] = base, base + 1, base + 2
-                    idx[#idx + 1], idx[#idx + 2], idx[#idx + 3] = base + 2, base + 3, base
-
-                    charIndex = charIndex + 1
-                end
-
-                -- Render character (multiple times if bold)
-                if node.bold then
-                    addCharQuad(0, 0)
-                    addCharQuad(boldOffsetX, 0)
-                    addCharQuad(0, boldOffsetY)
-                    addCharQuad(boldOffsetX, boldOffsetY)
-                else
-                    addCharQuad(0, 0)
-                end
-            end
-
-            penY = penY + lineHeight
+            charIndex = charIndex + 1
         end
 
-        tkn.tknFlushTknFontPtr(font.pTknFont, pTknGfxContext)
+        local totalHeight = lineCount * lineHeight
+        local penY = top + (rectHeight - totalHeight) * node.verticalAlign + (font.maxAscender * sizeScale / screenHeight * 2)
+        lineIndex = 1
+        penX = 0
+        lineCharCount = 0
+        local startX = left + (rectWidth - lineWidths[lineIndex]) * node.horizontalAlign
+
+        for _, code in utf8.codes(node.text) do
+            if code == 10 then -- \n
+                lineIndex = lineIndex + 1
+                penX = 0
+                lineCharCount = 0
+                penY = penY + lineHeight
+                startX = left + (rectWidth - (lineWidths[lineIndex] or 0)) * node.horizontalAlign
+            else
+                local glyph = getGlyph(code)
+                if glyph then
+                    local widthNDC = glyph.width * scaleX
+                    local heightNDC = glyph.height * scaleY
+                    local bearingXNDC = glyph.bearingX * scaleX
+                    local bearingYNDC = glyph.bearingY * scaleY
+                    local advanceNDC = glyph.advance * scaleX
+
+                    if penX + bearingXNDC + widthNDC > rectWidth and lineCharCount > 0 then
+                        lineIndex = lineIndex + 1
+                        penX = 0
+                        lineCharCount = 0
+                        penY = penY + lineHeight
+                        startX = left + (rectWidth - (lineWidths[lineIndex] or 0)) * node.horizontalAlign
+                    end
+
+                    local charLeft = startX + penX + bearingXNDC
+                    local charRight = charLeft + widthNDC
+                    local charTop = penY - bearingYNDC
+                    local charBottom = charTop + heightNDC
+
+                    local u0, v0 = glyph.x * atlasScale, glyph.y * atlasScale
+                    local u1, v1 = (glyph.x + glyph.width) * atlasScale, (glyph.y + glyph.height) * atlasScale
+
+                    if node.bold then
+                        addQuad(charLeft, charRight, charTop, charBottom, u0, v0, u1, v1)
+                        addQuad(charLeft + boldOffsetX, charRight + boldOffsetX, charTop, charBottom, u0, v0, u1, v1)
+                        addQuad(charLeft, charRight, charTop + boldOffsetY, charBottom + boldOffsetY, u0, v0, u1, v1)
+                        addQuad(charLeft + boldOffsetX, charRight + boldOffsetX, charTop + boldOffsetY, charBottom + boldOffsetY, u0, v0, u1, v1)
+                    else
+                        addQuad(charLeft, charRight, charTop, charBottom, u0, v0, u1, v1)
+                    end
+
+                    penX = penX + advanceNDC
+                    lineCharCount = lineCharCount + 1
+                end
+            end
+        end
 
         if charIndex > 0 then
             tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
         end
+        node.textDirty = false
     end
 end
 

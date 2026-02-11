@@ -5,10 +5,12 @@ static void assertFTError(FT_Error error)
     tknAssert(error == 0, "FreeType error: %d", error);
 }
 
-TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
+TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode, bool *pHasLoaded)
 {
     uint32_t index = unicode % pTknFont->tknCharCapacity;
     TknChar *pTknChar = pTknFont->tknCharPtrs[index];
+    *pHasLoaded = true;
+
     while (pTknChar)
     {
         if (pTknChar->unicode == unicode)
@@ -21,7 +23,7 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
     // Try each font in order until one can render this character
     FT_GlyphSlot glyph = NULL;
     FT_Bitmap *ftBitmap = NULL;
-    uint32_t foundFontIndex = pTknFont->fontCount - 1;  // Default to last font for fallback
+    uint32_t foundFontIndex = pTknFont->fontCount - 1; // Default to last font for fallback
 
     for (uint32_t i = 0; i < pTknFont->fontCount; i++)
     {
@@ -33,18 +35,18 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
             printf("[TknFont] Character U+%04X not found in font %u\n", unicode, i);
             continue;
         }
-        
+
         foundFontIndex = i;
         break;
     }
-    
+
     // Load from found font (or last font as fallback for replacement char)
     // Load with FT_LOAD_DEFAULT to get outline without pre-rendering
     FT_Error err = FT_Load_Char(pTknFont->ftFaces[foundFontIndex], unicode, FT_LOAD_DEFAULT);
     if (err == 0)
     {
         glyph = pTknFont->ftFaces[foundFontIndex]->glyph;
-        
+
         // Apply embolden to outline if strength is set for this font
         if (pTknFont->fontBoldStrengths[foundFontIndex] > 0)
         {
@@ -53,7 +55,7 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
                 FT_Outline_Embolden(&glyph->outline, pTknFont->fontBoldStrengths[foundFontIndex]);
             }
         }
-        
+
         // Now render the (possibly emboldened) outline to bitmap
         FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
         ftBitmap = &glyph->bitmap;
@@ -112,6 +114,7 @@ TknChar *loadTknChar(TknFont *pTknFont, uint32_t unicode)
     {
         pTknFont->maxRowHeight = glyph->bitmap.rows + 1;
     }
+    *pHasLoaded = false;
     return pNewChar;
 }
 
@@ -251,7 +254,7 @@ TknFont *createTknFontPtr(TknFontLibrary *pTknFontLibrary, TknGfxContext *pTknGf
     pTknFont->ftFaces = tknMalloc(sizeof(FT_Face) * fontPathCount);
     pTknFont->fontBoldStrengths = tknMalloc(sizeof(FT_Pos) * fontPathCount);
     pTknFont->fontCount = fontPathCount;
-    
+
     // Copy bold strengths (or zero if not provided)
     if (boldStrengths)
     {

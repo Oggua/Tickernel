@@ -10,14 +10,6 @@ local tknTextNode = require("engine.widgets.tknTextNode")
 local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknWindowWidget = {}
 
-local function createUINodeView(widget, node)
-
-end
-
-local function createUITreeView()
-
-end
-
 function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, title)
     local widget = {}
     local defaultTransform = {
@@ -168,7 +160,7 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
     }, function(widget)
-        ui.setNodeTransformActive(widget.dragWidget.backgroundNode, false)
+        -- ui.setNodeTransformActive(widget.dragWidget.backgroundNode, false)
     end)
     tknTextNode.addNode(pTknGfxContext, "closeButtonTextNode", widget.closeButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xee\xae\x98", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
 
@@ -204,7 +196,14 @@ function tknWindowWidget.updateWidget()
 end
 
 function tknWindowWidget.removeWidget(pTknGfxContext, widget)
-
+    tknButtonWidget.removeWidget(pTknGfxContext, widget.closeButtonWidget)
+    tknButtonWidget.removeWidget(pTknGfxContext, widget.fullScreenButtonWidget)
+    tknDragWidget.removeWidget(pTknGfxContext, widget.dragWidget)
+    widget.dragWidget = nil
+    widget.titleNode = nil
+    widget.closeButtonWidget = nil
+    widget.fullScreenButtonWidget = nil
+    widget.contentParentNode = nil
 end
 
 return tknWindowWidget
