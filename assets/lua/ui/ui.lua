@@ -192,14 +192,12 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
         node.colorDirty = false
     end
 
-    local t = os.clock()
     local screenSizeDirty = screenWidth ~= ui.screenWidth or screenHeight ~= ui.screenHeight
     if node.type == "imageNode" then
         imageNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     elseif node.type == "textNode" then
         textNode.updateMeshPtr(pTknGfxContext, node, ui.vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     end
-    print("Update node " .. tostring(node.name) .. " mesh time: " .. (os.clock() - t) * 1000 .. " ms")
 
     -- TODO Mark dirty for alphaThreshold and node's color
     if node.alphaThresholdDirty then
@@ -504,11 +502,9 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     end
 
     textNode.update(pTknGfxContext)
-    local t = os.clock()
     updateNodeGfxRecursively(pTknGfxContext, ui, ui.rootNode, screenWidth, screenHeight, ui.screenWidth ~= screenWidth, ui.screenHeight ~= screenHeight, false, false, false, false, false)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
-    print("UI update time: " .. (os.clock() - t) * 1000 .. " ms")
 
     for _, callback in ipairs(ui.postUpdateGfxCallbacks) do
         callback()

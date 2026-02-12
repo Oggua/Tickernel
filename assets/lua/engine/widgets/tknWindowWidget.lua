@@ -147,40 +147,40 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
 
     widget.titleNode = tknTextNode.addNode(pTknGfxContext, "titleNode", titleBackgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, title or "Window Title", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
 
-    widget.closeButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "closeButtonWidget", titleBackgroundNode, 2, {
-        type = ui.layoutType.anchored,
-        anchor = 1,
-        pivot = 1,
-        length = tknWidgetConfig.smallInteractableWidth,
-        offset = -tknWidgetConfig.defaultSpacing,
-    }, {
-        type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
-        length = tknWidgetConfig.smallInteractableWidth,
-        offset = 0,
-    }, function(widget)
-        -- ui.setNodeTransformActive(widget.dragWidget.backgroundNode, false)
-    end)
-    tknTextNode.addNode(pTknGfxContext, "closeButtonTextNode", widget.closeButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xee\xae\x98", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
+    -- widget.closeButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "closeButtonWidget", titleBackgroundNode, 2, {
+    --     type = ui.layoutType.anchored,
+    --     anchor = 1,
+    --     pivot = 1,
+    --     length = tknWidgetConfig.smallInteractableWidth,
+    --     offset = -tknWidgetConfig.defaultSpacing,
+    -- }, {
+    --     type = ui.layoutType.anchored,
+    --     anchor = 0.5,
+    --     pivot = 0.5,
+    --     length = tknWidgetConfig.smallInteractableWidth,
+    --     offset = 0,
+    -- }, function(widget)
+    --     -- ui.setNodeTransformActive(widget.dragWidget.backgroundNode, false)
+    -- end)
+    -- tknTextNode.addNode(pTknGfxContext, "closeButtonTextNode", widget.closeButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xee\xae\x98", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
 
-    widget.fullScreenButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "fullScreenButtonWidget", titleBackgroundNode, 2, {
-        type = ui.layoutType.anchored,
-        anchor = 1,
-        pivot = 1,
-        length = tknWidgetConfig.smallInteractableWidth,
-        offset = -tknWidgetConfig.defaultSpacing * 2 - tknWidgetConfig.smallInteractableWidth,
-    }, {
-        type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
-        length = tknWidgetConfig.smallInteractableWidth,
-        offset = 0,
-    }, function(widget)
-    end)
-    tknTextNode.addNode(pTknGfxContext, "fullScreenButtonTextNode", widget.fullScreenButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xef\x93\x8e", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
+    -- widget.fullScreenButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "fullScreenButtonWidget", titleBackgroundNode, 2, {
+    --     type = ui.layoutType.anchored,
+    --     anchor = 1,
+    --     pivot = 1,
+    --     length = tknWidgetConfig.smallInteractableWidth,
+    --     offset = -tknWidgetConfig.defaultSpacing * 2 - tknWidgetConfig.smallInteractableWidth,
+    -- }, {
+    --     type = ui.layoutType.anchored,
+    --     anchor = 0.5,
+    --     pivot = 0.5,
+    --     length = tknWidgetConfig.smallInteractableWidth,
+    --     offset = 0,
+    -- }, function(widget)
+    -- end)
+    -- tknTextNode.addNode(pTknGfxContext, "fullScreenButtonTextNode", widget.fullScreenButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xef\x93\x8e", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
 
-    widget.contentParentNode = ui.addNode(pTknGfxContext, innerParentNode, 2, "contentParentNode", relativeOrientation, {
+    widget.contentNode = ui.addNode(pTknGfxContext, innerParentNode, 2, "contentNode", relativeOrientation, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = tknWidgetConfig.smallInteractableWidth + tknWidgetConfig.defaultSpacing * 2,
@@ -203,7 +203,7 @@ function tknWindowWidget.removeWidget(pTknGfxContext, widget)
     widget.titleNode = nil
     widget.closeButtonWidget = nil
     widget.fullScreenButtonWidget = nil
-    widget.contentParentNode = nil
+    widget.contentNode = nil
 end
 
 return tknWindowWidget
