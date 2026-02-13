@@ -1200,90 +1200,11 @@ static int luaCreateMeshPtrWithData(lua_State *pLuaState)
     lua_pushlightuserdata(pLuaState, pTknMesh);
     return 1;
 }
-
 static int luaDestroyMeshPtr(lua_State *pLuaState)
 {
     TknGfxContext *pTknGfxContext = (TknGfxContext *)lua_touserdata(pLuaState, -2);
     TknMesh *pTknMesh = (TknMesh *)lua_touserdata(pLuaState, -1);
     tknDestroyMeshPtr(pTknGfxContext, pTknMesh);
-    return 0;
-}
-
-static int luaSaveMeshPtrToPlyFile(lua_State *pLuaState)
-{
-    // Parameters: vertexPropertyNames, vertexPropertyTypes, vertexInputLayout, vertices, indices, filePath
-    // Get vertexPropertyNames array
-    lua_len(pLuaState, -6);
-    uint32_t vertexPropertyCount = (uint32_t)lua_tointeger(pLuaState, -1);
-    lua_pop(pLuaState, 1);
-
-    const char **vertexPropertyNames = tknMalloc(sizeof(const char *) * vertexPropertyCount);
-    for (uint32_t i = 0; i < vertexPropertyCount; i++)
-    {
-        lua_rawgeti(pLuaState, -6, i + 1);
-        vertexPropertyNames[i] = lua_tostring(pLuaState, -1);
-        lua_pop(pLuaState, 1);
-    }
-
-    // Get vertexPropertyTypes array
-    const char **vertexPropertyTypes = tknMalloc(sizeof(const char *) * vertexPropertyCount);
-    for (uint32_t i = 0; i < vertexPropertyCount; i++)
-    {
-        lua_rawgeti(pLuaState, -5, i + 1);
-        vertexPropertyTypes[i] = lua_tostring(pLuaState, -1);
-        lua_pop(pLuaState, 1);
-    }
-
-    TknVertexInputLayout *pTknMeshVertexInputLayout = (TknVertexInputLayout *)lua_touserdata(pLuaState, -4);
-
-    // Pack vertex data from layout
-    VkDeviceSize vertexSize;
-    void *vertices = packDataFromLayout(pLuaState, -4, -3, &vertexSize);
-
-    // Calculate vertex count
-    uint32_t vertexCount = 0;
-    VkDeviceSize layoutSize = calculateLayoutSize(pLuaState, -4);
-    if (layoutSize > 0)
-    {
-        vertexCount = (uint32_t)(vertexSize / layoutSize);
-    }
-
-    // Handle indices (can be nil)
-    void *indices = NULL;
-    uint32_t indexCount = 0;
-    VkIndexType vkIndexType = VK_INDEX_TYPE_UINT32;
-
-    if (!lua_isnil(pLuaState, -2))
-    {
-        lua_len(pLuaState, -2);
-        indexCount = (uint32_t)lua_tointeger(pLuaState, -1);
-        lua_pop(pLuaState, 1);
-
-        indices = tknMalloc(sizeof(uint32_t) * indexCount);
-        uint32_t *indexArray = (uint32_t *)indices;
-
-        for (uint32_t i = 0; i < indexCount; i++)
-        {
-            lua_rawgeti(pLuaState, -2, i + 1);
-            indexArray[i] = (uint32_t)lua_tointeger(pLuaState, -1);
-            lua_pop(pLuaState, 1);
-        }
-    }
-
-    // Get file path
-    const char *plyFilePath = lua_tostring(pLuaState, -1);
-
-    // Call the C function
-    tknSaveMeshPtrToPlyFile(vertexPropertyCount, vertexPropertyNames, vertexPropertyTypes,
-                            pTknMeshVertexInputLayout, vertices, vertexCount, vkIndexType, indices, indexCount, plyFilePath);
-
-    // Clean up
-    tknFree(vertexPropertyNames);
-    tknFree(vertexPropertyTypes);
-    tknFree(vertices);
-    if (indices)
-        tknFree(indices);
-
     return 0;
 }
 
@@ -2001,7 +1922,6 @@ void bindFunctions(lua_State *pLuaState)
         {"tknUpdateUniformBufferPtr", luaUpdateUniformBufferPtr},
         {"tknCreateMeshPtrWithData", luaCreateMeshPtrWithData},
         {"tknDestroyMeshPtr", luaDestroyMeshPtr},
-        {"tknSaveMeshPtrToPlyFile", luaSaveMeshPtrToPlyFile},
         {"tknCreateInstancePtr", luaCreateInstancePtr},
         {"tknUpdateInstancePtr", luaUpdateInstancePtr},
         {"tknDestroyInstancePtr", luaDestroyInstancePtr},

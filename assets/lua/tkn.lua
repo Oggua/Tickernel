@@ -5,20 +5,6 @@
 require("vulkan")
 local tkn = _G.tkn
 
--- Type constants (Lua style naming)
-tkn.type = {
-    uint8 = 0,
-    uint16 = 1,
-    uint32 = 2,
-    uint64 = 3,
-    int8 = 4,
-    int16 = 5,
-    int32 = 6,
-    int64 = 7,
-    float = 8,
-    double = 9,
-}
-
 tkn.defaultVkPipelineViewportStateCreateInfo = {
     pViewports = {{
         x = 0.0,
@@ -119,6 +105,221 @@ function tkn.tknCreateDefaultMeshPtr(pTknGfxContext, format, pTknMeshVertexInput
     end
 
     return tkn.tknCreateMeshPtrWithData(pTknGfxContext, pTknMeshVertexInputLayout, format, vertices, indexType, indices)
+end
+
+-- Type constants (Lua style naming)
+tkn.type = {
+    uint8 = 0,
+    uint16 = 1,
+    uint32 = 2,
+    uint64 = 3,
+    int8 = 4,
+    int16 = 5,
+    int32 = 6,
+    int64 = 7,
+    float = 8,
+    double = 9,
+}
+
+local tknVoxelTypeToLuaUnpack = {
+    [0] = "<i1", -- TKN_VOXEL_INT8
+    [1] = "<I1", -- TKN_VOXEL_UINT8
+    [2] = "<i2", -- TKN_VOXEL_INT16
+    [3] = "<I2", -- TKN_VOXEL_UINT16
+    [4] = "<i4", -- TKN_VOXEL_INT32
+    [5] = "<I4", -- TKN_VOXEL_UINT32
+    [6] = "<f", -- TKN_VOXEL_FLOAT32
+}
+
+local tknVoxelTypeToTknType = {
+    [0] = tkn.type.int8,
+    [1] = tkn.type.uint8,
+    [2] = tkn.type.int16,
+    [3] = tkn.type.uint16,
+    [4] = tkn.type.int32,
+    [5] = tkn.type.uint32,
+    [6] = tkn.type.float,
+}
+
+function tkn.tknDeserializeTickernelVoxel(path)
+    local file = io.open(path, "rb")
+    if not file then
+        return nil, "Failed to open file: " .. tostring(path)
+    end
+
+    local content = file:read("*all")
+    file:close()
+
+    if not content or #content == 0 then
+        return nil, "Empty file: " .. tostring(path)
+    end
+
+    local offset = 1
+
+    local function unpackOne(fmt)
+        if offset > #content then
+            return nil, "Unexpected EOF while reading " .. fmt
+        end
+        local value
+        value, offset = string.unpack(fmt, content, offset)
+        return value
+    end
+
+    local propertyCount = unpackOne("<I4")
+    if propertyCount == nil then
+        return nil, "Failed to read propertyCount"
+    end
+
+    local names = {}
+    for i = 1, propertyCount do
+        local length = unpackOne("<I4")
+        if length == nil then
+            return nil, "Failed to read name length at index " .. i
+        end
+        if length == 0 then
+            names[i] = ""
+        else
+            local nameRaw = content:sub(offset, offset + length - 1)
+            if #nameRaw ~= length then
+                return nil, "Unexpected EOF while reading name at index " .. i
+            end
+            offset = offset + length
+            names[i] = nameRaw:gsub("\0+$", "")
+        end
+    end
+
+    local types = {}
+    for i = 1, propertyCount do
+        local value = unpackOne("<I4")
+        if value == nil then
+            return nil, "Failed to read property type at index " .. i
+        end
+        types[i] = value
+    end
+
+    local vertexCount = unpackOne("<I4")
+    if vertexCount == nil then
+        return nil, "Failed to read vertexCount"
+    end
+
+    local indexToProperties = {}
+    for i = 1, propertyCount do
+        local voxelType = types[i]
+        local unpackFmt = tknVoxelTypeToLuaUnpack[voxelType]
+        if not unpackFmt then
+            return nil, "Unknown voxel type at index " .. i .. ": " .. tostring(voxelType)
+        end
+
+        local propertyValues = {}
+        for j = 1, vertexCount do
+            local value = unpackOne(unpackFmt)
+            if value == nil then
+                return nil, "Failed to read property data at property " .. i .. ", vertex " .. j
+            end
+            propertyValues[j] = value
+        end
+        indexToProperties[i] = propertyValues
+    end
+
+    return {
+        propertyCount = propertyCount,
+        names = names,
+        types = types,
+        vertexCount = vertexCount,
+        indexToProperties = indexToProperties,
+    }
+end
+
+function tkn.tknBuildFormatFromTickernelVoxel(pTickernelVoxel)
+    local format = {}
+    for i = 1, pTickernelVoxel.propertyCount do
+        local name = pTickernelVoxel.names[i]
+        local voxelType = pTickernelVoxel.types[i]
+        local tknType = tknVoxelTypeToTknType[voxelType]
+        if not tknType then
+            return nil, "Unsupported voxel property type at index " .. i .. ": " .. tostring(voxelType)
+        end
+        format[i] = {
+            name = name,
+            type = tknType,
+            count = 1,
+        }
+    end
+    return format
+end
+
+function tkn.tknCreateMeshPtrWithTknVoxFile(pTknGfxContext, pTknMeshVertexInputLayout, vertexFormat, tknvoxFilePath, indexType)
+    local pTickernelVoxel, deserializeError = tkn.tknDeserializeTickernelVoxel(tknvoxFilePath)
+    if not pTickernelVoxel then
+        print("tkn.tknCreateMeshPtrWithTknVoxFile: " .. deserializeError)
+        return nil
+    end
+
+    local vertices = {
+        position = {},
+        color = {},
+        normal = {},
+    }
+
+    local function packColorUint32(r, g, b, a)
+        local rr = (math.floor(r) or 0) & 0xFF
+        local gg = (math.floor(g) or 0) & 0xFF
+        local bb = (math.floor(b) or 0) & 0xFF
+        local aa = (math.floor(a) or 0) & 0xFF
+        return rr | (gg << 8) | (bb << 16) | (aa << 24)
+    end
+
+    local function encodeNormalMask(nx, ny, nz)
+        local mask = 0
+        local epsilon = 0.0001
+
+        if nx < -epsilon then
+            mask = mask | 0x01 -- -X
+        end
+        if nx > epsilon then
+            mask = mask | 0x02 -- +X
+        end
+        if ny < -epsilon then
+            mask = mask | 0x04 -- -Y
+        end
+        if ny > epsilon then
+            mask = mask | 0x08 -- +Y
+        end
+        if nz < -epsilon then
+            mask = mask | 0x10 -- -Z
+        end
+        if nz > epsilon then
+            mask = mask | 0x20 -- +Z
+        end
+
+        if mask == 0 then
+            mask = 0x20 -- default +Z
+        end
+
+        return mask
+    end
+
+    for i = 1, pTickernelVoxel.vertexCount do
+        local px = pTickernelVoxel.indexToProperties[1][i]
+        local py = pTickernelVoxel.indexToProperties[2][i]
+        local pz = pTickernelVoxel.indexToProperties[3][i]
+        local r = pTickernelVoxel.indexToProperties[4][i]
+        local g = pTickernelVoxel.indexToProperties[5][i]
+        local b = pTickernelVoxel.indexToProperties[6][i]
+        local a = pTickernelVoxel.indexToProperties[7][i]
+        local nx = pTickernelVoxel.indexToProperties[8][i]
+        local ny = pTickernelVoxel.indexToProperties[9][i]
+        local nz = pTickernelVoxel.indexToProperties[10][i]
+
+        local positionBase = (i - 1) * 3
+        vertices.position[positionBase + 1] = px
+        vertices.position[positionBase + 2] = py
+        vertices.position[positionBase + 3] = pz
+
+        vertices.color[i] = packColorUint32(r, g, b, a)
+        vertices.normal[i] = encodeNormalMask(nx, ny, nz)
+    end
+    return tkn.tknCreateMeshPtrWithData(pTknGfxContext, pTknMeshVertexInputLayout, vertexFormat, vertices, indexType, nil)
 end
 
 -- Function declarations for IDE support (only used if C binding not available)
@@ -242,11 +443,12 @@ end
 if not tkn.tknCreateDrawCallPtr then
     ---Create a draw call combining pipeline, material, mesh, and instance data
     ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknPipeline lightuserdata TknPipeline pointer
     ---@param pTknMaterial lightuserdata TknMaterial pointer
     ---@param pTknMesh lightuserdata TknMesh pointer or nil
     ---@param pTknInstance lightuserdata TknInstance pointer or nil
     ---@return lightuserdata TknDrawCall pointer
-    function tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknMaterial, pTknMesh, pTknInstance)
+    function tkn.tknCreateDrawCallPtr(pTknGfxContext, pTknPipeline, pTknMaterial, pTknMesh, pTknInstance)
         error("tkn.tknCreateDrawCallPtr: C binding not loaded")
     end
 end

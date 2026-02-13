@@ -2,7 +2,7 @@ local game = {}
 local mainScene = require("game.mainScene")
 local ui = require("ui.ui")
 local tkn = require("tkn")
-local deferredRenderPass = require("deferredRenderer/deferredRenderPass")
+local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment, renderPassIndex, assetsPath, gameRootNode)
     deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, pDepthStencilAttachment, pSwapchainAttachment)
     game.assetsPath = assetsPath
@@ -53,9 +53,9 @@ end
 
 function game.recordFrame(pTknGfxContext, pTknFrame)
     tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, deferredRenderPass.pTknRenderPass)
-    tkn.tknNextSubpassPtr(pTknGfxContext, pTknFrame)
-
     game.currentScene.recordFrame(game, pTknGfxContext, pTknFrame)
+    tkn.tknNextSubpassPtr(pTknGfxContext, pTknFrame)
+    tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, deferredRenderPass.pLightingDrawCall)
     tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
 end
 

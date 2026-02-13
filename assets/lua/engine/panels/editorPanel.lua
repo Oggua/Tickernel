@@ -53,8 +53,20 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         offset = 0,
     }, dropdownItems)
 
-    panel.uiInspectorPanel = uiInspectorPanel.create(pTknGfxContext, editorRootNode, #editorRootNode.children + 1)
-
+    panel.contentNode = ui.addNode(pTknGfxContext, editorRootNode, 1, "editorPanelContentNode", {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = 0,
+        maxOffset = 0,
+        offset = 0,
+    }, {
+        type = ui.layoutType.relative,
+        pivot = 0.5,
+        minOffset = tknWidgetConfig.largeInteractableWidth + (2 * tknWidgetConfig.defaultSpacing),
+        maxOffset = 0,
+        offset = 0,
+    }, tknWidgetConfig.defaultTransform)
+    panel.uiInspectorPanel = uiInspectorPanel.create(pTknGfxContext, panel.contentNode, 1)
     return panel
 end
 
@@ -62,6 +74,18 @@ function editorPanel.destroy(pTknGfxContext, panel)
     if panel.topBarDropdownWidget then
         tknDropdownWidget.removeWidget(pTknGfxContext, panel.topBarDropdownWidget)
         panel.topBarDropdownWidget = nil
+    end
+    if panel.uiInspectorPanel then
+        uiInspectorPanel.destroy(pTknGfxContext, panel.uiInspectorPanel)
+        panel.uiInspectorPanel = nil
+    end
+    if panel.contentNode then
+        ui.removeNode(pTknGfxContext, panel.contentNode)
+        panel.contentNode = nil
+    end
+    if panel.topBarBackgroundNode then
+        ui.removeNode(pTknGfxContext, panel.topBarBackgroundNode)
+        panel.topBarBackgroundNode = nil
     end
 end
 

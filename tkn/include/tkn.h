@@ -117,8 +117,6 @@ void tknDestroyUniformBufferPtr(TknGfxContext *pTknGfxContext, TknUniformBuffer 
 void tknUpdateUniformBufferPtr(TknGfxContext *pTknGfxContext, TknUniformBuffer *pTknUniformBuffer, const void *data, VkDeviceSize size);
 
 TknMesh *tknCreateMeshPtrWithData(TknGfxContext *pTknGfxContext, TknVertexInputLayout *pTknMeshVertexInputLayout, void *vertices, uint32_t tknVertexCount, VkIndexType vkIndexType, void *indices, uint32_t tknIndexCount);
-TknMesh *tknCreateMeshPtrWithPlyFile(TknGfxContext *pTknGfxContext, TknVertexInputLayout *pTknMeshVertexInputLayout, VkIndexType vkIndexType, const char *plyFilePath);
-void tknSaveMeshPtrToPlyFile(uint32_t vertexPropertyCount, const char **vertexPropertyNames, const char **vertexPropertyTypes, TknVertexInputLayout *pTknMeshVertexInputLayout, void *vertices, uint32_t tknVertexCount, VkIndexType vkIndexType, void *indices, uint32_t tknIndexCount, const char *plyFilePath);
 void tknDestroyMeshPtr(TknGfxContext *pTknGfxContext, TknMesh *pTknMesh);
 void tknUpdateMeshPtr(TknGfxContext *pTknGfxContext, TknMesh *pTknMesh, const char *format, const void *vertices, uint32_t tknVertexCount, uint32_t indexType, const void *indices, uint32_t tknIndexCount);
 

@@ -36,10 +36,6 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         type = tkn.type.float,
         count = 16,
     }, {
-        name = "inv_view_proj",
-        type = tkn.type.float,
-        count = 16,
-    }, {
         name = "pointSizeFactor",
         type = tkn.type.float,
         count = 1,
@@ -209,9 +205,8 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     -- Create global uniform buffer
     local pGlobalUniformBuffer = {
-        view = {0.7071, -0.4082, 0.5774, 0, 0, 0.8165, 0.5774, 0, -0.7071, -0.4082, 0.5774, 0, 0, 0, -8.6603, 1},
+        view = {1.0000, 0.0000, -0.0000, 0, -0.0000, 0.5547, 0.8321, 0, 0.0000, -0.8321, 0.5547, 0, -0.0000, -0.0000, -36.0555, 1},
         proj = {1.3584, 0, 0, 0, 0, 2.4142, 0, 0, 0, 0, -1.0020, -1, 0, 0, -0.2002, 0},
-        inv_view_proj = {0.5206, 0, -0.5206, 0, -0.3007, 0.6013, -0.3007, 0, 0.0231, 0.0231, 0.0231, 0, 2.3077, 4.3301, 2.3077, 43.301},
         pointSizeFactor = 1000.0,
         time = 0.0,
         frameCount = 0,
@@ -256,10 +251,12 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     deferredRenderPass.pGeometryMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline)
     deferredRenderPass.pLightingMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline)
 
-    local pLightingDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline, deferredRenderPass.pLightingMaterial, nil, nil)
+    deferredRenderPass.pLightingDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pLightingPipeline, deferredRenderPass.pLightingMaterial, nil, nil)
 end
 
 function deferredRenderPass.teardown(pTknGfxContext)
+    tkn.tknDestroyDrawCallPtr(pTknGfxContext, deferredRenderPass.pLightingDrawCall)
+
     geometryPipeline.destroyPipelinePtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline)
     lightingPipeline.destroyPipelinePtr(pTknGfxContext, deferredRenderPass.pLightingPipeline)
     deferredRenderPass.pGeometryMaterial = nil

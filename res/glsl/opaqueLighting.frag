@@ -8,7 +8,8 @@ layout(location = 0) out vec4 o_color;
 void main() {
     float depth = subpassLoad(i_depth).x;
     vec4 clip = vec4(in_uv * 2.0 - 1.0, depth, 1.0);
-    vec4 world_w = globalUniform.inv_view_proj * clip;
+    mat4 invViewProj = inverse(globalUniform.proj * globalUniform.view);
+    vec4 world_w = invViewProj * clip;
     vec3 position = world_w.xyz / world_w.w;
 
     vec3 normal = normalize((subpassLoad(i_normal).xyz - 0.5) * 2);

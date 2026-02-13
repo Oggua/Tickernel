@@ -888,7 +888,7 @@ void tknSubmitAndPresentFramePtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFr
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = (VkSemaphore[]){pTknGfxContext->vkRenderFinishedSemaphore},
     };
-    
+
     tknAssertVkResult(vkQueueSubmit(pTknGfxContext->vkGfxQueue, 1, &submitInfo, pTknGfxContext->vkRenderFinishedFence));
 
     // Present
