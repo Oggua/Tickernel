@@ -486,9 +486,10 @@ if not tkn.tknUpdateUniformBufferPtr then
     ---Update contents of a uniform buffer
     ---@param pTknGfxContext lightuserdata Graphics context pointer
     ---@param pTknUniformBuffer lightuserdata TknUniformBuffer pointer
-    ---@param format table Field layout descriptors
+    ---@param format table Field layout descriptors (must be before buffer)
     ---@param buffer table Data table with named arrays
     ---@param size integer Optional override size, or nil for auto-calculated
+    ---@note Parameter order is: (pTknGfxContext, pTknUniformBuffer, format, buffer, size)
     function tkn.tknUpdateUniformBufferPtr(pTknGfxContext, pTknUniformBuffer, format, buffer, size)
         error("tkn.tknUpdateUniformBufferPtr: C binding not loaded")
     end
