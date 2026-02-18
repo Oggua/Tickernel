@@ -196,8 +196,8 @@ function tknWindowWidget.updateWidget()
 end
 
 function tknWindowWidget.removeWidget(pTknGfxContext, widget)
-    tknButtonWidget.removeWidget(pTknGfxContext, widget.closeButtonWidget)
-    tknButtonWidget.removeWidget(pTknGfxContext, widget.fullScreenButtonWidget)
+    -- tknButtonWidget.removeWidget(pTknGfxContext, widget.closeButtonWidget)
+    -- tknButtonWidget.removeWidget(pTknGfxContext, widget.fullScreenButtonWidget)
     tknDragWidget.removeWidget(pTknGfxContext, widget.dragWidget)
     widget.dragWidget = nil
     widget.titleNode = nil

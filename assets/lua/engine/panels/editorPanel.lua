@@ -19,26 +19,40 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         offset = 0,
     }, tknWidgetConfig.defaultTransform, tknWidgetConfig.color.semiDarker, false, false)
 
+    local closeLastPanel = function(widget)
+        if panel.uiInspectorPanel then
+            uiInspectorPanel.destroy(pTknGfxContext, panel.uiInspectorPanel)
+            panel.uiInspectorPanel = nil
+        end
+    end
+
     local dropdownItems = {{
+        name = "\xef\x98\x99 Game",
+        onSelect = function(widget)
+            print("Add Game Inspector selected")
+            closeLastPanel(widget)
+        end,
+    }, {
         name = "\xef\x8b\x86 UI Inspector",
-        onSelect = function()
+        onSelect = function(widget)
+            closeLastPanel(widget)
+            panel.uiInspectorPanel = uiInspectorPanel.create(pTknGfxContext, panel.contentNode, 1)
         end,
     }, {
         name = "\xee\xb5\x95 Asset Browser",
-        onSelect = function()
+        onSelect = function(widget)
             print("Add Asset Browser selected")
+            closeLastPanel(widget)
         end,
-    }, {
-        name = "\xef\x98\x99 Game Inspector",
-        onSelect = function()
-            print("Add Game Inspector selected")
-        end,
-    }, {
-        name = "\xef\x87\xb9 Console",
-        onSelect = function()
-            print("Add Console selected")
-        end,
-    }}
+    } -- {
+    --     name = "\xef\x87\xb9 Console",
+    --     onSelect = function(widget)
+    --         print("Add Console selected")
+    --         closeLastPanel(widget)
+    --     end,
+    -- }
+    }
+
     panel.topBarDropdownWidget = tknDropdownWidget.addWidget(pTknGfxContext, "editorPanelDropdownWidget", panel.topBarBackgroundNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0,
@@ -66,27 +80,19 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         maxOffset = 0,
         offset = 0,
     }, tknWidgetConfig.defaultTransform)
-    panel.uiInspectorPanel = uiInspectorPanel.create(pTknGfxContext, panel.contentNode, 1)
+
     return panel
 end
 
 function editorPanel.destroy(pTknGfxContext, panel)
-    if panel.topBarDropdownWidget then
-        tknDropdownWidget.removeWidget(pTknGfxContext, panel.topBarDropdownWidget)
-        panel.topBarDropdownWidget = nil
-    end
-    if panel.uiInspectorPanel then
-        uiInspectorPanel.destroy(pTknGfxContext, panel.uiInspectorPanel)
-        panel.uiInspectorPanel = nil
-    end
-    if panel.contentNode then
-        ui.removeNode(pTknGfxContext, panel.contentNode)
-        panel.contentNode = nil
-    end
-    if panel.topBarBackgroundNode then
-        ui.removeNode(pTknGfxContext, panel.topBarBackgroundNode)
-        panel.topBarBackgroundNode = nil
-    end
+    tknDropdownWidget.removeWidget(pTknGfxContext, panel.topBarDropdownWidget)
+    panel.topBarDropdownWidget = nil
+    uiInspectorPanel.destroy(pTknGfxContext, panel.uiInspectorPanel)
+    panel.uiInspectorPanel = nil
+    ui.removeNode(pTknGfxContext, panel.contentNode)
+    panel.contentNode = nil
+    ui.removeNode(pTknGfxContext, panel.topBarBackgroundNode)
+    panel.topBarBackgroundNode = nil
 end
 
 return editorPanel

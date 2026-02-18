@@ -59,11 +59,11 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
             ui.setNodeTransformActive(widget.backgroundNode, false)
             local index = i
             if widget.selectedIndex ~= index then
+                if item.onSelect then
+                    item.onSelect(widget)
+                end
                 widget.selectedIndex = index
                 ui.setTextString(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
-                if item.onSelect then
-                    item.onSelect()
-                end
             end
         end)
         tknTextNode.addNode(pTknGfxContext, name .. "itemTextNode" .. i, itemButtonWidget.backgroundNode, 1, paddedRelativeOrientation, paddedRelativeOrientation, tknWidgetConfig.defaultTransform, item.name, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
@@ -78,18 +78,11 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
 end
 
 function tknDropdownWidget.removeWidget(pTknGfxContext, widget)
-    -- Remove all item button widgets
-    if widget.itemButtonWidgets then
-        for _, itemButtonWidget in ipairs(widget.itemButtonWidgets) do
-            tknButtonWidget.removeWidget(pTknGfxContext, itemButtonWidget)
-        end
+    for _, itemButtonWidget in ipairs(widget.itemButtonWidgets) do
+        tknButtonWidget.removeWidget(pTknGfxContext, itemButtonWidget)
     end
 
-    -- Remove main button widget
-    if widget.buttonWidget then
-        tknButtonWidget.removeWidget(pTknGfxContext, widget.buttonWidget)
-    end
-
+    tknButtonWidget.removeWidget(pTknGfxContext, widget.buttonWidget)
     -- Clear references
     widget.itemButtonWidgets = nil
     widget.buttonWidget = nil

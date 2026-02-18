@@ -11,8 +11,8 @@ local camera = {
     z = 40.0,
     yaw = math.pi / 2,
     pitch = -0.6,
-    near = 1,
-    far = 512,
+    near = 2,
+    far = 256,
     fov = 90.0,
     moveSpeed = 2.0,
     rotateSpeed = 0.05,
@@ -123,7 +123,8 @@ function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachmen
     game.nextScene = mainScene
     game.gameRootNode = gameRootNode
     game.currentScene.start(game, pTknGfxContext)
-    tknSliderWidget.addWidget(pTknGfxContext, "pointSizeSliderNode", game.gameRootNode, 1, {
+
+    local sliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "pointSizeSliderNode", game.gameRootNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0.5,
         pivot = 0.5,
@@ -136,10 +137,11 @@ function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachmen
         length = 32,
         offset = 64,
     }, ui.orientationType.horizontal, 32, function(value)
-        camera.pointSize = value * camera.screenWidth
-        print("Camera pointSize to " .. camera.pointSize)
+        local size = camera.screenWidth < camera.screenHeight and camera.screenWidth or camera.screenHeight
+        game.sizeFactor = value * 2
+        print("Camera pointSize to " .. value)
     end)
-
+    game.sizeFactor = 0.5 * 2
 end
 
 function game.stop()
@@ -161,15 +163,23 @@ local function updateCamera(pTknGfxContext, width, height)
     updateCameraInput()
     camera.screenWidth = width
     camera.screenHeight = height
+    -- Use focal-length (pixels) from vertical FOV to map world-unit voxel size -> pixels:
+    -- f = 1 / tan(fov/2), focal pixels = (screenHeight / 2) * f
+    local f = 1.0 / math.tan(math.rad(camera.fov) * 0.5)
+    camera.pointSize = (camera.screenHeight * 0.5 * f) * game.sizeFactor
 
     local forwardX = math.cos(camera.pitch) * math.cos(camera.yaw)
     local forwardY = math.cos(camera.pitch) * math.sin(camera.yaw)
     local forwardZ = math.sin(camera.pitch)
 
     local view = buildViewMatrix(camera.x, camera.y, camera.z, camera.x + forwardX, camera.y + forwardY, camera.z + forwardZ)
-
     local aspect = (height ~= 0) and (width / height) or (16.0 / 9.0)
     local proj = buildProjMatrix(camera.fov, aspect, camera.near, camera.far)
+
+    local focalX = camera.screenWidth * proj[1] * 0.5 -- proj[1] == m00 (f/aspect)
+    local focalY = camera.screenHeight * proj[6] * 0.5 -- proj[6] == m11 (f)
+    local focal = math.max(focalX, focalY)
+    camera.pointSize = focal * game.sizeFactor
 
     tkn.tknUpdateUniformBufferPtr(pTknGfxContext, deferredRenderPass.pGlobalUniformBuffer, deferredRenderPass.globalUniformBufferFormat, {
         view = view,

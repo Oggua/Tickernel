@@ -323,10 +323,11 @@ function uiInspectorPanel.destroy(pTknGfxContext, panel)
     tknScrollViewWidget.removeWidget(pTknGfxContext, panel.uiTreeScrollViewWidget)
     panel.uiTreeScrollViewWidget = nil
 
-    if panel.uiInspectorWindowWidget then
-        tknWindowWidget.removeWidget(pTknGfxContext, panel.uiInspectorWindowWidget)
-        panel.uiInspectorWindowWidget = nil
-    end
+    tknWindowWidget.removeWidget(pTknGfxContext, panel.uiTreeInspectorWindowWidget)
+    panel.uiTreeInspectorWindowWidget = nil
+
+    tknWindowWidget.removeWidget(pTknGfxContext, panel.fieldInspectorWindowWidget)
+    panel.fieldInspectorWindowWidget = nil
 end
 
 return uiInspectorPanel
