@@ -237,14 +237,16 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     -- Create lights uniform buffer
     local pLightsUniformBuffer = {
-        directionalLightColor = {1.0, 1.0, 1.0, 0.5},
+        directionalLightColor = {1.0, 1.0, 1.0, 0.4},
         directionalLightDirection = {0.4, -0.3, -0.9, 0.0},
         -- vec4 color;
         -- vec3 position;
         -- float range;
         -- Each point light is 8 floats: r,g,b,a, px,py,pz, range
         pointLights = { -- Light 3: warm orange
-        1.00, 0.0, 0.5, 5.0, 32, 32, 16, 20.0},
+        1.00, 0.0, 0.5, 8.0, 32, 32, 16, 20.0,
+        0.6, 0.5, 0.3, 4.0, 38, 38, 38, 20.0,
+        0.6, 0.5, 0.3, 4.0, 0, 0, 16, 20.0},
         pointLightCount = 3,
     }
     -- pad pointLights to exactly 128 * 8 floats

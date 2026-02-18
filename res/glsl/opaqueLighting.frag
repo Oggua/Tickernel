@@ -34,7 +34,7 @@ void main() {
         o_rgb += albedo.rgb * light.color.rgb * light.color.a * pointHalfLambert * attenuation;
     }
 
-    const vec3 fogColor = vec3(0.15, 0.31, 0.4); 
+    const vec3 fogColor = vec3(0.13, 0.28, 0.36);
     float distanceToCamera = length(position - cameraPosition);
     float fogFactor = smoothstep(globalUniform.near, globalUniform.far, distanceToCamera);
     o_rgb = mix(o_rgb, fogColor, fogFactor);
