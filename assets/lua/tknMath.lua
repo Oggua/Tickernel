@@ -1,4 +1,11 @@
 local tknMath = {}
+function tknMath.rgbaToAbgr(rgba)
+    local r = (rgba >> 24) & 0xFF
+    local g = (rgba >> 16) & 0xFF
+    local b = (rgba >> 8) & 0xFF
+    local a = rgba & 0xFF
+    return (a << 24) | (b << 16) | (g << 8) | r
+end
 
 function tknMath.multiplyColors(c1, c2)
     local a1 = (c1 >> 24) & 0xFF
@@ -55,11 +62,15 @@ function tknMath.lerp(a, b, t)
 end
 
 function tknMath.cantorPair(a, b)
-    return (a + b) * (a + b + 1) // 2 + b
+    local ai = math.tointeger(math.floor(a))
+    local bi = math.tointeger(math.floor(b))
+    return (ai + bi) * (ai + bi + 1) // 2 + bi
 end
 
 function tknMath.lcgRandom(v)
-    return 114067148579 * v + 728201631
+    local vi = math.tointeger(math.floor(v))
+    vi = vi & 0xFFFFFFFF
+    return (1664525 * vi + 1013904223) & 0xFFFFFFFF
 end
 
 function tknMath.pingPong(a, b, t)
@@ -204,104 +215,53 @@ function tknMath.perlinNoise2D(seed, x, y)
     return value
 end
 
--- local Grad3D = function(hash, x, y, z)
---     local h = hash & 15
---     local u = h < 8 and x or y
---     local v = h < 4 and y or (h == 12 or h == 14) and x or z
---     return ((h & 1) == 0 and u or -u) + ((h & 2) == 0 and v or -v)
--- end
+local grad3D = function(hash, x, y, z)
+    local h = hash & 15
+    local u = h < 8 and x or y
+    local v = h < 4 and y or (h == 12 or h == 14) and x or z
+    return ((h & 1) == 0 and u or -u) + ((h & 2) == 0 and v or -v)
+end
 
--- local DotGridGradient3D = function(ix, iy, iz, x, y, z, seed)
---     local dx = x - ix
---     local dy = y - iy
---     local dz = z - iz
---     local hash = gameMath.LCGRandom(gameMath.CantorPair(gameMath.CantorPair(gameMath.CantorPair(ix, iy), iz), seed))
---     hash = hash & 0xFF
---     return Grad3D(hash, dx, dy, dz)
--- end
+local dotGridGradient3D = function(ix, iy, iz, x, y, z, seed)
+    local dx = x - ix
+    local dy = y - iy
+    local dz = z - iz
+    local hash = tknMath.lcgRandom(tknMath.cantorPair(tknMath.cantorPair(tknMath.cantorPair(ix, iy), iz), seed))
+    hash = hash & 0xFF
+    return grad3D(hash, dx, dy, dz)
+end
 
--- ---comment
--- ---@param seed number
--- ---@param x number
--- ---@param y number
--- ---@param z number
--- ---@return number
--- function gameMath.PerlinNoise3D(seed, x, y, z)
---     -- Determine grid cell coordinates
---     local x0 = math.floor(x)
---     local x1 = x0 + 1
---     local y0 = math.floor(y)
---     local y1 = y0 + 1
---     local z0 = math.floor(z)
---     local z1 = z0 + 1
---     -- Determine interpolation weights
---     -- Could also use higher order polynomial/s-curve here
---     local sx = x - x0
---     local sy = y - y0
---     local sz = z - z0
---     -- Interpolate between grid point gradients
---     local x00 = gameMath.SmoothLerp(DotGridGradient3D(x0, y0, z0, x, y, z, seed),
---         DotGridGradient3D(x1, y0, z0, x, y, z, seed), sx)
---     local x10 = gameMath.SmoothLerp(DotGridGradient3D(x0, y1, z0, x, y, z, seed),
---         DotGridGradient3D(x1, y1, z0, x, y, z, seed), sx)
---     local x01 = gameMath.SmoothLerp(DotGridGradient3D(x0, y0, z1, x, y, z, seed),
---         DotGridGradient3D(x1, y0, z1, x, y, z, seed), sx)
---     local x11 = gameMath.SmoothLerp(DotGridGradient3D(x0, y1, z1, x, y, z, seed),
---         DotGridGradient3D(x1, y1, z1, x, y, z, seed), sx)
+---comment
+---@param seed number
+---@param x number
+---@param y number
+---@param z number
+---@return number
+function tknMath.perlinNoise3D(seed, x, y, z)
+    -- Determine grid cell coordinates
+    local x0 = math.floor(x)
+    local x1 = x0 + 1
+    local y0 = math.floor(y)
+    local y1 = y0 + 1
+    local z0 = math.floor(z)
+    local z1 = z0 + 1
+    -- Determine interpolation weights
+    -- Could also use higher order polynomial/s-curve here
+    local sx = x - x0
+    local sy = y - y0
+    local sz = z - z0
+    -- Interpolate between grid point gradients
+    local x00 = tknMath.smoothLerp(dotGridGradient3D(x0, y0, z0, x, y, z, seed), dotGridGradient3D(x1, y0, z0, x, y, z, seed), sx)
+    local x10 = tknMath.smoothLerp(dotGridGradient3D(x0, y1, z0, x, y, z, seed), dotGridGradient3D(x1, y1, z0, x, y, z, seed), sx)
+    local x01 = tknMath.smoothLerp(dotGridGradient3D(x0, y0, z1, x, y, z, seed), dotGridGradient3D(x1, y0, z1, x, y, z, seed), sx)
+    local x11 = tknMath.smoothLerp(dotGridGradient3D(x0, y1, z1, x, y, z, seed), dotGridGradient3D(x1, y1, z1, x, y, z, seed), sx)
 
---     local y0 = gameMath.SmoothLerp(x00, x10, sy)
---     local y1 = gameMath.SmoothLerp(x01, x11, sy)
+    local y0 = tknMath.smoothLerp(x00, x10, sy)
+    local y1 = tknMath.smoothLerp(x01, x11, sy)
 
---     return gameMath.SmoothLerp(y0, y1, sz)
--- end
+    return tknMath.smoothLerp(y0, y1, sz)
+end
 
--- -- Start time
--- local startTime = os.clock()
-
--- -- Code block to measure
-
--- local ns = 0.17
--- local intervalCount = 20
--- local intervals = {}
--- for i = 1, intervalCount do
---     intervals[i] = 0
--- end
--- local min = 0
--- local max = 0
--- local totalCount = 0
--- for x = 1, 100 do
---     for y = 1, 10000 do
---         local n = gameMath.PerlinNoise2D(43214, x * ns, y * ns)
---         if n < min then
---             min = n
---         end
---         if n > max then
---             max = n
---         end
---         if n >= -1 and n <= 1 then
---             local index = math.floor(((n + 1) / 2) * intervalCount) + 1
---             if index < 1 then index = 1 end
---             if index > intervalCount then index = intervalCount end
---             intervals[index] = intervals[index] + 1
---             totalCount = totalCount + 1
---         end
---     end
--- end
--- for i = 1, intervalCount do
---     local rangeStart = -1 + (i - 1) * (2 / intervalCount)
---     local rangeEnd = rangeStart + (2 / intervalCount)
---     local percentage = (intervals[i] / totalCount) * 100
---     print(string.format("Interval %d (%.2f to %.2f): %.2f%%", i, rangeStart, rangeEnd, percentage))
--- end
--- print("Min value: ", min)
--- print("Max value: ", max)
-
--- -- End time
--- local endTime = os.clock()
-
--- -- Calculate and print execution time
--- local elapsedTime = endTime - startTime
--- print(string.format("Execution time: %.4f seconds", elapsedTime))
 local rotationMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
 local scaleMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}

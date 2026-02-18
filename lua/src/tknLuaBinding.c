@@ -1138,7 +1138,6 @@ static int luaUpdateUniformBufferPtr(lua_State *pLuaState)
 
     // Use the provided size if available, otherwise use calculated size
     VkDeviceSize finalSize = lua_isnil(pLuaState, -1) ? size : (VkDeviceSize)lua_tointeger(pLuaState, -1);
-    printf("Updating uniform buffer with size: %llu\n", (unsigned long long)finalSize);
     tknUpdateUniformBufferPtr(pTknGfxContext, pTknUniformBuffer, packedData, finalSize);
 
     tknFree(packedData);

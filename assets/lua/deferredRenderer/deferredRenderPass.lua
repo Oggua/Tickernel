@@ -59,6 +59,14 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         name = "fov",
         type = tkn.type.float,
         count = 1,
+    }, {
+        name = "screenWidth",
+        type = tkn.type.int32,
+        count = 1,
+    }, {
+        name = "screenHeight",
+        type = tkn.type.int32,
+        count = 1,
     }}
 
     -- Lights uniform buffer format
@@ -205,7 +213,9 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     -- Create global uniform buffer
     local pGlobalUniformBuffer = {
-        view = {1.0000, 0.0000, -0.0000, 0, -0.0000, 0.5547, 0.8321, 0, 0.0000, -0.8321, 0.5547, 0, -0.0000, -0.0000, -36.0555, 1},
+        -- Camera: Z is height, looking from NE direction at 45 degrees
+        -- eye ≈ (40, 40, 50), target ≈ (0, 0, 10), up = (0, 0, 1)
+        view = {0.7071, 0, 0.7071, 0, -0.3536, 0.8660, -0.3536, 0, -0.6124, -0.5, 0.6124, 0, -28.28, -28.28, -70.71, 1},
         proj = {1.3584, 0, 0, 0, 0, 2.4142, 0, 0, 0, 0, -1.0020, -1, 0, 0, -0.2002, 0},
         pointSizeFactor = 1000.0,
         time = 0.0,
@@ -213,6 +223,8 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         near = 0.1,
         far = 100.0,
         fov = 90.0,
+        screenWidth = 800,
+        screenHeight = 600,
     }
     deferredRenderPass.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.globalUniformBufferFormat, pGlobalUniformBuffer)
     local inputBindings = {{
@@ -225,12 +237,20 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     -- Create lights uniform buffer
     local pLightsUniformBuffer = {
-        directionalLightColor = {1.0, 1.0, 0.9, 1.0},
-        directionalLightDirection = {0.5, -1.0, 0.3, 0.0},
-        pointLights = {},
-        pointLightCount = 0,
+        directionalLightColor = {1.0, 1.0, 1.0, 1.0},
+        directionalLightDirection = {0.4, -0.3, -0.9, 0.0},
+        -- vec4 color;
+        -- vec3 position;
+        -- float range;
+        -- Each point light is 8 floats: r,g,b,a, px,py,pz, range
+        pointLights = { -- Light 3: warm orange
+        1.00, 0.0, 0.0, 10.0, 36, 36, 36, 28.0},
+        pointLightCount = 3,
     }
-    for i = 1, 128 * 8 do
+    -- pad pointLights to exactly 128 * 8 floats
+    local desiredCount = 128 * 8
+    local cur = #pLightsUniformBuffer.pointLights
+    for i = cur + 1, desiredCount do
         table.insert(pLightsUniformBuffer.pointLights, 0.0)
     end
     deferredRenderPass.pLightsUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.lightsUniformBufferFormat, pLightsUniformBuffer)

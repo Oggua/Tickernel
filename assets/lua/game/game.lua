@@ -4,18 +4,19 @@ local ui = require("ui.ui")
 local tkn = require("tkn")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local input = require("input")
-
+local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 local camera = {
-    x = 0.0,
-    y = 20.0,
-    z = 30.0,
-    yaw = -math.pi / 2,
-    pitch = -0.98,
-    near = 0.1,
-    far = 1000.0,
+    x = 32.0,
+    y = -20.0,
+    z = 40.0,
+    yaw = math.pi / 2,
+    pitch = -0.6,
+    near = 1,
+    far = 512,
     fov = 90.0,
-    moveSpeed = 1.0,
-    rotateSpeed = 0.03,
+    moveSpeed = 2.0,
+    rotateSpeed = 0.05,
+    pointSize = 16.0,
 }
 
 local function isKeyDown(key)
@@ -78,34 +79,34 @@ local function updateCameraInput()
 
     camera.pitch = clamp(camera.pitch, -1.45, 1.45)
 
-    local forwardX = math.cos(camera.pitch) * math.cos(camera.yaw)
-    local forwardY = math.cos(camera.pitch) * math.sin(camera.yaw)
-    local forwardZ = math.sin(camera.pitch)
-    forwardX, forwardY, forwardZ = normalize(forwardX, forwardY, forwardZ)
+    -- 水平面上的前进方向（只考虑yaw，pitch不影响水平移动）
+    local forwardX = math.cos(camera.yaw)
+    local forwardY = math.sin(camera.yaw)
 
-    local rightX, rightY, rightZ = cross(forwardX, forwardY, forwardZ, 0.0, 0.0, 1.0)
-    rightX, rightY, rightZ = normalize(rightX, rightY, rightZ)
+    -- 右方向 = cross(forward, up) 在XY平面上的投影
+    local rightX = math.sin(camera.yaw)
+    local rightY = -math.cos(camera.yaw)
 
     local speed = camera.moveSpeed
     if isKeyDown(input.keyCode.w) then
         camera.x = camera.x + forwardX * speed
         camera.y = camera.y + forwardY * speed
-        camera.z = camera.z + forwardZ * speed
+        -- z不变
     end
     if isKeyDown(input.keyCode.s) then
         camera.x = camera.x - forwardX * speed
         camera.y = camera.y - forwardY * speed
-        camera.z = camera.z - forwardZ * speed
+        -- z不变
     end
     if isKeyDown(input.keyCode.d) then
         camera.x = camera.x + rightX * speed
         camera.y = camera.y + rightY * speed
-        camera.z = camera.z + rightZ * speed
+        -- z不变
     end
     if isKeyDown(input.keyCode.a) then
         camera.x = camera.x - rightX * speed
         camera.y = camera.y - rightY * speed
-        camera.z = camera.z - rightZ * speed
+        -- z不变
     end
     if isKeyDown(input.keyCode.e) then
         camera.z = camera.z + speed
@@ -122,6 +123,23 @@ function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachmen
     game.nextScene = mainScene
     game.gameRootNode = gameRootNode
     game.currentScene.start(game, pTknGfxContext)
+    tknSliderWidget.addWidget(pTknGfxContext, "pointSizeSliderNode", game.gameRootNode, 1, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = 512,
+        offset = 0,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0,
+        pivot = 0,
+        length = 32,
+        offset = 64,
+    }, ui.orientationType.horizontal, 32, function(value)
+        camera.pointSize = value * camera.screenWidth
+        print("Camera pointSize to " .. camera.pointSize)
+    end)
+
 end
 
 function game.stop()
@@ -141,6 +159,8 @@ end
 
 local function updateCamera(pTknGfxContext, width, height)
     updateCameraInput()
+    camera.screenWidth = width
+    camera.screenHeight = height
 
     local forwardX = math.cos(camera.pitch) * math.cos(camera.yaw)
     local forwardY = math.cos(camera.pitch) * math.sin(camera.yaw)
@@ -154,20 +174,16 @@ local function updateCamera(pTknGfxContext, width, height)
     tkn.tknUpdateUniformBufferPtr(pTknGfxContext, deferredRenderPass.pGlobalUniformBuffer, deferredRenderPass.globalUniformBufferFormat, {
         view = view,
         proj = proj,
-        pointSizeFactor = 1000.0,
+        pointSizeFactor = camera.pointSize,
         time = 0.0,
         frameCount = 0,
         near = camera.near,
         far = camera.far,
         fov = camera.fov,
+        screenWidth = camera.screenWidth,
+        screenHeight = camera.screenHeight,
     }, nil)
-    -- local inputBindings = {{
-    --     vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-    --     pTknUniformBuffer = deferredRenderPass.pGlobalUniformBuffer,
-    --     binding = 0,
-    -- }}
-    -- deferredRenderPass.pGlobalMaterial = tkn.tknGetGlobalMaterialPtr(pTknGfxContext)
-    -- tkn.tknUpdateMaterialPtr(pTknGfxContext, deferredRenderPass.pGlobalMaterial, inputBindings)
+
 end
 
 -- Called after waitRenderFence, handles GPU resources and scene switching

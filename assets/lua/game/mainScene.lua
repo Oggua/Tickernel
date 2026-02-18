@@ -3,7 +3,9 @@ local ui = require("ui.ui")
 local input = require("input")
 local mainPanel = require("game.panels.mainPanel")
 local tkn = require("tkn")
+local tknVox = require("tknVox")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+
 function mainScene.start(game, pTknGfxContext)
     mainScene.mainPanel = mainPanel.create(pTknGfxContext, game, game.gameRootNode, function()
         print("Start Game button clicked")
@@ -14,11 +16,15 @@ function mainScene.start(game, pTknGfxContext)
         print("Quit Game button clicked")
     end)
 
-    mainScene.pTknMesh = tkn.tknCreateMeshPtrWithTknVoxFile(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, game.assetsPath .. "/models/LargeBuilding01_0.tknvox", VK_INDEX_TYPE_UINT16)
+    mainScene.terrainMeshData = tknVox.loadVoxFile(game.assetsPath .. "/models/Garden_0.tknvox")
+    -- mainScene.terrainMeshData = tknVox.loadVoxFile(game.assetsPath .. "/models/TallBuilding02_0.tknvox")
+    mainScene.pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, mainScene.terrainMeshData, 0, nil)
     mainScene.pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
         model = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
     })
     mainScene.pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, mainScene.pTknMesh, mainScene.pTknInstance)
+
+
 end
 
 function mainScene.stop(game)

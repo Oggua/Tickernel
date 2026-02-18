@@ -9,8 +9,10 @@ void main() {
     float depth = subpassLoad(i_depth).x;
     vec4 clip = vec4(in_uv * 2.0 - 1.0, depth, 1.0);
     mat4 invViewProj = inverse(globalUniform.proj * globalUniform.view);
+    mat4 invView = inverse(globalUniform.view);
     vec4 world_w = invViewProj * clip;
     vec3 position = world_w.xyz / world_w.w;
+    vec3 cameraPosition = invView[3].xyz;
 
     vec3 normal = normalize((subpassLoad(i_normal).xyz - 0.5) * 2);
     vec4 albedo = subpassLoad(i_albedo);
@@ -31,5 +33,10 @@ void main() {
 
         o_rgb += albedo.rgb * light.color.rgb * light.color.a * pointHalfLambert * attenuation;
     }
+
+    const vec3 fogColor = vec3(0.15, 0.31, 0.4); 
+    float distanceToCamera = length(position - cameraPosition);
+    float fogFactor = smoothstep(globalUniform.near, globalUniform.far, distanceToCamera);
+    o_rgb = mix(o_rgb, fogColor, fogFactor);
     o_color = vec4(o_rgb, 1.0);
 }
