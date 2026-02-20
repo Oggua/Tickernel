@@ -133,42 +133,37 @@ local function updateNodeGfxRecursively(pTknGfxContext, ui, node, screenWidth, s
         local local11 = scaleY * cosR
         local offsetToParentX = rect.horizontal.offset
         local offsetToParentY = rect.vertical.offset
+        -- Build local 3x3 matrix in row-major: [m00,m01,m02, m10,m11,m12, m20,m21,m22]
+        local localModel = {local00, local01, 0, local10, local11, 0, offsetToParentX, offsetToParentY, 1}
         if node.parent then
             local pm = node.parent.rect.model
-            -- Inherit rotation/scale from parent and combine with local transform
-            local rotScaleMatrix00 = pm[1] * local00 + pm[4] * local01
-            local rotScaleMatrix01 = pm[2] * local00 + pm[5] * local01
-            local rotScaleMatrix10 = pm[1] * local10 + pm[4] * local11
-            local rotScaleMatrix11 = pm[2] * local10 + pm[5] * local11
-            -- Transform offset by parent's full transform
-            local worldOffsetX = pm[1] * offsetToParentX + pm[4] * offsetToParentY + pm[7]
-            local worldOffsetY = pm[2] * offsetToParentX + pm[5] * offsetToParentY + pm[8]
-            if rect.model[1] ~= rotScaleMatrix00 or rect.model[2] ~= rotScaleMatrix01 or rect.model[3] ~= 0 or rect.model[4] ~= rotScaleMatrix10 or rect.model[5] ~= rotScaleMatrix11 or rect.model[6] ~= 0 or rect.model[7] ~= worldOffsetX or rect.model[8] ~= worldOffsetY or rect.model[9] ~= 1 then
+            -- parent model is stored in same row-major layout
+            local newModel = tknMath.multiplyMatrix3x3(pm, localModel)
+            if rect.model[1] ~= newModel[1] or rect.model[2] ~= newModel[2] or rect.model[3] ~= newModel[3] or rect.model[4] ~= newModel[4] or rect.model[5] ~= newModel[5] or rect.model[6] ~= newModel[6] or rect.model[7] ~= newModel[7] or rect.model[8] ~= newModel[8] or rect.model[9] ~= newModel[9] then
                 instanceDirty = true
             end
-            rect.model[1] = rotScaleMatrix00
-            rect.model[2] = rotScaleMatrix01
-            rect.model[3] = 0
-            rect.model[4] = rotScaleMatrix10
-            rect.model[5] = rotScaleMatrix11
-            rect.model[6] = 0
-            rect.model[7] = worldOffsetX
-            rect.model[8] = worldOffsetY
-            rect.model[9] = 1
+            rect.model[1] = newModel[1]
+            rect.model[2] = newModel[2]
+            rect.model[3] = newModel[3]
+            rect.model[4] = newModel[4]
+            rect.model[5] = newModel[5]
+            rect.model[6] = newModel[6]
+            rect.model[7] = newModel[7]
+            rect.model[8] = newModel[8]
+            rect.model[9] = newModel[9]
         else
-            if rect.model[1] ~= local00 or rect.model[2] ~= local01 or rect.model[3] ~= 0 or rect.model[4] ~= local10 or rect.model[5] ~= local11 or rect.model[6] ~= 0 or rect.model[7] ~= offsetToParentX or rect.model[8] ~= offsetToParentY or rect.model[9] ~= 1 then
+            if rect.model[1] ~= localModel[1] or rect.model[2] ~= localModel[2] or rect.model[3] ~= localModel[3] or rect.model[4] ~= localModel[4] or rect.model[5] ~= localModel[5] or rect.model[6] ~= localModel[6] or rect.model[7] ~= localModel[7] or rect.model[8] ~= localModel[8] or rect.model[9] ~= localModel[9] then
                 instanceDirty = true
             end
-            -- No parent, use local transform directly
-            rect.model[1] = local00
-            rect.model[2] = local01
-            rect.model[3] = 0
-            rect.model[4] = local10
-            rect.model[5] = local11
-            rect.model[6] = 0
-            rect.model[7] = offsetToParentX
-            rect.model[8] = offsetToParentY
-            rect.model[9] = 1
+            rect.model[1] = localModel[1]
+            rect.model[2] = localModel[2]
+            rect.model[3] = localModel[3]
+            rect.model[4] = localModel[4]
+            rect.model[5] = localModel[5]
+            rect.model[6] = localModel[6]
+            rect.model[7] = localModel[7]
+            rect.model[8] = localModel[8]
+            rect.model[9] = localModel[9]
         end
         node.transform.modelDirty = false
         parentModelDirty = true
@@ -324,20 +319,24 @@ function ui.setNodeOrientation(node, orientationKey, orientation)
     node[orientationKey].dirty = true
 end
 
-function ui.setNodeTransformModel(node, rotation, horizontalScale, verticalScale)
-    node.transform.modelDirty = node.transform.rotation ~= rotation or node.transform.horizontalScale ~= horizontalScale or node.transform.verticalScale ~= verticalScale
+function ui.setNodeTransformRotation(node, rotation)
+    node.transform.modelDirty = node.transform.modelDirty or node.transform.rotation ~= rotation
     node.transform.rotation = rotation
+end
+
+function ui.setNodeTransformScale(node, horizontalScale, verticalScale)
+    node.transform.modelDirty = node.transform.modelDirty or node.transform.horizontalScale ~= horizontalScale or node.transform.verticalScale ~= verticalScale
     node.transform.horizontalScale = horizontalScale
     node.transform.verticalScale = verticalScale
 end
 
 function ui.setNodeTransformColor(node, color)
-    node.transform.colorDirty = node.transform.color ~= color
+    node.transform.colorDirty = node.transform.colorDirty or node.transform.color ~= color
     node.transform.color = color
 end
 
 function ui.setNodeTransformActive(node, active)
-    node.transform.activeDirty = node.transform.active ~= active
+    node.transform.activeDirty = node.transform.activeDirty or node.transform.active ~= active
     node.transform.active = active
 end
 
@@ -352,7 +351,8 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
     }
     ui.setNodeOrientation(node, ui.orientationType.horizontal, horizontal)
     ui.setNodeOrientation(node, ui.orientationType.vertical, vertical)
-    ui.setNodeTransformModel(node, transform.rotation, transform.horizontalScale, transform.verticalScale)
+    ui.setNodeTransformRotation(node, transform.rotation)
+    ui.setNodeTransformScale(node, transform.horizontalScale, transform.verticalScale)
     ui.setNodeTransformColor(node, transform.color)
     ui.setNodeTransformActive(node, transform.active)
 
@@ -361,8 +361,12 @@ local function addNodeInternal(pTknGfxContext, parent, index, name, horizontal, 
         ui.rootNode = node
         ui.topNode = node
     else
-        assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
-        table.insert(parent.children, index, node)
+        if index then
+            assert(index >= 1 and index <= #parent.children + 1, "ui.addNode: index out of bounds")
+            table.insert(parent.children, index, node)
+        else
+            table.insert(parent.children, node)
+        end
         if isTopNode(node) then
             ui.topNode = node
         end

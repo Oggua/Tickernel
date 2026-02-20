@@ -22,25 +22,56 @@ function tknMath.multiplyColors(c1, c2)
     local b = (b1 * b2) // 255
     return (a << 24) | (r << 16) | (g << 8) | b
 end
--- 3x3 matrix multiplication (m1 * m2) - COLUMN-MAJOR format for GLSL
--- Matrices are stored as: [col0_x, col0_y, col0_z, col1_x, col1_y, col1_z, col2_x, col2_y, col2_z]
--- If result is provided, writes to it and returns it; otherwise creates new table
-function tknMath.multiplyMat3(m1, m2, result)
-    local r = result or {}
-    -- Column 0 of result
-    r[1] = m1[1] * m2[1] + m1[4] * m2[2] + m1[7] * m2[3]
-    r[2] = m1[2] * m2[1] + m1[5] * m2[2] + m1[8] * m2[3]
-    r[3] = m1[3] * m2[1] + m1[6] * m2[2] + m1[9] * m2[3]
-    -- Column 1 of result
-    r[4] = m1[1] * m2[4] + m1[4] * m2[5] + m1[7] * m2[6]
-    r[5] = m1[2] * m2[4] + m1[5] * m2[5] + m1[8] * m2[6]
-    r[6] = m1[3] * m2[4] + m1[6] * m2[5] + m1[9] * m2[6]
-    -- Column 2 of result
-    r[7] = m1[1] * m2[7] + m1[4] * m2[8] + m1[7] * m2[9]
-    r[8] = m1[2] * m2[7] + m1[5] * m2[8] + m1[8] * m2[9]
-    r[9] = m1[3] * m2[7] + m1[6] * m2[8] + m1[9] * m2[9]
+-- 3x3 matrix multiplication for flat ROW-MAJOR arrays (returns new table)
+-- Matrices are stored as: [m00, m01, m02, m10, m11, m12, m20, m21, m22]
+-- Computes r = a * b where a,b are row-major flat arrays
+function tknMath.multiplyMatrix3x3(a, b)
+    local r = {}
+    r[1] = a[1]*b[1] + a[2]*b[4] + a[3]*b[7]
+    r[2] = a[1]*b[2] + a[2]*b[5] + a[3]*b[8]
+    r[3] = a[1]*b[3] + a[2]*b[6] + a[3]*b[9]
+
+    r[4] = a[4]*b[1] + a[5]*b[4] + a[6]*b[7]
+    r[5] = a[4]*b[2] + a[5]*b[5] + a[6]*b[8]
+    r[6] = a[4]*b[3] + a[5]*b[6] + a[6]*b[9]
+
+    r[7] = a[7]*b[1] + a[8]*b[4] + a[9]*b[7]
+    r[8] = a[7]*b[2] + a[8]*b[5] + a[9]*b[8]
+    r[9] = a[7]*b[3] + a[8]*b[6] + a[9]*b[9]
     return r
 end
+
+-- backward compatibility aliases
+-- (no backward-compat aliases; project uses descriptive names)
+
+-- 4x4 matrix multiplication for flat row-major arrays (returns new table)
+function tknMath.multiplyMatrix4x4(a, b)
+    -- Unrolled 4x4 multiplication (row-major flat arrays) for performance in Lua
+    local c = {}
+    c[1]  = a[1]*b[1]  + a[2]*b[5]  + a[3]*b[9]  + a[4]*b[13]
+    c[2]  = a[1]*b[2]  + a[2]*b[6]  + a[3]*b[10] + a[4]*b[14]
+    c[3]  = a[1]*b[3]  + a[2]*b[7]  + a[3]*b[11] + a[4]*b[15]
+    c[4]  = a[1]*b[4]  + a[2]*b[8]  + a[3]*b[12] + a[4]*b[16]
+
+    c[5]  = a[5]*b[1]  + a[6]*b[5]  + a[7]*b[9]  + a[8]*b[13]
+    c[6]  = a[5]*b[2]  + a[6]*b[6]  + a[7]*b[10] + a[8]*b[14]
+    c[7]  = a[5]*b[3]  + a[6]*b[7]  + a[7]*b[11] + a[8]*b[15]
+    c[8]  = a[5]*b[4]  + a[6]*b[8]  + a[7]*b[12] + a[8]*b[16]
+
+    c[9]  = a[9]*b[1]  + a[10]*b[5] + a[11]*b[9] + a[12]*b[13]
+    c[10] = a[9]*b[2]  + a[10]*b[6] + a[11]*b[10]+ a[12]*b[14]
+    c[11] = a[9]*b[3]  + a[10]*b[7] + a[11]*b[11]+ a[12]*b[15]
+    c[12] = a[9]*b[4]  + a[10]*b[8] + a[11]*b[12]+ a[12]*b[16]
+
+    c[13] = a[13]*b[1] + a[14]*b[5] + a[15]*b[9] + a[16]*b[13]
+    c[14] = a[13]*b[2] + a[14]*b[6] + a[15]*b[10]+ a[16]*b[14]
+    c[15] = a[13]*b[3] + a[14]*b[7] + a[15]*b[11]+ a[16]*b[15]
+    c[16] = a[13]*b[4] + a[14]*b[8] + a[15]*b[12]+ a[16]*b[16]
+    return c
+end
+
+-- backward compatibility alias
+-- (no backward-compat alias; project uses descriptive names)
 
 function tknMath.round(v)
     return math.floor(0.5 + v)
