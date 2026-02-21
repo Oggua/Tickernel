@@ -24,7 +24,6 @@ function mainScene.start(game, pTknGfxContext)
     })
     mainScene.pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, mainScene.pTknMesh, mainScene.pTknInstance)
 
-
 end
 
 function mainScene.stop(game)
@@ -32,6 +31,9 @@ function mainScene.stop(game)
 end
 
 function mainScene.stopGfx(game, pTknGfxContext)
+    tkn.tknDestroyDrawCallPtr(pTknGfxContext, mainScene.pTknDrawCall)
+    tkn.tknDestroyMeshPtr(pTknGfxContext, mainScene.pTknMesh)
+    tkn.tknDestroyInstancePtr(pTknGfxContext, mainScene.pTknInstance)
     mainPanel.destroy(mainScene.mainPanel, pTknGfxContext)
     mainScene.mainPanel = nil
 end
