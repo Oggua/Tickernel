@@ -26,46 +26,9 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         count = 16,
     }}
 
-    -- Global uniform buffer format (view, projection, etc.)
-    deferredRenderPass.globalUniformBufferFormat = {{
-        name = "view",
+    deferredRenderPass.geometryUniformBufferFormat = {{
+        name = "pointSize",
         type = tkn.type.float,
-        count = 16,
-    }, {
-        name = "proj",
-        type = tkn.type.float,
-        count = 16,
-    }, {
-        name = "pointSizeFactor",
-        type = tkn.type.float,
-        count = 1,
-    }, {
-        name = "time",
-        type = tkn.type.float,
-        count = 1,
-    }, {
-        name = "frameCount",
-        type = tkn.type.int32,
-        count = 1,
-    }, {
-        name = "near",
-        type = tkn.type.float,
-        count = 1,
-    }, {
-        name = "far",
-        type = tkn.type.float,
-        count = 1,
-    }, {
-        name = "fov",
-        type = tkn.type.float,
-        count = 1,
-    }, {
-        name = "screenWidth",
-        type = tkn.type.int32,
-        count = 1,
-    }, {
-        name = "screenHeight",
-        type = tkn.type.int32,
         count = 1,
     }}
 
@@ -178,7 +141,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     local vkSubpassDescriptions = {geometrySubpassDescription, ligthtingSubpassDescription}
 
-    local spvPathsArray = {{}, {assetsPath .. "/shaders/lighting.subpass.frag.spv"}}
+    local spvPathsArray = {{assetsPath .. "/shaders/geometry.subpass.vert.spv"}, {assetsPath .. "/shaders/lighting.subpass.frag.spv"}}
 
     local vkSubpassDependencies = {{
         srcSubpass = VK_SUBPASS_EXTERNAL,
@@ -211,51 +174,33 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     deferredRenderPass.pVoxelVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, deferredRenderPass.vertexFormat)
     deferredRenderPass.pInstanceVertexInputLayout = tkn.tknCreateVertexInputLayoutPtr(pTknGfxContext, deferredRenderPass.instanceFormat)
 
-    -- Create global uniform buffer
-    local pGlobalUniformBuffer = {
-        -- Camera: Z is height, looking from NE direction at 45 degrees
-        -- eye ≈ (40, 40, 50), target ≈ (0, 0, 10), up = (0, 0, 1)
-        view = {0.7071, 0, 0.7071, 0, -0.3536, 0.8660, -0.3536, 0, -0.6124, -0.5, 0.6124, 0, -28.28, -28.28, -70.71, 1},
-        proj = {1.3584, 0, 0, 0, 0, 2.4142, 0, 0, 0, 0, -1.0020, -1, 0, 0, -0.2002, 0},
-        pointSizeFactor = 1000.0,
-        time = 0.0,
-        frameCount = 0,
-        near = 0.1,
-        far = 100.0,
-        fov = 90.0,
-        screenWidth = 800,
-        screenHeight = 600,
+    deferredRenderPass.pGeometrySubpassMaterial = tkn.tknGetSubpassMaterialPtr(pTknGfxContext, deferredRenderPass.pTknRenderPass, 0)
+    local geometryUniformBuffer = {
+        pointSize = 1.0,
     }
-    deferredRenderPass.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.globalUniformBufferFormat, pGlobalUniformBuffer)
-    local inputBindings = {{
+    deferredRenderPass.pGeometryUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.geometryUniformBufferFormat, geometryUniformBuffer)
+    local geometryInputBindings = {{
         vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        pTknUniformBuffer = deferredRenderPass.pGlobalUniformBuffer,
+        pTknUniformBuffer = deferredRenderPass.pGeometryUniformBuffer,
         binding = 0,
     }}
-    deferredRenderPass.pGlobalMaterial = tkn.tknGetGlobalMaterialPtr(pTknGfxContext)
-    tkn.tknUpdateMaterialPtr(pTknGfxContext, deferredRenderPass.pGlobalMaterial, inputBindings)
+    tkn.tknUpdateMaterialPtr(pTknGfxContext, deferredRenderPass.pGeometrySubpassMaterial, geometryInputBindings)
 
     -- Create lights uniform buffer
-    local pLightsUniformBuffer = {
+    local lightsUniformBuffer = {
         directionalLightColor = {1.0, 1.0, 1.0, 0.4},
         directionalLightDirection = {0.4, -0.3, -0.9, 0.0},
-        -- vec4 color;
-        -- vec3 position;
-        -- float range;
-        -- Each point light is 8 floats: r,g,b,a, px,py,pz, range
         pointLights = { -- Light 3: warm orange
-        1.00, 0.0, 0.5, 8.0, 32, 32, 16, 20.0,
-        0.6, 0.5, 0.3, 4.0, 38, 38, 38, 20.0,
-        0.6, 0.5, 0.3, 4.0, 0, 0, 16, 20.0},
+        1.00, 0.0, 0.5, 8.0, 32, 32, 16, 20.0, 0.6, 0.5, 0.3, 4.0, 38, 38, 38, 20.0, 0.6, 0.5, 0.3, 4.0, 0, 0, 16, 20.0},
         pointLightCount = 3,
     }
     -- pad pointLights to exactly 128 * 8 floats
     local desiredCount = 128 * 8
-    local cur = #pLightsUniformBuffer.pointLights
+    local cur = #lightsUniformBuffer.pointLights
     for i = cur + 1, desiredCount do
-        table.insert(pLightsUniformBuffer.pointLights, 0.0)
+        table.insert(lightsUniformBuffer.pointLights, 0.0)
     end
-    deferredRenderPass.pLightsUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.lightsUniformBufferFormat, pLightsUniformBuffer)
+    deferredRenderPass.pLightsUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.lightsUniformBufferFormat, lightsUniformBuffer)
 
     -- Bind lights uniform buffer to lighting subpass material
     deferredRenderPass.pLightingSubpassMaterial = tkn.tknGetSubpassMaterialPtr(pTknGfxContext, deferredRenderPass.pTknRenderPass, 1)
@@ -285,12 +230,13 @@ function deferredRenderPass.teardown(pTknGfxContext)
     deferredRenderPass.pLightingMaterial = nil
 
     -- Destroy uniform buffers
-    tkn.tknDestroyUniformBufferPtr(pTknGfxContext, deferredRenderPass.pGlobalUniformBuffer)
-    deferredRenderPass.pGlobalUniformBuffer = nil
-    deferredRenderPass.pGlobalMaterial = nil
     tkn.tknDestroyUniformBufferPtr(pTknGfxContext, deferredRenderPass.pLightsUniformBuffer)
     deferredRenderPass.pLightsUniformBuffer = nil
     deferredRenderPass.pLightingSubpassMaterial = nil
+
+    tkn.tknDestroyUniformBufferPtr(pTknGfxContext, deferredRenderPass.pGeometryUniformBuffer)
+    deferredRenderPass.pGeometryUniformBuffer = nil
+    deferredRenderPass.pGeometrySubpassMaterial = nil
 
     tkn.tknDestroyRenderPassPtr(pTknGfxContext, deferredRenderPass.pTknRenderPass)
 

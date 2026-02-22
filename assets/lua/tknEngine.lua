@@ -4,10 +4,106 @@ local game = require("game.game")
 local input = require("input")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local editorPanel = require("engine.panels.editorPanel")
+local transformSystem = require("game.transformSystem")
+local cameraSystem = require("game.cameraSystem")
 local tknEngine = {}
+
+local function setupGlobalMaterial(pTknGfxContext)
+    tknEngine.globalUniformBufferFormat = {{
+        name = "view",
+        type = tkn.type.float,
+        count = 16,
+    }, {
+        name = "proj",
+        type = tkn.type.float,
+        count = 16,
+    }, {
+        name = "near",
+        type = tkn.type.float,
+        count = 1,
+    }, {
+        name = "far",
+        type = tkn.type.float,
+        count = 1,
+    }, {
+        name = "fov",
+        type = tkn.type.float,
+        count = 1,
+    }, {
+        name = "time",
+        type = tkn.type.float,
+        count = 1,
+    }, {
+        name = "frameCount",
+        type = tkn.type.int32,
+        count = 1,
+    }, {
+        name = "screenWidth",
+        type = tkn.type.int32,
+        count = 1,
+    }, {
+        name = "screenHeight",
+        type = tkn.type.int32,
+        count = 1,
+    }}
+
+    -- Create global uniform buffer
+    local pGlobalUniformBuffer = {
+        view = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+        proj = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+        near = 2,
+        far = 128,
+        fov = 90,
+        time = 0.0,
+        frameCount = 0,
+        screenWidth = 800,
+        screenHeight = 600,
+    }
+    tknEngine.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer)
+    local inputBindings = {{
+        vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        pTknUniformBuffer = tknEngine.pGlobalUniformBuffer,
+        binding = 0,
+    }}
+    tknEngine.pGlobalMaterial = tkn.tknGetGlobalMaterialPtr(pTknGfxContext)
+    tkn.tknUpdateMaterialPtr(pTknGfxContext, tknEngine.pGlobalMaterial, inputBindings)
+end
+local function teardownGlobalMaterial(pTknGfxContext)
+    tkn.tknDestroyUniformBufferPtr(pTknGfxContext, tknEngine.pGlobalUniformBuffer)
+    tknEngine.pGlobalUniformBuffer = nil
+    tknEngine.pGlobalMaterial = nil
+    tknEngine.globalUniformBufferFormat = nil
+end
+local function updateGlobalMaterial(pTknGfxContext, camera, time, frameCount, screenWidth, screenHeight)
+    local view = camera.transform:getInverseMatrix()
+    local proj = tkn.tknBuildProjMatrix(camera.fov, screenWidth / screenHeight, camera.near, camera.far)
+    -- Create global uniform buffer
+    local pGlobalUniformBuffer = {
+        view = view,
+        proj = proj,
+        near = camera.near,
+        far = camera.far,
+        fov = camera.fov,
+        time = time,
+        frameCount = frameCount,
+        screenWidth = screenWidth,
+        screenHeight = screenHeight,
+    }
+    -- tknEngine.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer)
+    tkn.tknUpdateUniformBufferPtr(pTknGfxContext, tknEngine.pGlobalUniformBuffer, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer, nil)
+    local inputBindings = {{
+        vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        pTknUniformBuffer = tknEngine.pGlobalUniformBuffer,
+        binding = 0,
+    }}
+    tknEngine.pGlobalMaterial = tkn.tknGetGlobalMaterialPtr(pTknGfxContext)
+    tkn.tknUpdateMaterialPtr(pTknGfxContext, tknEngine.pGlobalMaterial, inputBindings)
+end
 
 function tknEngine.start(pTknGfxContext, assetsPath)
     tknEngine.assetsPath = assetsPath
+    -- Global uniform buffer format (view, projection, etc.)
+
     local depthVkFormat = tkn.tknGetSupportedFormat(pTknGfxContext, {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
     tknEngine.pDepthStencilAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
     tknEngine.pSwapchainAttachment = tkn.tknGetSwapchainAttachmentPtr(pTknGfxContext)
@@ -15,12 +111,23 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     tknEngine.gameRootUINode = ui.addNode(pTknGfxContext, ui.rootNode, 1, "TickernelEngine", tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform)
     tknEngine.editorRootUINode = ui.addNode(pTknGfxContext, ui.rootNode, 2, "Editor", tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform)
-
     tknEngine.editorPanel = editorPanel.create(pTknGfxContext, tknEngine.editorRootUINode)
     game.start(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, 0, assetsPath, tknEngine.gameRootUINode)
+
+    transformSystem.setup()
+    cameraSystem.setup()
+
+    tknEngine.cameraTransform = transformSystem.add({0, 0, 0}, {0, 0, 0}, {1, 1, 1}, transformSystem.rootTransform, nil)
+    tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 2, 128, 90)
 end
 
 function tknEngine.stop(pTknGfxContext)
+    cameraSystem.remove(tknEngine.camera)
+    transformSystem.remove(tknEngine.cameraTransform)
+
+    transformSystem.teardown()
+    cameraSystem.teardown()
+
     game.stop()
     tkn.tknWaitRenderFence(pTknGfxContext)
     game.stopGfx(pTknGfxContext)
@@ -34,11 +141,14 @@ function tknEngine.stop(pTknGfxContext)
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, tknEngine.pDepthStencilAttachment)
     tknEngine.pDepthStencilAttachment = nil
     tknEngine.pSwapchainAttachment = nil
+
 end
 
 function tknEngine.update(pTknGfxContext, width, height)
-    -- print("Lua update")
     game.update()
+    transformSystem.update()
+    cameraSystem.update(pTknGfxContext, width, height)
+
     tkn.tknWaitRenderFence(pTknGfxContext)
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)

@@ -91,10 +91,16 @@ static void *packDataFromLayout(lua_State *pLuaState, int layoutIndex, int dataI
             lua_pop(pLuaState, 1);
             vertexCount = arrayLength / firstFieldCount;
         }
+        else if (!lua_isnil(pLuaState, -1))
+        {
+            // Single scalar value provided for this field -> treat as one "vertex" (uniform buffer single element)
+            vertexCount = 1;
+        }
         lua_pop(pLuaState, 1);
     }
 
     VkDeviceSize totalSize = singleVertexSize * vertexCount;
+    // printf("Calculated vertex count: %u, single vertex size: %llu, total size: %llu\n", vertexCount, singleVertexSize, totalSize);
     void *data = tknMalloc(totalSize);
     uint8_t *dataPtr = (uint8_t *)data;
 

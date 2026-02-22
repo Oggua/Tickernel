@@ -27,17 +27,17 @@ end
 -- Computes r = a * b where a,b are row-major flat arrays
 function tknMath.multiplyMatrix3x3(a, b)
     local r = {}
-    r[1] = a[1]*b[1] + a[2]*b[4] + a[3]*b[7]
-    r[2] = a[1]*b[2] + a[2]*b[5] + a[3]*b[8]
-    r[3] = a[1]*b[3] + a[2]*b[6] + a[3]*b[9]
+    r[1] = a[1] * b[1] + a[2] * b[4] + a[3] * b[7]
+    r[2] = a[1] * b[2] + a[2] * b[5] + a[3] * b[8]
+    r[3] = a[1] * b[3] + a[2] * b[6] + a[3] * b[9]
 
-    r[4] = a[4]*b[1] + a[5]*b[4] + a[6]*b[7]
-    r[5] = a[4]*b[2] + a[5]*b[5] + a[6]*b[8]
-    r[6] = a[4]*b[3] + a[5]*b[6] + a[6]*b[9]
+    r[4] = a[4] * b[1] + a[5] * b[4] + a[6] * b[7]
+    r[5] = a[4] * b[2] + a[5] * b[5] + a[6] * b[8]
+    r[6] = a[4] * b[3] + a[5] * b[6] + a[6] * b[9]
 
-    r[7] = a[7]*b[1] + a[8]*b[4] + a[9]*b[7]
-    r[8] = a[7]*b[2] + a[8]*b[5] + a[9]*b[8]
-    r[9] = a[7]*b[3] + a[8]*b[6] + a[9]*b[9]
+    r[7] = a[7] * b[1] + a[8] * b[4] + a[9] * b[7]
+    r[8] = a[7] * b[2] + a[8] * b[5] + a[9] * b[8]
+    r[9] = a[7] * b[3] + a[8] * b[6] + a[9] * b[9]
     return r
 end
 
@@ -48,25 +48,25 @@ end
 function tknMath.multiplyMatrix4x4(a, b)
     -- Unrolled 4x4 multiplication (row-major flat arrays) for performance in Lua
     local c = {}
-    c[1]  = a[1]*b[1]  + a[2]*b[5]  + a[3]*b[9]  + a[4]*b[13]
-    c[2]  = a[1]*b[2]  + a[2]*b[6]  + a[3]*b[10] + a[4]*b[14]
-    c[3]  = a[1]*b[3]  + a[2]*b[7]  + a[3]*b[11] + a[4]*b[15]
-    c[4]  = a[1]*b[4]  + a[2]*b[8]  + a[3]*b[12] + a[4]*b[16]
+    c[1] = a[1] * b[1] + a[2] * b[5] + a[3] * b[9] + a[4] * b[13]
+    c[2] = a[1] * b[2] + a[2] * b[6] + a[3] * b[10] + a[4] * b[14]
+    c[3] = a[1] * b[3] + a[2] * b[7] + a[3] * b[11] + a[4] * b[15]
+    c[4] = a[1] * b[4] + a[2] * b[8] + a[3] * b[12] + a[4] * b[16]
 
-    c[5]  = a[5]*b[1]  + a[6]*b[5]  + a[7]*b[9]  + a[8]*b[13]
-    c[6]  = a[5]*b[2]  + a[6]*b[6]  + a[7]*b[10] + a[8]*b[14]
-    c[7]  = a[5]*b[3]  + a[6]*b[7]  + a[7]*b[11] + a[8]*b[15]
-    c[8]  = a[5]*b[4]  + a[6]*b[8]  + a[7]*b[12] + a[8]*b[16]
+    c[5] = a[5] * b[1] + a[6] * b[5] + a[7] * b[9] + a[8] * b[13]
+    c[6] = a[5] * b[2] + a[6] * b[6] + a[7] * b[10] + a[8] * b[14]
+    c[7] = a[5] * b[3] + a[6] * b[7] + a[7] * b[11] + a[8] * b[15]
+    c[8] = a[5] * b[4] + a[6] * b[8] + a[7] * b[12] + a[8] * b[16]
 
-    c[9]  = a[9]*b[1]  + a[10]*b[5] + a[11]*b[9] + a[12]*b[13]
-    c[10] = a[9]*b[2]  + a[10]*b[6] + a[11]*b[10]+ a[12]*b[14]
-    c[11] = a[9]*b[3]  + a[10]*b[7] + a[11]*b[11]+ a[12]*b[15]
-    c[12] = a[9]*b[4]  + a[10]*b[8] + a[11]*b[12]+ a[12]*b[16]
+    c[9] = a[9] * b[1] + a[10] * b[5] + a[11] * b[9] + a[12] * b[13]
+    c[10] = a[9] * b[2] + a[10] * b[6] + a[11] * b[10] + a[12] * b[14]
+    c[11] = a[9] * b[3] + a[10] * b[7] + a[11] * b[11] + a[12] * b[15]
+    c[12] = a[9] * b[4] + a[10] * b[8] + a[11] * b[12] + a[12] * b[16]
 
-    c[13] = a[13]*b[1] + a[14]*b[5] + a[15]*b[9] + a[16]*b[13]
-    c[14] = a[13]*b[2] + a[14]*b[6] + a[15]*b[10]+ a[16]*b[14]
-    c[15] = a[13]*b[3] + a[14]*b[7] + a[15]*b[11]+ a[16]*b[15]
-    c[16] = a[13]*b[4] + a[14]*b[8] + a[15]*b[12]+ a[16]*b[16]
+    c[13] = a[13] * b[1] + a[14] * b[5] + a[15] * b[9] + a[16] * b[13]
+    c[14] = a[13] * b[2] + a[14] * b[6] + a[15] * b[10] + a[16] * b[14]
+    c[15] = a[13] * b[3] + a[14] * b[7] + a[15] * b[11] + a[16] * b[15]
+    c[16] = a[13] * b[4] + a[14] * b[8] + a[15] * b[12] + a[16] * b[16]
     return c
 end
 
@@ -371,12 +371,12 @@ local function translateModel(x, y, z)
     return translateMatrix
 end
 
-local function matrixMultiply(A, B, result)
+local function matrixMultiply(a, b, result)
     for i = 1, 4 do
         for j = 1, 4 do
             result[i][j] = 0
             for k = 1, 4 do
-                result[i][j] = result[i][j] + A[i][k] * B[k][j]
+                result[i][j] = result[i][j] + a[i][k] * b[k][j]
             end
         end
     end
@@ -391,8 +391,37 @@ function tknMath.applyTransformations(scale, x, y, z, angle, matrix)
     matrixMultiply(translateMatrix, modelMatrix, matrix)
 end
 
-function tknMath.createMatrix()
-    return {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
+function tknMath.cross2D(ax, ay, bx, by)
+    return ax * by - ay * bx
+end
+
+function tknMath.cross3D(ax, ay, az, bx, by, bz)
+    return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
+end
+
+function tknMath.normalize3D(x, y, z)
+    local len = math.sqrt(x * x + y * y + z * z)
+    if len < 0.000001 then
+        return 0.0, 0.0, 0.0
+    end
+    return x / len, y / len, z / len
+end
+
+function tknMath.normalize2D(x, y)
+    local len = math.sqrt(x * x + y * y)
+    if len < 0.000001 then
+        return 0.0, 0.0
+    end
+    return x / len, y / len
+
+end
+
+function tknMath.dot3D(ax, ay, az, bx, by, bz)
+    return ax * bx + ay * by + az * bz
+end
+
+function tknMath.dot2D(ax, ay, bx, by)
+    return ax * bx + ay * by
 end
 
 return tknMath

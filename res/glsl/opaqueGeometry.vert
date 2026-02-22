@@ -1,6 +1,7 @@
 
 #version 450
 #include "global.glsl"
+#include "geometry.subpass.glsl"
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in uint color;
@@ -53,7 +54,7 @@ void main(void) {
     // float perspectiveGap = sinAngle / (-viewPosition.z); // relative depth spread per voxel
     // float tanHalfFov = 1.0 / globalUniform.proj[1][1];  // derive tan(FOV/2) from projection matrix
     // float obliqueFactor = (1.0 + perspectiveGap * tanHalfFov) / max(cosAngle, 0.25); // clamp to max 4x base
-    gl_PointSize = 1.0 / -viewPosition.z * globalUniform.pointSizeFactor;
+    gl_PointSize = 1.0 / -viewPosition.z * geometryUniform.pointSize;
     outputNormal = bestNormal;
     outputAlbedo = unpackedColor;
 }

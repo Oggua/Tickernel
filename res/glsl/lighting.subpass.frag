@@ -1,4 +1,4 @@
 #version 450
-#include "lighting.subpass.frag.glsl"
+#include "lighting.subpass.glsl"
 void main(void) {
 }

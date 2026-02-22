@@ -1,6 +1,6 @@
 #version 450
 #include "global.glsl"
-#include "lighting.subpass.frag.glsl"
+#include "lighting.subpass.glsl"
 
 layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 o_color;

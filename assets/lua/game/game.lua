@@ -13,21 +13,6 @@ function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachmen
     game.currentScene = mainScene
     game.nextScene = mainScene
     game.rootUINode = rootUINode
-    game.rootGameNode = game.addTransform("rootGameNode", {
-        x = 0,
-        y = 0,
-        z = 0,
-    }, {
-        x = 0,
-        y = 0,
-        z = 0,
-        w = 0,
-    }, {
-        x = 1,
-        y = 1,
-        z = 1,
-    }, true, nil, nil)
-
     game.currentScene.start(game, pTknGfxContext)
 end
 
@@ -39,13 +24,10 @@ function game.stopGfx(pTknGfxContext)
     game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
     deferredRenderPass.teardown(pTknGfxContext)
-    game.removeNode(game.rootGameNode)
 end
 
 function game.update()
     game.currentScene.update(game)
-    updateGameNodeRecursively(game.rootGameNode, {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}, true, false, false)
-
 end
 
 function game.updateGfx(pTknGfxContext, width, height)
@@ -76,6 +58,5 @@ function game.recordFrame(pTknGfxContext, pTknFrame)
     tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, deferredRenderPass.pLightingDrawCall)
     tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
 end
-
 
 return game
