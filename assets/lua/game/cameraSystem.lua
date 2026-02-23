@@ -111,9 +111,9 @@ local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local function updateViewAndProj(camera, screenWidth, screenHeight)
     -- Resolve eye position
     local eyeX, eyeY, eyeZ
-    eyeX = camera.transform.x or 0
-    eyeY = camera.transform.y or 0
-    eyeZ = camera.transform.z or 0
+    eyeX = camera.transform.position.x or 0
+    eyeY = camera.transform.position.y or 0
+    eyeZ = camera.transform.position.z or 0
 
     -- compute forward by rotating local +X (1,0,0) by quaternion
     local q = camera.transform.rotation

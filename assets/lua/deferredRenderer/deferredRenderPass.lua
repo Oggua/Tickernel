@@ -176,7 +176,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     deferredRenderPass.pGeometrySubpassMaterial = tkn.tknGetSubpassMaterialPtr(pTknGfxContext, deferredRenderPass.pTknRenderPass, 0)
     local geometryUniformBuffer = {
-        pointSize = 1.0,
+        pointSize = 512.0,
     }
     deferredRenderPass.pGeometryUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.geometryUniformBufferFormat, geometryUniformBuffer)
     local geometryInputBindings = {{

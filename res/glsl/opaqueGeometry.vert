@@ -54,6 +54,7 @@ void main(void) {
     // float perspectiveGap = sinAngle / (-viewPosition.z); // relative depth spread per voxel
     // float tanHalfFov = 1.0 / globalUniform.proj[1][1];  // derive tan(FOV/2) from projection matrix
     // float obliqueFactor = (1.0 + perspectiveGap * tanHalfFov) / max(cosAngle, 0.25); // clamp to max 4x base
+
     gl_PointSize = 1.0 / -viewPosition.z * geometryUniform.pointSize;
     outputNormal = bestNormal;
     outputAlbedo = unpackedColor;

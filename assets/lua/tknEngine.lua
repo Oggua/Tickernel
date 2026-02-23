@@ -6,6 +6,7 @@ local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local editorPanel = require("engine.panels.editorPanel")
 local transformSystem = require("game.transformSystem")
 local cameraSystem = require("game.cameraSystem")
+local transformController = require("transformController")
 local tknEngine = {}
 
 local function setupGlobalMaterial(pTknGfxContext)
@@ -75,8 +76,8 @@ local function teardownGlobalMaterial(pTknGfxContext)
     tknEngine.globalUniformBufferFormat = nil
 end
 local function updateGlobalMaterial(pTknGfxContext, camera, time, frameCount, screenWidth, screenHeight)
-    local view = camera.transform:getInverseMatrix()
-    local proj = tkn.tknBuildProjMatrix(camera.fov, screenWidth / screenHeight, camera.near, camera.far)
+    local view = camera.view
+    local proj = camera.proj
     -- Create global uniform buffer
     local pGlobalUniformBuffer = {
         view = view,
@@ -114,10 +115,11 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     tknEngine.editorPanel = editorPanel.create(pTknGfxContext, tknEngine.editorRootUINode)
     game.start(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, 0, assetsPath, tknEngine.gameRootUINode)
 
+    setupGlobalMaterial(pTknGfxContext)
     transformSystem.setup()
     cameraSystem.setup()
 
-    tknEngine.cameraTransform = transformSystem.add({0, 0, 0}, {0, 0, 0}, {1, 1, 1}, transformSystem.rootTransform, nil)
+    tknEngine.cameraTransform = transformSystem.add({0, -10, 0}, {0, 0, 0, 0}, {1, 1, 1}, transformSystem.rootTransform, nil)
     tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 2, 128, 90)
 end
 
@@ -127,6 +129,7 @@ function tknEngine.stop(pTknGfxContext)
 
     transformSystem.teardown()
     cameraSystem.teardown()
+    teardownGlobalMaterial(pTknGfxContext)
 
     game.stop()
     tkn.tknWaitRenderFence(pTknGfxContext)
@@ -146,9 +149,10 @@ end
 
 function tknEngine.update(pTknGfxContext, width, height)
     game.update()
+    transformController.update(tknEngine.cameraTransform)
     transformSystem.update()
     cameraSystem.update(pTknGfxContext, width, height)
-
+    updateGlobalMaterial(pTknGfxContext, tknEngine.camera, 0, 0, width, height)
     tkn.tknWaitRenderFence(pTknGfxContext)
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)
