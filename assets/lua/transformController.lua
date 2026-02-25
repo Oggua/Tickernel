@@ -1,7 +1,7 @@
 local input = require("input")
 local transformSystem = require("game.transformSystem")
 local tknMath = require("tknMath")
-local transformController = {}
+local cameraTransformController = {}
 
 local function quatMul(ax, ay, az, aw, bx, by, bz, bw)
     local px = aw * bx + bw * ax + ay * bz - az * by
@@ -25,7 +25,20 @@ local function quatNormalize(x, y, z, w)
     return x / len, y / len, z / len, w / len
 end
 
-function transformController.update(transform)
+local function quatRotateVec(vx, vy, vz, qx, qy, qz, qw)
+    -- rotate vector v by quaternion q: v' = v + 2*qw*(q_xyz x v) + 2*(q_xyz x (q_xyz x v))
+    local tx = 2 * (qy * vz - qz * vy)
+    local ty = 2 * (qz * vx - qx * vz)
+    local tz = 2 * (qx * vy - qy * vx)
+
+    local cx = qy * tz - qz * ty
+    local cy = qz * tx - qx * tz
+    local cz = qx * ty - qy * tx
+
+    return vx + qw * tx + cx, vy + qw * ty + cy, vz + qw * tz + cz
+end
+
+function cameraTransformController.update(transform)
     local moveSpeed = 0.1
     local rotateSpeed = 0.02
 
@@ -37,22 +50,16 @@ function transformController.update(transform)
     local qx, qy, qz, qw = transform.rotation.x or 0, transform.rotation.y or 0, transform.rotation.z or 0, transform.rotation.w or 1
 
     -- compute forward by rotating local +X (1,0,0) by quaternion
-    local tx = 0
-    local ty = 2 * qz
-    local tz = -2 * qy
-    local cx = qy * tz - qz * ty
-    local cy = qz * tx - qx * tz
-    local cz = qx * ty - qy * tx
-    local fx = 1 + qw * tx + cx
-    local fy = 0 + qw * ty + cy
-    local fz = 0 + qw * tz + cz
+    local fx, fy, fz = quatRotateVec(1, 0, 0, qx, qy, qz, qw)
     fx, fy, fz = tknMath.normalize3D(fx, fy, fz)
 
-    -- up vector Z-up
-    local upX, upY, upZ = 0.0, 0.0, 1.0
+    -- compute camera "up" by rotating local +Z (0,0,1) by quaternion
+    local upX, upY, upZ = quatRotateVec(0, 0, 1, qx, qy, qz, qw)
+    upX, upY, upZ = tknMath.normalize3D(upX, upY, upZ)
 
-    -- right = normalize(cross(forward, up))
-    local rx, ry, rz = tknMath.cross3D(fx, fy, fz, upX, upY, upZ)
+    -- right = normalize(cross(world_up, forward)) for left-handed coord
+    local worldUpX, worldUpY, worldUpZ = 0.0, 0.0, 1.0
+    local rx, ry, rz = tknMath.cross3D(worldUpX, worldUpY, worldUpZ, fx, fy, fz)
     rx, ry, rz = tknMath.normalize3D(rx, ry, rz)
 
     local px = transform.position.x or 0
@@ -61,55 +68,31 @@ function transformController.update(transform)
 
     if (input.getKeyState(input.keyCode.w) == input.inputState.down) then
         px = px + fx * moveSpeed
+        py = py + fy * moveSpeed
         pz = pz + fz * moveSpeed
     end
     if (input.getKeyState(input.keyCode.s) == input.inputState.down) then
         px = px - fx * moveSpeed
+        py = py - fy * moveSpeed
         pz = pz - fz * moveSpeed
     end
     if (input.getKeyState(input.keyCode.d) == input.inputState.down) then
         px = px + rx * moveSpeed
+        py = py + ry * moveSpeed
         pz = pz + rz * moveSpeed
     end
     if (input.getKeyState(input.keyCode.a) == input.inputState.down) then
         px = px - rx * moveSpeed
+        py = py - ry * moveSpeed
         pz = pz - rz * moveSpeed
     end
 
-    if (input.getKeyState(input.keyCode.q) == input.inputState.down) then
-        py = py + moveSpeed
-    end
-    if (input.getKeyState(input.keyCode.e) == input.inputState.down) then
-        py = py - moveSpeed
-    end
+    -- Q/E removed: no vertical camera control here
 
     -- write position using transformSystem API
     transformSystem.setPosition(transform, px, py, pz)
 
-    -- handle rotations: yaw around world Z, pitch around local right
-    local newQx, newQy, newQz, newQw = qx, qy, qz, qw
-
-    if (input.getKeyState(input.keyCode.left) == input.inputState.down) then
-        -- yaw left (negative)
-        local ryx, ryy, ryz, ryw = quatFromAxisAngle(0, 0, 1, -rotateSpeed)
-        newQx, newQy, newQz, newQw = quatMul(ryx, ryy, ryz, ryw, newQx, newQy, newQz, newQw)
-    end
-    if (input.getKeyState(input.keyCode.right) == input.inputState.down) then
-        local ryx, ryy, ryz, ryw = quatFromAxisAngle(0, 0, 1, rotateSpeed)
-        newQx, newQy, newQz, newQw = quatMul(ryx, ryy, ryz, ryw, newQx, newQy, newQz, newQw)
-    end
-    if (input.getKeyState(input.keyCode.up) == input.inputState.down) then
-        -- pitch up around local right (positive)
-        local pxq, pyq, pzq, pwq = quatFromAxisAngle(rx, ry, rz, rotateSpeed)
-        newQx, newQy, newQz, newQw = quatMul(newQx, newQy, newQz, newQw, pxq, pyq, pzq, pwq)
-    end
-    if (input.getKeyState(input.keyCode.down) == input.inputState.down) then
-        local pxq, pyq, pzq, pwq = quatFromAxisAngle(rx, ry, rz, -rotateSpeed)
-        newQx, newQy, newQz, newQw = quatMul(newQx, newQy, newQz, newQw, pxq, pyq, pzq, pwq)
-    end
-
-    newQx, newQy, newQz, newQw = quatNormalize(newQx, newQy, newQz, newQw)
-    transformSystem.setRotation(transform, newQx, newQy, newQz, newQw)
+    -- rotation controls disabled per user request
 end
 
-return transformController
+return cameraTransformController

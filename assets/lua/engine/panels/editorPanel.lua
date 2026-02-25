@@ -7,6 +7,7 @@ local tknTextNode = require("engine.widgets.tknTextNode")
 local tknImageNode = require("engine.widgets.tknImageNode")
 
 local uiInspectorPanel = require("engine.panels.uiInspectorPanel")
+local luaInspectorPanel = require("engine.panels.luaInspectorPanel")
 local editorPanel = {}
 
 function editorPanel.create(pTknGfxContext, editorRootNode)
@@ -24,6 +25,10 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
             uiInspectorPanel.destroy(pTknGfxContext, panel.uiInspectorPanel)
             panel.uiInspectorPanel = nil
         end
+        if panel.debugInspectorPanel then
+            luaInspectorPanel.destroy(pTknGfxContext, panel.debugInspectorPanel)
+            panel.debugInspectorPanel = nil
+        end
     end
 
     local dropdownItems = {{
@@ -33,18 +38,27 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
             closeLastPanel(widget)
         end,
     }, {
+        name = "\xef\x85\x88 Debug",
+        onSelect = function(widget)
+            print("Add Debug Inspector selected")
+            closeLastPanel(widget)
+            panel.debugInspectorPanel = luaInspectorPanel.create(pTknGfxContext, panel.contentNode, 1)
+            luaInspectorPanel.bind(pTknGfxContext, panel.debugInspectorPanel, _G, "_G")
+        end,
+    }, {
         name = "\xef\x8b\x86 UI Inspector",
         onSelect = function(widget)
             closeLastPanel(widget)
             panel.uiInspectorPanel = uiInspectorPanel.create(pTknGfxContext, panel.contentNode, 1)
         end,
-    }, {
-        name = "\xee\xb5\x95 Asset Browser",
-        onSelect = function(widget)
-            print("Add Asset Browser selected")
-            closeLastPanel(widget)
-        end,
     } -- {
+    --     name = "\xee\xb5\x95 Asset Browser",
+    --     onSelect = function(widget)
+    --         print("Add Asset Browser selected")
+    --         closeLastPanel(widget)
+    --     end,
+    -- },
+    -- {
     --     name = "\xef\x87\xb9 Console",
     --     onSelect = function(widget)
     --         print("Add Console selected")
@@ -53,7 +67,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
     -- }
     }
 
-    panel.topBarDropdownWidget = tknDropdownWidget.addWidget(pTknGfxContext, "editorPanelDropdownWidget", panel.topBarBackgroundNode, 1, {
+    panel.topBarDropdownWidget = tknDropdownWidget.add(pTknGfxContext, "editorPanelDropdownWidget", panel.topBarBackgroundNode, 1, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
@@ -85,7 +99,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
 end
 
 function editorPanel.destroy(pTknGfxContext, panel)
-    tknDropdownWidget.removeWidget(pTknGfxContext, panel.topBarDropdownWidget)
+    tknDropdownWidget.remove(pTknGfxContext, panel.topBarDropdownWidget)
     panel.topBarDropdownWidget = nil
     uiInspectorPanel.destroy(pTknGfxContext, panel.uiInspectorPanel)
     panel.uiInspectorPanel = nil

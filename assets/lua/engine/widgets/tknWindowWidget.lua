@@ -10,7 +10,7 @@ local tknTextNode = require("engine.widgets.tknTextNode")
 local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknWindowWidget = {}
 
-function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, title)
+function tknWindowWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical, title)
     local widget = {}
     local defaultTransform = {
         rotation = 0,
@@ -19,7 +19,7 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
         color = nil,
         active = true,
     }
-    widget.dragWidget = tknDragWidget.addWidget(pTknGfxContext, "windowDragWidget", parent, index, horizontal, vertical)
+    widget.dragWidget = tknDragWidget.add(pTknGfxContext, "windowDragWidget", parent, index, horizontal, vertical)
 
     local relativeOrientation = {
         type = ui.layoutType.relative,
@@ -147,7 +147,7 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
 
     widget.titleNode = tknTextNode.addNode(pTknGfxContext, "titleNode", titleBackgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, title or "Window Title", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
 
-    -- widget.closeButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "closeButtonWidget", titleBackgroundNode, 2, {
+    -- widget.closeButtonWidget = tknButtonWidget.add(pTknGfxContext, "closeButtonWidget", titleBackgroundNode, 2, {
     --     type = ui.layoutType.anchored,
     --     anchor = 1,
     --     pivot = 1,
@@ -164,7 +164,7 @@ function tknWindowWidget.addWidget(pTknGfxContext, name, parent, index, horizont
     -- end)
     -- tknTextNode.addNode(pTknGfxContext, "closeButtonTextNode", widget.closeButtonWidget.backgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, "\xee\xae\x98", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
 
-    -- widget.fullScreenButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "fullScreenButtonWidget", titleBackgroundNode, 2, {
+    -- widget.fullScreenButtonWidget = tknButtonWidget.add(pTknGfxContext, "fullScreenButtonWidget", titleBackgroundNode, 2, {
     --     type = ui.layoutType.anchored,
     --     anchor = 1,
     --     pivot = 1,
@@ -195,10 +195,10 @@ function tknWindowWidget.updateWidget()
 
 end
 
-function tknWindowWidget.removeWidget(pTknGfxContext, widget)
-    -- tknButtonWidget.removeWidget(pTknGfxContext, widget.closeButtonWidget)
-    -- tknButtonWidget.removeWidget(pTknGfxContext, widget.fullScreenButtonWidget)
-    tknDragWidget.removeWidget(pTknGfxContext, widget.dragWidget)
+function tknWindowWidget.remove(pTknGfxContext, widget)
+    -- tknButtonWidget.remove(pTknGfxContext, widget.closeButtonWidget)
+    -- tknButtonWidget.remove(pTknGfxContext, widget.fullScreenButtonWidget)
+    tknDragWidget.remove(pTknGfxContext, widget.dragWidget)
     widget.dragWidget = nil
     widget.titleNode = nil
     widget.closeButtonWidget = nil

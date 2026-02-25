@@ -134,26 +134,28 @@ local function updateViewAndProj(camera, screenWidth, screenHeight)
     -- Up vector for Z-up
     local upX, upY, upZ = 0.0, 0.0, 1.0
 
-    local sx, sy, sz = tknMath.cross3D(fx, fy, fz, upX, upY, upZ)
+    -- Left-handed: right = cross(up, forward), up' = cross(forward, right)
+    local sx, sy, sz = tknMath.cross3D(upX, upY, upZ, fx, fy, fz)
     sx, sy, sz = tknMath.normalize3D(sx, sy, sz)
-    local ux, uy, uz = tknMath.cross3D(fx, fy, fz, sx, sy, sz)
+    -- try alternate up = cross(right, forward) to match engine handedness
+    local ux, uy, uz = tknMath.cross3D(sx, sy, sz, fx, fy, fz)
 
-    -- write view into existing camera.view array in-place
+    -- write view into existing camera.view array in-place (left-handed view)
     camera.view[1] = sx
     camera.view[2] = ux
-    camera.view[3] = -fx
+    camera.view[3] = fx
     camera.view[4] = 0
     camera.view[5] = sy
     camera.view[6] = uy
-    camera.view[7] = -fy
+    camera.view[7] = fy
     camera.view[8] = 0
     camera.view[9] = sz
     camera.view[10] = uz
-    camera.view[11] = -fz
+    camera.view[11] = fz
     camera.view[12] = 0
     camera.view[13] = -tknMath.dot3D(sx, sy, sz, eyeX, eyeY, eyeZ)
     camera.view[14] = -tknMath.dot3D(ux, uy, uz, eyeX, eyeY, eyeZ)
-    camera.view[15] = tknMath.dot3D(fx, fy, fz, eyeX, eyeY, eyeZ)
+    camera.view[15] = -tknMath.dot3D(fx, fy, fz, eyeX, eyeY, eyeZ)
     camera.view[16] = 1
 
     local aspect = screenWidth / screenHeight

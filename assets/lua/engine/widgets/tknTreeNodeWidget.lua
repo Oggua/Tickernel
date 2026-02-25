@@ -10,18 +10,20 @@ local tknTextNode = require("engine.widgets.tknTextNode")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknTreeNodeWidget = {}
 
-function tknTreeNodeWidget.addWidget(pTknGfxContext, parent, index, horizontal, vertical, contentString, onSelectedChange, onExpandedChange)
+function tknTreeNodeWidget.add(pTknGfxContext, parent, index, horizontal, vertical, contentString, onSelectedChange, onExpandedChange)
     local treeNodeWidget = {}
-    treeNodeWidget.selectedToggleWidget = tknToggleWidget.addWidget(pTknGfxContext, "selectedToggleNode", parent, index, horizontal, vertical, 1, function(widget, isOn)
-        if isOn then
-            ui.setImageOrTextNodeColor(treeNodeWidget.selectedToggleWidget.textNode, tknWidgetConfig.color.inverseSemiLighter)
-        else
-            ui.setImageOrTextNodeColor(treeNodeWidget.selectedToggleWidget.textNode, tknWidgetConfig.color.semiLighter)
-        end
-        if onSelectedChange then
+    local onValueChange = nil
+    if onSelectedChange then
+        onValueChange = function(widget, isOn)
+            if isOn then
+                ui.setImageOrTextNodeColor(treeNodeWidget.selectedToggleWidget.textNode, tknWidgetConfig.color.inverseSemiLighter)
+            else
+                ui.setImageOrTextNodeColor(treeNodeWidget.selectedToggleWidget.textNode, tknWidgetConfig.color.semiLighter)
+            end
             onSelectedChange(treeNodeWidget, isOn)
         end
-    end)
+    end
+    treeNodeWidget.selectedToggleWidget = tknToggleWidget.add(pTknGfxContext, "selectedToggleNode", parent, index, horizontal, vertical, 1, onValueChange)
     treeNodeWidget.selectedToggleWidget.textNode = tknTextNode.addNode(pTknGfxContext, "contentText", treeNodeWidget.selectedToggleWidget.backgroundNode, 2, {
         type = ui.layoutType.relative,
         pivot = 0,
@@ -33,7 +35,22 @@ function tknTreeNodeWidget.addWidget(pTknGfxContext, parent, index, horizontal, 
     local expandedString = "\xee\xa9\x8e"
     local collapsedString = "\xee\xa9\xae"
     local noChildrenString = "-"
-    treeNodeWidget.expandedButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, "expandedButtonWidget", treeNodeWidget.selectedToggleWidget.backgroundNode, 3, {
+
+    local onClick = nil
+    if onExpandedChange then
+        onClick = function(widget)
+            if widget.isOn then
+                widget.isOn = false
+                ui.setTextString(widget.textNode, collapsedString)
+            else
+                widget.isOn = true
+                ui.setTextString(widget.textNode, expandedString)
+            end
+            onExpandedChange(treeNodeWidget, widget.isOn)
+        end
+    end
+
+    treeNodeWidget.expandedButtonWidget = tknButtonWidget.add(pTknGfxContext, "expandedButtonWidget", treeNodeWidget.selectedToggleWidget.backgroundNode, 3, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
@@ -45,18 +62,8 @@ function tknTreeNodeWidget.addWidget(pTknGfxContext, parent, index, horizontal, 
         pivot = 0.5,
         length = tknWidgetConfig.smallInteractableWidth,
         offset = 0,
-    }, function(widget)
-        if onExpandedChange then
-            if widget.isOn then
-                widget.isOn = false
-                ui.setTextString(widget.textNode, collapsedString)
-            else
-                widget.isOn = true
-                ui.setTextString(widget.textNode, expandedString)
-            end
-            onExpandedChange(treeNodeWidget, widget.isOn)
-        end
-    end)
+    }, onClick)
+
     if onExpandedChange then
         treeNodeWidget.expandedButtonWidget.textNode = tknTextNode.addNode(pTknGfxContext, "buttonTextNode", treeNodeWidget.expandedButtonWidget.backgroundNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, collapsedString, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
     else
@@ -76,9 +83,9 @@ function tknTreeNodeWidget.addWidget(pTknGfxContext, parent, index, horizontal, 
     return treeNodeWidget
 end
 
-function tknTreeNodeWidget.removeWidget(pTknGfxContext, treeNodeWidget)
-    tknButtonWidget.removeWidget(pTknGfxContext, treeNodeWidget.expandedButtonWidget)
-    tknToggleWidget.removeWidget(pTknGfxContext, treeNodeWidget.selectedToggleWidget)
+function tknTreeNodeWidget.remove(pTknGfxContext, treeNodeWidget)
+    tknButtonWidget.remove(pTknGfxContext, treeNodeWidget.expandedButtonWidget)
+    tknToggleWidget.remove(pTknGfxContext, treeNodeWidget.selectedToggleWidget)
     treeNodeWidget.selectedToggleWidget = nil
     treeNodeWidget.expandedButtonWidget = nil
     treeNodeWidget.bottomInteractionNode = nil

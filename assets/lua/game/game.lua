@@ -4,11 +4,9 @@ local ui = require("ui.ui")
 local tkn = require("tkn")
 local tknMath = require("tknMath")
 local input = require("input")
-local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 
-function game.start(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment, renderPassIndex, assetsPath, rootUINode)
-    deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, pDepthStencilAttachment, pSwapchainAttachment)
+function game.start(pTknGfxContext, assetsPath, rootUINode)
     game.assetsPath = assetsPath
     game.currentScene = mainScene
     game.nextScene = mainScene
@@ -23,7 +21,6 @@ end
 function game.stopGfx(pTknGfxContext)
     game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
-    deferredRenderPass.teardown(pTknGfxContext)
 end
 
 function game.update()
@@ -52,11 +49,7 @@ function game.switchScene(nextScene)
 end
 
 function game.recordFrame(pTknGfxContext, pTknFrame)
-    tkn.tknBeginRenderPassPtr(pTknGfxContext, pTknFrame, deferredRenderPass.pTknRenderPass)
     game.currentScene.recordFrame(game, pTknGfxContext, pTknFrame)
-    tkn.tknNextSubpassPtr(pTknGfxContext, pTknFrame)
-    tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, deferredRenderPass.pLightingDrawCall)
-    tkn.tknEndRenderPassPtr(pTknGfxContext, pTknFrame)
 end
 
 return game

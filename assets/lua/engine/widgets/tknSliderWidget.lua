@@ -5,7 +5,7 @@ local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknSliderWidget = {}
 
-function tknSliderWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, orientationType, handleLength, onValueChange)
+function tknSliderWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical, orientationType, handleLength, onValueChange)
     local widget = {}
     widget.orientationType = orientationType
     widget.onValueChange = onValueChange
@@ -181,7 +181,7 @@ function tknSliderWidget.setValue(widget, value)
     end
 end
 
-function tknSliderWidget.removeWidget(pTknGfxContext, widget)
+function tknSliderWidget.remove(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.sliderNode)
     widget.sliderNode = nil
     widget.backgroundNode = nil

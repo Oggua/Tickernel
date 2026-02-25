@@ -37,7 +37,7 @@ local function removeFieldNodeWidgetChildren(pTknGfxContext, panel, index)
     local parentFields = panel.fieldTreeNodeWidgets[index].fields
     while index + 1 <= #panel.fieldTreeNodeWidgets and isChildOfFieldNode(panel.fieldTreeNodeWidgets[index + 1].fields, parentFields) do
         local w = table.remove(panel.fieldTreeNodeWidgets, index + 1)
-        tknTreeNodeWidget.removeWidget(pTknGfxContext, w)
+        tknTreeNodeWidget.remove(pTknGfxContext, w)
     end
     for i = index + 1, #panel.fieldTreeNodeWidgets do
         ui.setNodeOrientation(panel.fieldTreeNodeWidgets[i].selectedToggleWidget.toggleNode, ui.orientationType.vertical, {
@@ -121,7 +121,7 @@ local function addFieldTreeNodeWidget(pTknGfxContext, panel, node, fields, index
             })
         end
     end
-    local treeNodeWidget = tknTreeNodeWidget.addWidget(pTknGfxContext, panel.fieldTreeScrollViewWidget.contentNode, index, {
+    local treeNodeWidget = tknTreeNodeWidget.add(pTknGfxContext, panel.fieldTreeScrollViewWidget.contentNode, index, {
         type = ui.layoutType.relative,
         pivot = 0,
         minOffset = 0,
@@ -149,7 +149,7 @@ local function showSelectedNode(pTknGfxContext, panel, node)
     else
         while #panel.fieldTreeNodeWidgets > 0 do
             local w = table.remove(panel.fieldTreeNodeWidgets)
-            tknTreeNodeWidget.removeWidget(pTknGfxContext, w)
+            tknTreeNodeWidget.remove(pTknGfxContext, w)
         end
     end
 end
@@ -158,7 +158,7 @@ local function removeUINodeWidgetChildren(pTknGfxContext, panel, index)
     local parentNode = panel.treeNodeWidgets[index].node
     while index + 1 <= #panel.treeNodeWidgets and isChildOfNode(panel.treeNodeWidgets[index + 1].node, parentNode) do
         local w = table.remove(panel.treeNodeWidgets, index + 1)
-        tknTreeNodeWidget.removeWidget(pTknGfxContext, w)
+        tknTreeNodeWidget.remove(pTknGfxContext, w)
         if panel.selectedTreeNodeWidget == w then
             panel.selectedTreeNodeWidget = nil
             showSelectedNode(pTknGfxContext, panel, nil)
@@ -231,7 +231,7 @@ local function addUINodeWidget(pTknGfxContext, panel, node, index)
             end
         end
     end
-    local treeNodeWidget = tknTreeNodeWidget.addWidget(pTknGfxContext, panel.uiTreeScrollViewWidget.contentNode, index, {
+    local treeNodeWidget = tknTreeNodeWidget.add(pTknGfxContext, panel.uiTreeScrollViewWidget.contentNode, index, {
         type = ui.layoutType.relative,
         pivot = 0,
         minOffset = 0,
@@ -261,7 +261,7 @@ end
 function uiInspectorPanel.create(pTknGfxContext, parent, index)
     local panel = {}
 
-    panel.uiTreeInspectorWindowWidget = tknWindowWidget.addWidget(pTknGfxContext, "uiTreeWindowNode", parent, index, {
+    panel.uiTreeInspectorWindowWidget = tknWindowWidget.add(pTknGfxContext, "uiTreeWindowNode", parent, index, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
@@ -269,7 +269,7 @@ function uiInspectorPanel.create(pTknGfxContext, parent, index)
         offset = 0,
     }, tknWidgetConfig.fullRelativeOrientation, "\xee\xbe\x90 UI Tree Inspector")
 
-    panel.uiTreeScrollViewWidget = tknScrollViewWidget.addWidget(pTknGfxContext, "uiTreeScrollViewNode", panel.uiTreeInspectorWindowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, {
+    panel.uiTreeScrollViewWidget = tknScrollViewWidget.add(pTknGfxContext, "uiTreeScrollViewNode", panel.uiTreeInspectorWindowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
@@ -288,14 +288,14 @@ function uiInspectorPanel.create(pTknGfxContext, parent, index)
         offset = 0,
     })
 
-    panel.fieldInspectorWindowWidget = tknWindowWidget.addWidget(pTknGfxContext, "uiNodeInspectorWindowNode", parent, index, {
+    panel.fieldInspectorWindowWidget = tknWindowWidget.add(pTknGfxContext, "uiNodeInspectorWindowNode", parent, index, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
         length = 1024,
         offset = 0,
     }, tknWidgetConfig.fullRelativeOrientation, "\xee\xa9\xbe UI Field Inspector")
-    panel.fieldTreeScrollViewWidget = tknScrollViewWidget.addWidget(pTknGfxContext, "uiNodeInspectorScrollViewNode", panel.fieldInspectorWindowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, {
+    panel.fieldTreeScrollViewWidget = tknScrollViewWidget.add(pTknGfxContext, "uiNodeInspectorScrollViewNode", panel.fieldInspectorWindowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
@@ -314,19 +314,19 @@ function uiInspectorPanel.destroy(pTknGfxContext, panel)
     if panel.treeNodeWidgets then
         for i = #panel.treeNodeWidgets, 1, -1 do
             local widget = panel.treeNodeWidgets[i]
-            tknTreeNodeWidget.removeWidget(pTknGfxContext, widget)
+            tknTreeNodeWidget.remove(pTknGfxContext, widget)
             panel.treeNodeWidgets[i] = nil
         end
     end
     panel.selectedTreeNodeWidget = nil
 
-    tknScrollViewWidget.removeWidget(pTknGfxContext, panel.uiTreeScrollViewWidget)
+    tknScrollViewWidget.remove(pTknGfxContext, panel.uiTreeScrollViewWidget)
     panel.uiTreeScrollViewWidget = nil
 
-    tknWindowWidget.removeWidget(pTknGfxContext, panel.uiTreeInspectorWindowWidget)
+    tknWindowWidget.remove(pTknGfxContext, panel.uiTreeInspectorWindowWidget)
     panel.uiTreeInspectorWindowWidget = nil
 
-    tknWindowWidget.removeWidget(pTknGfxContext, panel.fieldInspectorWindowWidget)
+    tknWindowWidget.remove(pTknGfxContext, panel.fieldInspectorWindowWidget)
     panel.fieldInspectorWindowWidget = nil
 end
 

@@ -257,7 +257,7 @@ local function getActiveInteractableInputNode(node, xNdc, yNdc, inputState)
                 return foundNode
             end
         end
-        if node and node.type == "interactableNode" and ui.rectContainsPoint(node.rect, xNdc, yNdc) then
+        if node and node.type == "interactableNode" and node.processInput and ui.rectContainsPoint(node.rect, xNdc, yNdc) then
             return node
         else
             return nil

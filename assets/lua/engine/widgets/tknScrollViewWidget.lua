@@ -6,7 +6,7 @@ local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknScrollViewWidget = {}
 
-function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, contentNodeHorizontal, contentNodeVertical)
+function tknScrollViewWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical, contentNodeHorizontal, contentNodeVertical)
     local widget = {}
     local startX, startY = nil, nil
     local processInput = function(node, xNdc, yNdc, inputState)
@@ -35,25 +35,24 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
             return false
         end
     end
-    local defaultTransform = {
-        rotation = 0,
-        horizontalScale = 1,
-        verticalScale = 1,
-        color = nil,
-        active = true,
-    }
-    widget.scrollViewNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, defaultTransform)
+    widget.scrollViewNode = ui.addInteractableNode(pTknGfxContext, processInput, parent, index, name, horizontal, vertical, tknWidgetConfig.defaultTransform)
 
-    widget.scrollViewBackgroundNode = tknImageNode.addNode(pTknGfxContext, "scrollViewBackground", widget.scrollViewNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, defaultTransform, tknWidgetConfig.color.semiDark, true, true)
+    widget.scrollViewBackgroundNode = tknImageNode.addNode(pTknGfxContext, "scrollViewBackground", widget.scrollViewNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, tknWidgetConfig.color.semiDark, true, true)
 
-    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", contentNodeHorizontal, contentNodeVertical, defaultTransform)
+    widget.contentNode = ui.addNode(pTknGfxContext, widget.scrollViewBackgroundNode, 1, "scrollViewContent", contentNodeHorizontal, contentNodeVertical, tknWidgetConfig.defaultTransform)
 
     local onRightSliderValueChange = function(value)
-        widget.contentNode.vertical.anchor = value
-        widget.contentNode.vertical.pivot = value
-        ui.setNodeOrientation(widget.contentNode, ui.orientationType.vertical, widget.contentNode.vertical)
+        if widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min >= widget.scrollViewBackgroundNode.rect.vertical.max - widget.scrollViewBackgroundNode.rect.vertical.min then
+            widget.contentNode.vertical.anchor = value
+            widget.contentNode.vertical.pivot = value
+            ui.setNodeOrientation(widget.contentNode, ui.orientationType.vertical, widget.contentNode.vertical)
+        else
+            widget.contentNode.vertical.anchor = 0
+            widget.contentNode.vertical.pivot = 0
+            ui.setNodeOrientation(widget.contentNode, ui.orientationType.vertical, widget.contentNode.vertical)
+        end
     end
-    widget.rightSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
+    widget.rightSliderWidget = tknSliderWidget.add(pTknGfxContext, "rightScrollViewSlider", widget.scrollViewBackgroundNode, 2, {
         type = ui.layoutType.anchored,
         anchor = 1,
         pivot = 1,
@@ -68,11 +67,18 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
     }, ui.orientationType.vertical, 0, onRightSliderValueChange)
 
     local onBottomSliderValueChange = function(value)
-        widget.contentNode.horizontal.anchor = value
-        widget.contentNode.horizontal.pivot = value
-        ui.setNodeOrientation(widget.contentNode, ui.orientationType.horizontal, widget.contentNode.horizontal)
+        if widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min >= widget.scrollViewBackgroundNode.rect.horizontal.max - widget.scrollViewBackgroundNode.rect.horizontal.min then
+            widget.contentNode.horizontal.anchor = value
+            widget.contentNode.horizontal.pivot = value
+            ui.setNodeOrientation(widget.contentNode, ui.orientationType.horizontal, widget.contentNode.horizontal)
+        else
+            widget.contentNode.horizontal.anchor = 0
+            widget.contentNode.horizontal.pivot = 0
+            ui.setNodeOrientation(widget.contentNode, ui.orientationType.horizontal, widget.contentNode.horizontal)
+        end
+
     end
-    widget.bottomSliderWidget = tknSliderWidget.addWidget(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
+    widget.bottomSliderWidget = tknSliderWidget.add(pTknGfxContext, "bottomScrollViewSlider", widget.scrollViewBackgroundNode, 3, {
         type = ui.layoutType.relative,
         pivot = 0.5,
         minOffset = 0,
@@ -104,17 +110,18 @@ function tknScrollViewWidget.addWidget(pTknGfxContext, name, parent, index, hori
     return widget
 end
 
-function tknScrollViewWidget.removeWidget(pTknGfxContext, widget)
+function tknScrollViewWidget.remove(pTknGfxContext, widget)
     ui.removePostUpdateGfxCallback(widget.postUpdateGfxCallback)
     widget.postUpdateGfxCallback = nil
-    tknSliderWidget.removeWidget(pTknGfxContext, widget.bottomSliderWidget)
-    tknSliderWidget.removeWidget(pTknGfxContext, widget.rightSliderWidget)
+    tknSliderWidget.remove(pTknGfxContext, widget.bottomSliderWidget)
+    tknSliderWidget.remove(pTknGfxContext, widget.rightSliderWidget)
     ui.removeNode(pTknGfxContext, widget.scrollViewNode)
     widget.scrollViewNode = nil
     widget.scrollViewBackgroundNode = nil
 end
 
 function tknScrollViewWidget.setContentOrientation(widget, orientationType, orientation)
+
     ui.setNodeOrientation(widget.contentNode, orientationType, orientation)
     widget.handleLengthDirty = true
 end

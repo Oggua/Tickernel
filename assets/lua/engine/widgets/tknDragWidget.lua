@@ -4,7 +4,7 @@ local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknDragWidget = {}
 
-function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical)
+function tknDragWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical)
     local widget = {}
     local dragState = {
         active = false,
@@ -101,7 +101,7 @@ function tknDragWidget.addWidget(pTknGfxContext, name, parent, index, horizontal
     return widget
 end
 
-function tknDragWidget.removeWidget(pTknGfxContext, widget)
+function tknDragWidget.remove(pTknGfxContext, widget)
     ui.removeNode(pTknGfxContext, widget.dragNode)
     widget.dragNode = nil
     widget.backgroundNode = nil

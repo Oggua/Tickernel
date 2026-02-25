@@ -6,11 +6,11 @@ local tknTextNode = require("engine.widgets.tknTextNode")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknDropdownWidget = {}
 
-function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizontal, vertical, items)
+function tknDropdownWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical, items)
     local widget = {}
     widget.selectedIndex = 1
     widget.items = items
-    widget.buttonWidget = tknButtonWidget.addWidget(pTknGfxContext, name .. "buttonNode", parent, index, horizontal, vertical, function(buttonWidget)
+    widget.buttonWidget = tknButtonWidget.add(pTknGfxContext, name .. "buttonNode", parent, index, horizontal, vertical, function(buttonWidget)
         ui.setNodeTransformActive(widget.backgroundNode, not widget.backgroundNode.transform.active)
     end)
     local paddedRelativeOrientation = {
@@ -49,7 +49,7 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
 
     widget.itemButtonWidgets = {}
     for i, item in ipairs(widget.items) do
-        local itemButtonWidget = tknButtonWidget.addWidget(pTknGfxContext, name .. "ButtonNode" .. i, widget.backgroundNode, i, paddedRelativeOrientation, {
+        local itemButtonWidget = tknButtonWidget.add(pTknGfxContext, name .. "ButtonNode" .. i, widget.backgroundNode, i, paddedRelativeOrientation, {
             type = ui.layoutType.anchored,
             anchor = 0,
             pivot = 0,
@@ -77,12 +77,12 @@ function tknDropdownWidget.addWidget(pTknGfxContext, name, parent, index, horizo
     return widget
 end
 
-function tknDropdownWidget.removeWidget(pTknGfxContext, widget)
+function tknDropdownWidget.remove(pTknGfxContext, widget)
     for _, itemButtonWidget in ipairs(widget.itemButtonWidgets) do
-        tknButtonWidget.removeWidget(pTknGfxContext, itemButtonWidget)
+        tknButtonWidget.remove(pTknGfxContext, itemButtonWidget)
     end
 
-    tknButtonWidget.removeWidget(pTknGfxContext, widget.buttonWidget)
+    tknButtonWidget.remove(pTknGfxContext, widget.buttonWidget)
     -- Clear references
     widget.itemButtonWidgets = nil
     widget.buttonWidget = nil
