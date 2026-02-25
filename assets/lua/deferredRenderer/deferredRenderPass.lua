@@ -1,4 +1,5 @@
 local tkn = require("tkn")
+local vulkan = require("vulkan")
 local geometryPipeline = require("deferredRenderer.geometryPipeline")
 local lightingPipeline = require("deferredRenderer.lightingPipeline")
 local deferredRenderPass = {}
@@ -52,46 +53,46 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         count = 1,
     }}
 
-    deferredRenderPass.pAlbedoAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
-    deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT, 1)
+    deferredRenderPass.pAlbedoAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vulkan.VK_FORMAT_R8G8B8A8_UNORM, vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, vulkan.VK_IMAGE_ASPECT_COLOR_BIT, 1)
+    deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vulkan.VK_FORMAT_A2R10G10B10_UNORM_PACK32, vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, vulkan.VK_IMAGE_ASPECT_COLOR_BIT, 1)
 
     local pAttachments = {pDepthStencilAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, pSwapchainAttachment}
 
     local depthAttachmentDescription = {
-        samples = VK_SAMPLE_COUNT_1_BIT,
-        loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        samples = vulkan.VK_SAMPLE_COUNT_1_BIT,
+        loadOp = vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR,
+        storeOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        stencilLoadOp = vulkan.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        stencilStoreOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        initialLayout = vulkan.VK_IMAGE_LAYOUT_UNDEFINED,
+        finalLayout = vulkan.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
     local albedoAttachmentDescription = {
-        samples = VK_SAMPLE_COUNT_1_BIT,
-        loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        samples = vulkan.VK_SAMPLE_COUNT_1_BIT,
+        loadOp = vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR,
+        storeOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        stencilLoadOp = vulkan.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        stencilStoreOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        initialLayout = vulkan.VK_IMAGE_LAYOUT_UNDEFINED,
+        finalLayout = vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
     local normalAttachmentDescription = {
-        samples = VK_SAMPLE_COUNT_1_BIT,
-        loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        samples = vulkan.VK_SAMPLE_COUNT_1_BIT,
+        loadOp = vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR,
+        storeOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        stencilLoadOp = vulkan.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        stencilStoreOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        initialLayout = vulkan.VK_IMAGE_LAYOUT_UNDEFINED,
+        finalLayout = vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
     local swapchainAttachmentDescription = {
-        samples = VK_SAMPLE_COUNT_1_BIT,
-        loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        samples = vulkan.VK_SAMPLE_COUNT_1_BIT,
+        loadOp = vulkan.VK_ATTACHMENT_LOAD_OP_CLEAR,
+        storeOp = vulkan.VK_ATTACHMENT_STORE_OP_STORE,
+        stencilLoadOp = vulkan.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        stencilStoreOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        initialLayout = vulkan.VK_IMAGE_LAYOUT_UNDEFINED,
+        finalLayout = vulkan.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     };
 
     local vkAttachmentDescriptions = {depthAttachmentDescription, albedoAttachmentDescription, normalAttachmentDescription, swapchainAttachmentDescription};
@@ -102,37 +103,37 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     }, {0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0, 1.0}, {0.15, 0.28, 0.20, 1.0}};
 
     local geometrySubpassDescription = {
-        pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineBindPoint = vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
         pInputAttachments = {},
         pColorAttachments = {{
             attachment = 1,
-            layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         }, {
             attachment = 2,
-            layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         }},
         pDepthStencilAttachment = {
             attachment = 0,
-            layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         },
         pPreserveAttachments = {},
     }
 
     local ligthtingSubpassDescription = {
-        pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        pipelineBindPoint = vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
         pInputAttachments = {{
             attachment = 0,
-            layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
         }, {
             attachment = 1,
-            layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         }, {
             attachment = 2,
-            layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         }},
         pColorAttachments = {{
             attachment = 3,
-            layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            layout = vulkan.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         }},
         pResolveAttachments = {},
         pDepthStencilAttachment = nil,
@@ -144,29 +145,29 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     local spvPathsArray = {{assetsPath .. "/shaders/geometry.subpass.vert.spv"}, {assetsPath .. "/shaders/lighting.subpass.frag.spv"}}
 
     local vkSubpassDependencies = {{
-        srcSubpass = VK_SUBPASS_EXTERNAL,
+        srcSubpass = vulkan.VK_SUBPASS_EXTERNAL,
         dstSubpass = 0,
-        srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-        dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-        srcAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-        dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
+        srcStageMask = vulkan.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        dstStageMask = vulkan.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | vulkan.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+        srcAccessMask = vulkan.VK_ACCESS_MEMORY_READ_BIT,
+        dstAccessMask = vulkan.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | vulkan.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        dependencyFlags = vulkan.VK_DEPENDENCY_BY_REGION_BIT,
     }, {
         srcSubpass = 0,
         dstSubpass = 1,
-        srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-        dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
+        srcStageMask = vulkan.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | vulkan.VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        dstStageMask = vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        srcAccessMask = vulkan.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | vulkan.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        dstAccessMask = vulkan.VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+        dependencyFlags = vulkan.VK_DEPENDENCY_BY_REGION_BIT,
     }, {
         srcSubpass = 1,
-        dstSubpass = VK_SUBPASS_EXTERNAL,
-        srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-        srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-        dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
+        dstSubpass = vulkan.VK_SUBPASS_EXTERNAL,
+        srcStageMask = vulkan.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        dstStageMask = vulkan.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        srcAccessMask = vulkan.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        dstAccessMask = vulkan.VK_ACCESS_MEMORY_READ_BIT,
+        dependencyFlags = vulkan.VK_DEPENDENCY_BY_REGION_BIT,
     }}
     deferredRenderPass.pTknRenderPass = tkn.tknCreateRenderPassPtr(pTknGfxContext, vkAttachmentDescriptions, pAttachments, vkClearValues, vkSubpassDescriptions, spvPathsArray, vkSubpassDependencies, renderPassIndex)
 
@@ -180,7 +181,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     }
     deferredRenderPass.pGeometryUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, deferredRenderPass.geometryUniformBufferFormat, geometryUniformBuffer)
     local geometryInputBindings = {{
-        vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         pTknUniformBuffer = deferredRenderPass.pGeometryUniformBuffer,
         binding = 0,
     }}
@@ -205,7 +206,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     -- Bind lights uniform buffer to lighting subpass material
     deferredRenderPass.pLightingSubpassMaterial = tkn.tknGetSubpassMaterialPtr(pTknGfxContext, deferredRenderPass.pTknRenderPass, 1)
     local lightingInputBindings = {{
-        vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         pTknUniformBuffer = deferredRenderPass.pLightsUniformBuffer,
         binding = 3,
     }}

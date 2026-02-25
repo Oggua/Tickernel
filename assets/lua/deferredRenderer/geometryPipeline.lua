@@ -1,17 +1,17 @@
-require("vulkan")
+local vulkan = require("vulkan")
 local tkn = require("tkn")
 local geometryPipeline = {}
 function geometryPipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subpassIndex, assetsPath, pTknMeshVertexInputLayout, pInstanceVertexInputLayout)
     local geometryPipelineSpvPaths = {assetsPath .. "/shaders/opaqueGeometry.vert.spv", assetsPath .. "/shaders/opaqueGeometry.frag.spv"}
     local vkPipelineInputAssemblyStateCreateInfo = {
-        topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+        topology = vulkan.VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
         primitiveRestartEnable = false,
     }
 
     local vkPipelineDepthStencilStateCreateInfo = {
         depthTestEnable = true,
         depthWriteEnable = true,
-        depthCompareOp = VK_COMPARE_OP_LESS,
+        depthCompareOp = vulkan.VK_COMPARE_OP_LESS,
         depthBoundsTestEnable = false,
         stencilTestEnable = false,
         minDepthBounds = 0.0,
@@ -19,25 +19,25 @@ function geometryPipeline.createPipelinePtr(pTknGfxContext, pTknRenderPass, subp
     }
     local vkPipelineColorBlendStateCreateInfo = {
         logicOpEnable = false,
-        logicOp = VK_LOGIC_OP_COPY,
+        logicOp = vulkan.VK_LOGIC_OP_COPY,
         pAttachments = {{
             blendEnable = true,
-            srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-            dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-            colorBlendOp = VK_BLEND_OP_ADD,
-            srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-            alphaBlendOp = VK_BLEND_OP_ADD,
-            colorWriteMask = VK_COLOR_COMPONENT_A_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT,
+            srcColorBlendFactor = vulkan.VK_BLEND_FACTOR_ONE,
+            dstColorBlendFactor = vulkan.VK_BLEND_FACTOR_ZERO,
+            colorBlendOp = vulkan.VK_BLEND_OP_ADD,
+            srcAlphaBlendFactor = vulkan.VK_BLEND_FACTOR_ONE,
+            dstAlphaBlendFactor = vulkan.VK_BLEND_FACTOR_ZERO,
+            alphaBlendOp = vulkan.VK_BLEND_OP_ADD,
+            colorWriteMask = vulkan.VK_COLOR_COMPONENT_A_BIT | vulkan.VK_COLOR_COMPONENT_R_BIT | vulkan.VK_COLOR_COMPONENT_G_BIT | vulkan.VK_COLOR_COMPONENT_B_BIT,
         }, {
             blendEnable = true,
-            srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-            dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
-            colorBlendOp = VK_BLEND_OP_ADD,
-            srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-            alphaBlendOp = VK_BLEND_OP_ADD,
-            colorWriteMask = VK_COLOR_COMPONENT_A_BIT | VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT,
+            srcColorBlendFactor = vulkan.VK_BLEND_FACTOR_ONE,
+            dstColorBlendFactor = vulkan.VK_BLEND_FACTOR_ZERO,
+            colorBlendOp = vulkan.VK_BLEND_OP_ADD,
+            srcAlphaBlendFactor = vulkan.VK_BLEND_FACTOR_ONE,
+            dstAlphaBlendFactor = vulkan.VK_BLEND_FACTOR_ZERO,
+            alphaBlendOp = vulkan.VK_BLEND_OP_ADD,
+            colorWriteMask = vulkan.VK_COLOR_COMPONENT_A_BIT | vulkan.VK_COLOR_COMPONENT_R_BIT | vulkan.VK_COLOR_COMPONENT_G_BIT | vulkan.VK_COLOR_COMPONENT_B_BIT,
         }},
         blendConstants = {0.0, 0.0, 0.0, 0.0},
     }

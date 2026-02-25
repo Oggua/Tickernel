@@ -2,7 +2,7 @@
 -- This file provides type hints and documentation for the tkn module
 -- Actual implementations are provided by C bindings
 -- Initialize tkn table if not already loaded by C bindings
-require("vulkan")
+local vulkan = require("vulkan")
 local tkn = _G.tkn
 
 tkn.defaultVkPipelineViewportStateCreateInfo = {
@@ -27,7 +27,7 @@ tkn.defaultVkPipelineViewportStateCreateInfo = {
 }
 
 tkn.defaultVkPipelineMultisampleStateCreateInfo = {
-    rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+    rasterizationSamples = vulkan.VK_SAMPLE_COUNT_1_BIT,
     sampleShadingEnable = false,
     minSampleShading = 0,
     pSampleMask = nil,
@@ -36,15 +36,15 @@ tkn.defaultVkPipelineMultisampleStateCreateInfo = {
 }
 
 tkn.defaultVkPipelineDynamicStateCreateInfo = {
-    pDynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR},
+    pDynamicStates = {vulkan.VK_DYNAMIC_STATE_VIEWPORT, vulkan.VK_DYNAMIC_STATE_SCISSOR},
 }
 
 tkn.defaultVkPipelineRasterizationStateCreateInfo = {
     depthClampEnable = false,
     rasterizerDiscardEnable = false,
-    polygonMode = VK_POLYGON_MODE_FILL,
-    cullMode = VK_CULL_MODE_NONE,
-    frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+    polygonMode = vulkan.VK_POLYGON_MODE_FILL,
+    cullMode = vulkan.VK_CULL_MODE_NONE,
+    frontFace = vulkan.VK_FRONT_FACE_COUNTER_CLOCKWISE,
     depthBiasEnable = false,
     depthBiasConstantFactor = 0.0,
     depthBiasClamp = 0.0,
@@ -72,7 +72,7 @@ function tkn.tknCreateImagePtrWithPath(tknContext, path)
                 height = height,
                 depth = 1,
             }
-            local pTknImage = tkn.tknCreateImagePtr(tknContext, vkExtent3D, vkFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TEXTURE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT, data)
+            local pTknImage = tkn.tknCreateImagePtr(tknContext, vkExtent3D, vkFormat, vulkan.VK_IMAGE_TILING_OPTIMAL, vulkan.VK_IMAGE_USAGE_TEXTURE_BIT | vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT, vulkan.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vulkan.VK_IMAGE_ASPECT_COLOR_BIT, data)
             tkn.tknDestroyASTCImage(pASTC)
             return pTknImage, width, height
         else
@@ -139,7 +139,7 @@ if not tkn.tknGetSupportedFormat then
     ---@param candidates table List of VkFormat candidates to test
     ---@param tiling integer VkImageTiling mode (LINEAR or OPTIMAL)
     ---@param features integer Required VkFormatFeatureFlags
-    ---@return integer Supported VkFormat, or VK_FORMAT_UNDEFINED if none match
+    ---@return integer Supported VkFormat, or vulkan.VK_FORMAT_UNDEFINED if none match
     function tkn.tknGetSupportedFormat(pTknGfxContext, candidates, tiling, features)
         error("tkn.tknGetSupportedFormat: C binding not loaded")
     end
@@ -149,8 +149,8 @@ if not tkn.tknCreateDynamicAttachmentPtr then
     ---Create a dynamically-scaled render attachment
     ---@param pTknGfxContext lightuserdata Graphics context pointer
     ---@param vkFormat integer VkFormat for the attachment
-    ---@param vkImageUsageFlags integer Usage flags (e.g., VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-    ---@param vkImageAspectFlags integer Aspect flags (e.g., VK_IMAGE_ASPECT_COLOR_BIT)
+    ---@param vkImageUsageFlags integer Usage flags (e.g., vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+    ---@param vkImageAspectFlags integer Aspect flags (e.g., vulkan.VK_IMAGE_ASPECT_COLOR_BIT)
     ---@param scaler number Scale factor (0.0-1.0) relative to swapchain size
     ---@return lightuserdata TknAttachment pointer
     function tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vkFormat, vkImageUsageFlags, vkImageAspectFlags, scaler)
@@ -597,7 +597,7 @@ if not tkn.tknSetStencilCompareMask then
     ---Set stencil compare mask for a frame
     ---@param pTknGfxContext lightuserdata Graphics context pointer
     ---@param pTknFrame lightuserdata Frame pointer
-    ---@param faceMask integer VkStencilFaceFlags (e.g., VK_STENCIL_FACE_FRONT_AND_BACK)
+    ---@param faceMask integer VkStencilFaceFlags (e.g., vulkan.VK_STENCIL_FACE_FRONT_AND_BACK)
     ---@param compareMask integer Compare mask value
     function tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, faceMask, compareMask)
         error("tkn.tknSetStencilCompareMask: C binding not loaded")
@@ -608,7 +608,7 @@ if not tkn.tknSetStencilWriteMask then
     ---Set stencil write mask for a frame
     ---@param pTknGfxContext lightuserdata Graphics context pointer
     ---@param pTknFrame lightuserdata Frame pointer
-    ---@param faceMask integer VkStencilFaceFlags (e.g., VK_STENCIL_FACE_FRONT_AND_BACK)
+    ---@param faceMask integer VkStencilFaceFlags (e.g., vulkan.VK_STENCIL_FACE_FRONT_AND_BACK)
     ---@param writeMask integer Write mask value
     function tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, faceMask, writeMask)
         error("tkn.tknSetStencilWriteMask: C binding not loaded")
@@ -619,7 +619,7 @@ if not tkn.tknSetStencilReference then
     ---Set stencil reference value for a frame
     ---@param pTknGfxContext lightuserdata Graphics context pointer
     ---@param pTknFrame lightuserdata Frame pointer
-    ---@param faceMask integer VkStencilFaceFlags (e.g., VK_STENCIL_FACE_FRONT_AND_BACK)
+    ---@param faceMask integer VkStencilFaceFlags (e.g., vulkan.VK_STENCIL_FACE_FRONT_AND_BACK)
     ---@param reference integer Reference value
     function tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, faceMask, reference)
         error("tkn.tknSetStencilReference: C binding not loaded")

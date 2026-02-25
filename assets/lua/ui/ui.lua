@@ -7,7 +7,7 @@ local interactableNode = require("ui.interactableNode")
 local uiRenderPass = require("ui.uiRenderPass")
 local input = require("input")
 local colorPreset = require("ui.colorPreset")
-
+local vulkan = require("vulkan")
 local function calculateOrientation(node, key, screenLength)
     local orientation = node[key]
     local parentLengthNdc = node.parent and (node.parent.rect[key].max - node.parent.rect[key].min) or 2
@@ -440,7 +440,7 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment,
 
     uiRenderPass.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment, assetsPath, ui.vertexFormat.pTknVertexInputLayout, ui.instanceFormat.pTknVertexInputLayout, renderPassIndex)
 
-    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 0.0, false, 0.0, 0.0, 0.0, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
+    ui.pTknSampler = tkn.tknCreateSamplerPtr(pTknGfxContext, vulkan.VK_FILTER_LINEAR, vulkan.VK_FILTER_LINEAR, vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR, vulkan.VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, vulkan.VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, vulkan.VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, 0.0, false, 0.0, 0.0, 0.0, vulkan.VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)
     ui.renderPass = uiRenderPass
 
     imageNode.setup(assetsPath)
@@ -520,7 +520,7 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
         if node.rect.active then
             if node.mask then
                 -- Mask-creating node: enable stencil write, create new mask layer
-                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
                 maskIndex = maskIndex + 1
                 assert(maskIndex <= 7, "ui.recordDrawCalls: exceeded maximum mask count of 7")
                 local maskBit = (1 << maskIndex) - 1
@@ -528,22 +528,22 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
                 if compareMask < 0 then
                     compareMask = 0
                 end
-                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, compareMask)
-                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
+                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, compareMask)
+                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
                 -- Disable stencil write for children (they read, not write)
-                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
             elseif maskIndex > 0 then
                 -- Masked node: read from current mask, don't write
                 local maskBit = (1 << maskIndex) - 1
-                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
-                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
+                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, maskBit)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
             else
                 -- Unmasked root node: render normally, can write if needed
-                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
-                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
-                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+                tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+                tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+                tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
                 tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pTknDrawCall)
             end
         end
@@ -558,17 +558,17 @@ function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
         -- Clear stencil by writing back to parent level value
         -- compareMask selects only the parent level bits for comparison
         local parentMaskBit = maskIndex > 1 and ((1 << (maskIndex - 1)) - 1) or 0
-        tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
-        tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
-        tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+        tkn.tknSetStencilCompareMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
+        tkn.tknSetStencilReference(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, parentMaskBit)
+        tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
         tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, node.pClearMaskTknDrawCall)
         -- Restore write mask state after clearing
         if maskIndex > 1 then
             -- Still inside a parent mask, keep write disabled
-            tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
+            tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0x00)
         else
             -- Exiting root mask layer, restore to write-enabled
-            tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
+            tkn.tknSetStencilWriteMask(pTknGfxContext, pTknFrame, vulkan.VK_STENCIL_FACE_FRONT_AND_BACK, 0xFF)
         end
     end
 end

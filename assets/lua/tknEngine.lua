@@ -1,4 +1,5 @@
 local tkn = require("tkn")
+local vulkan = require("vulkan")
 local ui = require("ui.ui")
 local game = require("game.game")
 local input = require("input")
@@ -64,7 +65,7 @@ local function setupGlobalMaterial(pTknGfxContext)
     }
     tknEngine.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer)
     local inputBindings = {{
-        vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         pTknUniformBuffer = tknEngine.pGlobalUniformBuffer,
         binding = 0,
     }}
@@ -95,7 +96,7 @@ local function updateGlobalMaterial(pTknGfxContext, camera, time, frameCount, sc
     -- tknEngine.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer)
     tkn.tknUpdateUniformBufferPtr(pTknGfxContext, tknEngine.pGlobalUniformBuffer, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer, nil)
     local inputBindings = {{
-        vkDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         pTknUniformBuffer = tknEngine.pGlobalUniformBuffer,
         binding = 0,
     }}
@@ -119,8 +120,8 @@ end
 function tknEngine.start(pTknGfxContext, assetsPath)
     tknEngine.assetsPath = assetsPath
     -- Global uniform buffer format (view, projection, etc.)
-    local depthVkFormat = tkn.tknGetSupportedFormat(pTknGfxContext, {VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT}, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-    tknEngine.pDepthStencilAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, depthVkFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT, 1)
+    local depthVkFormat = tkn.tknGetSupportedFormat(pTknGfxContext, {vulkan.VK_FORMAT_D24_UNORM_S8_UINT, vulkan.VK_FORMAT_D32_SFLOAT_S8_UINT}, vulkan.VK_IMAGE_TILING_OPTIMAL, vulkan.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    tknEngine.pDepthStencilAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, depthVkFormat, vulkan.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, vulkan.VK_IMAGE_ASPECT_DEPTH_BIT, 1)
     tknEngine.pSwapchainAttachment = tkn.tknGetSwapchainAttachmentPtr(pTknGfxContext)
     ui.setup(pTknGfxContext, tknEngine.pSwapchainAttachment, tknEngine.pDepthStencilAttachment, assetsPath, 1)
     tknWidgetConfig.setup(pTknGfxContext, assetsPath)

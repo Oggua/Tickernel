@@ -1,4 +1,5 @@
 local tkn = require("tkn")
+local vulkan = require("vulkan")
 local colorPreset = require("ui.colorPreset")
 local imageNode = {}
 function imageNode.setup(assetsPath)
@@ -32,7 +33,7 @@ function imageNode.loadImage(pTknGfxContext, relativePath, pTknSampler, pTknPipe
         else
             local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
             local inputBindings = {{
-                vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 pTknImage = pTknImage,
                 pTknSampler = pTknSampler,
                 binding = 0,
@@ -61,7 +62,7 @@ function imageNode.unloadImage(pTknGfxContext, image)
 end
 
 function imageNode.setupNode(pTknGfxContext, color, alphaThreshold, fitMode, image, uv, vertexFormat, instanceFormat, pTknPipeline, mask, node)
-    local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, VK_INDEX_TYPE_UINT16, 54)
+    local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, 16, vulkan.VK_INDEX_TYPE_UINT16, 54)
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, instanceFormat.pTknVertexInputLayout, instanceFormat, {
         model = {1, 0, 0, 0, 1, 0, 0, 0, 1}, -- identity matrix
         color = {tkn.rgbaToAbgr(colorPreset.white)},
@@ -147,7 +148,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
                 uv = {node.uv.u0, node.uv.v0, node.uv.u1, node.uv.v0, node.uv.u1, node.uv.v1, node.uv.u0, node.uv.v1},
             }
             local indices = {0, 1, 2, 2, 3, 0}
-            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, vulkan.VK_INDEX_TYPE_UINT16, indices)
         elseif node.fitMode.type == imageNode.fitModeType.sliced then
             -- 9-slice: calculate 16 Uvs and positions based on padding and uv
             local h = node.fitMode.horizontal
@@ -228,7 +229,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
                     table.insert(indices, v0)
                 end
             end
-            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, vulkan.VK_INDEX_TYPE_UINT16, indices)
         else
             -- Calculate Uv based on fitMode (cover/contain)
             local u0, v0, u1, v1 = node.uv.u0, node.uv.v0, node.uv.u1, node.uv.v1
@@ -257,7 +258,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
                     uv = {u0, v0, u1, v0, u1, v1, u0, v1},
                 }
                 local indices = {0, 1, 2, 2, 3, 0}
-                tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+                tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, vulkan.VK_INDEX_TYPE_UINT16, indices)
             elseif node.fitMode.type == imageNode.fitModeType.contain then
                 -- Adjust vertex positions instead of Uv for true contain
                 if imageAspect > containerAspect then
@@ -277,7 +278,7 @@ function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth
                     uv = {u0, v0, u1, v0, u1, v1, u0, v1},
                 }
                 local indices = {0, 1, 2, 2, 3, 0}
-                tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+                tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, vulkan.VK_INDEX_TYPE_UINT16, indices)
             else
                 error("Unknown fitMode type: " .. tostring(node.fitMode.type))
             end

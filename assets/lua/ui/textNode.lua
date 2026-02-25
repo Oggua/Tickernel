@@ -1,4 +1,5 @@
 local tkn = require("tkn")
+local vulkan = require("vulkan")
 local colorPreset = require("ui.colorPreset")
 local textNode = {}
 function textNode.setup(assetsPath)
@@ -43,7 +44,7 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
             tkn.tknDestroyTknFontPtr(textNode.pTknFontLibrary, font.pTknFont, pTknGfxContext)
             local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength, boldStrengths)
             local inputBindings = {{
-                vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 pTknImage = pTknImage,
                 pTknSampler = pTknSampler,
                 binding = 0,
@@ -64,7 +65,7 @@ function textNode.loadFont(pTknGfxContext, relativePath, fontSize, atlasLength, 
         local pTknFont, pTknImage, maxAscender, minDescender = tkn.tknCreateTknFontPtr(textNode.pTknFontLibrary, pTknGfxContext, fontPaths, fontSize, atlasLength, boldStrengths)
         local pTknMaterial = tkn.tknCreatePipelineMaterialPtr(pTknGfxContext, pTknPipeline)
         local inputBindings = {{
-            vkDescriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             pTknImage = pTknImage,
             pTknSampler = pTknSampler,
             binding = 0,
@@ -97,7 +98,7 @@ function textNode.setupNode(pTknGfxContext, textString, font, size, color, alpha
     -- Bold text needs more vertices (4x for each character)
     local verticesPerChar = bold and 16 or 4
     local indicesPerChar = bold and 24 or 6
-    local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, maxChars * verticesPerChar, VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
+    local pTknMesh = tkn.tknCreateDefaultMeshPtr(pTknGfxContext, vertexFormat, vertexFormat.pTknVertexInputLayout, maxChars * verticesPerChar, vulkan.VK_INDEX_TYPE_UINT16, maxChars * indicesPerChar)
 
     -- Create instance buffer (mat3 + color)
     local instances = {
@@ -364,7 +365,7 @@ function textNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth,
         end
 
         if charIndex > 0 then
-            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, VK_INDEX_TYPE_UINT16, indices)
+            tkn.tknUpdateMeshPtr(pTknGfxContext, node.pTknMesh, vertexFormat, vertices, vulkan.VK_INDEX_TYPE_UINT16, indices)
         end
         node.textDirty = false
     end
