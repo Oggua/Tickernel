@@ -134,7 +134,7 @@ end
 function imageNode.updateMeshPtr(pTknGfxContext, node, vertexFormat, screenWidth, screenHeight, boundsDirty, screenSizeDirty)
     assert(node.type == "imageNode", "imageNode.updateMeshPtr: node is not an imageNode")
     if boundsDirty or (screenSizeDirty and node.fitMode.type ~= imageNode.fitModeType.sliced) then
-        print("Updating imageNode mesh for node: " .. tostring(node.name) .. ", boundsDirty: " .. tostring(boundsDirty) .. ", screenSizeDirty: " .. tostring(screenSizeDirty) .. ")")
+        -- print("Updating imageNode mesh for node: " .. tostring(node.name) .. ", boundsDirty: " .. tostring(boundsDirty) .. ", screenSizeDirty: " .. tostring(screenSizeDirty) .. ")")
         local rect = node.rect
         -- rect.horizontal/vertical.min/max are already relative to pivot (0, 0)
         local left = rect.horizontal.min
