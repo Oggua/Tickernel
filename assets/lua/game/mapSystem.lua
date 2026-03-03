@@ -115,7 +115,7 @@ function mapSystem.setup()
         },
         lava = {
             name = "lava",
-            color = tknMath.rgbaToAbgr(0xEE0F00FF),
+            color = tknMath.rgbaToAbgr(0xEE1F00FF),
             emissive = 8,
             roughness = 8, -- 流动熔岩有橘色高光
             metallic = 0,
