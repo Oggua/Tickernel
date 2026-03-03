@@ -45,8 +45,8 @@ local function quatRotateVec(vx, vy, vz, qx, qy, qz, qw)
 end
 
 function cameraTransformController.update(transform)
-    local moveSpeed = 1
-    local rotateSpeed = 1
+    local moveSpeed = 0.05
+    local rotateSpeed = 0.5
 
     -- ensure transform.position/rotation tables exist
     transform.position = transform.position or {

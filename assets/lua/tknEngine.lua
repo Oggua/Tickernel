@@ -55,8 +55,8 @@ local function setupGlobalMaterial(pTknGfxContext)
     local pGlobalUniformBuffer = {
         view = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
         proj = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
-        near = 2,
-        far = 128,
+        near = 0.01,
+        far = 32,
         fov = 90,
         time = 0.0,
         frameCount = 0,
@@ -131,14 +131,15 @@ function tknEngine.start(pTknGfxContext, assetsPath)
 
     deferredRenderPass.setup(pTknGfxContext, assetsPath, 0, tknEngine.pDepthStencilAttachment, tknEngine.pSwapchainAttachment)
 
-    game.start(pTknGfxContext, assetsPath, tknEngine.gameRootUINode)
+    tknEngine.voxelPerMeter = 16
+    game.start(pTknGfxContext, assetsPath, tknEngine.gameRootUINode, tknEngine.voxelPerMeter)
 
     setupGlobalMaterial(pTknGfxContext)
     transformSystem.setup()
     cameraSystem.setup()
 
     tknEngine.cameraTransform = transformSystem.add({10, 0, 0}, {0, 0, 0, 0}, {1, 1, 1}, transformSystem.rootTransform, nil)
-    tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 2, 256, 90)
+    tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 0.01, 16, 90)
 end
 
 function tknEngine.stop(pTknGfxContext)
@@ -165,7 +166,6 @@ function tknEngine.stop(pTknGfxContext)
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, tknEngine.pDepthStencilAttachment)
     tknEngine.pDepthStencilAttachment = nil
     tknEngine.pSwapchainAttachment = nil
-
 end
 
 function tknEngine.update(pTknGfxContext, width, height)
@@ -174,7 +174,7 @@ function tknEngine.update(pTknGfxContext, width, height)
     transformSystem.update()
     cameraSystem.update(pTknGfxContext, width, height)
     updateGlobalMaterial(pTknGfxContext, tknEngine.camera, 0, 0, width, height)
-    updateDeferredGeometrySubpassMaterial(pTknGfxContext, tknEngine.camera, width, height, 1.414)
+    updateDeferredGeometrySubpassMaterial(pTknGfxContext, tknEngine.camera, width, height, 1.414 / tknEngine.voxelPerMeter)
     tkn.tknWaitRenderFence(pTknGfxContext)
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)

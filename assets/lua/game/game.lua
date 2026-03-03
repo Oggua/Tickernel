@@ -6,11 +6,12 @@ local tknMath = require("tknMath")
 local input = require("input")
 local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 
-function game.start(pTknGfxContext, assetsPath, rootUINode)
+function game.start(pTknGfxContext, assetsPath, rootUINode, voxelPerMeter)
     game.assetsPath = assetsPath
     game.currentScene = mainScene
     game.nextScene = mainScene
     game.rootUINode = rootUINode
+    game.voxelPerMeter = voxelPerMeter
     game.currentScene.start(game, pTknGfxContext)
 end
 

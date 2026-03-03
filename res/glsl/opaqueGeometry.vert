@@ -6,13 +6,14 @@
 layout(location = 0) in vec3 position;
 layout(location = 1) in uint color;
 layout(location = 2) in uint normal;
-layout(location = 3) in mat4 model;
+layout(location = 3) in uint roughness;
+layout(location = 4) in mat4 model;
 
 layout(location = 0) out vec4 outputAlbedo;
 layout(location = 1) out vec3 outputNormal;
 
 void main(void) {
-    vec4 unpackedColor = unpackUnorm4x8(color);
+    vec3 unpackedColor = unpackUnorm4x8(color).rgb;
 
     const vec3 normalTable[26] = vec3[26](
         // 6 faces
@@ -57,5 +58,5 @@ void main(void) {
 
     gl_PointSize = 1.0 / -viewPosition.z * geometryUniform.pointSize;
     outputNormal = bestNormal;
-    outputAlbedo = unpackedColor;
+    outputAlbedo = vec4(unpackedColor, roughness / 255.0);
 }

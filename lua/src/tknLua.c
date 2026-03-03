@@ -182,7 +182,7 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
     }
     else
     {
-        printf("Failed to acquire frame!\n");
+        // printf("Failed to acquire frame!\n");
         lua_pop(pLuaState, 2);
     }
 

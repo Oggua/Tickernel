@@ -115,6 +115,7 @@ function tknMath.pingPong(a, b, t)
 end
 
 function tknMath.smoothLerp(a, b, t)
+    t = tknMath.clamp(t, 0, 1)
     t = t * t * t * (6 * t * t - 15 * t + 10)
     return a + (b - a) * t
 end
@@ -219,6 +220,7 @@ local dotGridGradient2D = function(ix, iy, x, y, seed)
     return grad2D(hash, dx, dy)
 end
 
+tknMath.minN, tknMath.maxN = math.maxinteger, math.mininteger
 ---comment
 ---@param seed integer
 ---@param x number
@@ -243,6 +245,7 @@ function tknMath.perlinNoise2D(seed, x, y)
     n1 = dotGridGradient2D(x1, y1, x, y, seed)
     ix1 = tknMath.smoothLerp(n0, n1, sx)
     value = tknMath.smoothLerp(ix0, ix1, sy)
+
     return value
 end
 
@@ -293,6 +296,26 @@ function tknMath.perlinNoise3D(seed, x, y, z)
     return tknMath.smoothLerp(y0, y1, sz)
 end
 
+function tknMath.fractalPerlinNoise2D(seed, x, y, octaves)
+    local result = 0
+    local freq = 1.0
+    local currentSeed = seed
+    for m = 0, octaves - 1 do
+        local amplitude = 1.0 / (m + 1)
+        local nx = x * freq
+        local ny = y * freq
+        result = result + amplitude * tknMath.perlinNoise2D(currentSeed, nx, ny)
+        freq = freq * 2
+        currentSeed = tknMath.lcgRandom(currentSeed)
+    end
+    if result < tknMath.minN then
+        tknMath.minN = result
+    end
+    if result > tknMath.maxN then
+        tknMath.maxN = result
+    end
+    return result
+end
 local rotationMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
 local scaleMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}

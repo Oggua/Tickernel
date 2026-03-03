@@ -55,9 +55,7 @@ local nodeTypeToColor = {
     [nodeType.lava] = 0xF7A072FF, -- 柔和橙红色
 }
 
-local biome = {
-    
-}
+local biome = {}
 
 local function swizzle_color_to_packed(hex)
     -- Convert human 0xRRGGBBAA to stored uint where little-endian bytes are R,G,B,A
@@ -214,7 +212,6 @@ function tknVox.loadVoxFile(filePath)
 
     return vertices
 end
-
 
 -- ============================================================================
 -- Terrain Generation
