@@ -25,87 +25,114 @@ function mapSystem.setup()
         baseRock = {
             name = "baseRock",
             color = tknMath.rgbaToAbgr(0x080808FF),
-            roughness = 168, -- 岩石底层，非常粗糙
+            emissive = 0,
+            roughness = 14, -- 地底岩石，极粗糙
+            metallic = 0,
         },
         darkDirt = {
             name = "darkDirt",
             color = tknMath.rgbaToAbgr(0x654321FF),
-            roughness = 244, -- 泥土，较粗糙
+            emissive = 0,
+            roughness = 14, -- 湿润泥土，极粗糙
+            metallic = 0,
         },
         dirt = {
             name = "dirt",
             color = tknMath.rgbaToAbgr(0x8B4513FF),
-            roughness = 244, -- 泥土，较粗糙
+            emissive = 0,
+            roughness = 13, -- 普通泥土
+            metallic = 0,
         },
         lightDirt = {
             name = "lightDirt",
             color = tknMath.rgbaToAbgr(0xA0522DFF),
-            roughness = 244, -- 泥土，较粗糙
+            emissive = 0,
+            roughness = 12, -- 干燥表层土
+            metallic = 0,
         },
         darkRock = {
             name = "darkRock",
             color = tknMath.rgbaToAbgr(0x111111FF),
-            roughness = 225, -- 普通岩石，粗糙
+            emissive = 0,
+            roughness = 13, -- 粗糙深色岩石
+            metallic = 0,
         },
         rock = {
             name = "rock",
             color = tknMath.rgbaToAbgr(0x171717FF),
-            roughness = 225, -- 普通岩石，粗糙
+            emissive = 0,
+            roughness = 12, -- 普通岩石
+            metallic = 0,
         },
         lightRock = {
             name = "lightRock",
             color = tknMath.rgbaToAbgr(0x212121FF),
-            roughness = 225, -- 普通岩石，粗糙
+            emissive = 0,
+            roughness = 10, -- 较光滑的浅色岩石
+            metallic = 0,
         },
         darkGrass = {
             name = "darkGrass",
             color = tknMath.rgbaToAbgr(0x6B8E23FF),
-            roughness = 240, -- 草地，非常粗糙（草叶漫反射）
+            emissive = 0,
+            roughness = 13, -- 草叶漫反射，很粗糙
+            metallic = 0,
         },
         grass = {
             name = "grass",
             color = tknMath.rgbaToAbgr(0x9ACD32FF),
-            roughness = 240, -- 草地，非常粗糙（草叶漫反射）
+            emissive = 0,
+            roughness = 12, -- 普通草地
+            metallic = 0,
         },
         lightGrass = {
             name = "lightGrass",
             color = tknMath.rgbaToAbgr(0xBDB76BFF),
-            roughness = 240, -- 草地，非常粗糙（草叶漫反射）
+            emissive = 0,
+            roughness = 11, -- 浅草/枯草稍光滑
+            metallic = 0,
         },
         sand = {
             name = "sand",
             color = tknMath.rgbaToAbgr(0xD4B368FF),
-            roughness = 244, -- 沙子，粗糙但比岩石细腻
+            emissive = 0,
+            roughness = 11, -- 沙粒细腻，比岩石光滑
+            metallic = 0,
         },
         lightSand = {
             name = "lightSand",
-            color = tknMath.rgbaToAbgr(0xD4B368FF),
-            roughness = 129, -- 沙子，粗糙但比岩石细腻
+            color = tknMath.rgbaToAbgr(0xD4B388FF),
+            emissive = 0,
+            roughness = 9, -- 浅色沙，更细腻
+            metallic = 0,
         },
         water = {
             name = "water",
             color = tknMath.rgbaToAbgr(0x41A5FFFF),
-            roughness = 20, -- 水面，非常光滑（接近镜面）
+            emissive = 0,
+            roughness = 0, -- 水面接近镜面
+            metallic = 1, -- 半金属：产生镜面反射带蓝色调
         },
         lava = {
             name = "lava",
-            color = tknMath.rgbaToAbgr(0xEE2200FF),
-            roughness = 80, -- 熔岩，流动状态较光滑，有高光
+            color = tknMath.rgbaToAbgr(0xEE0F00FF),
+            emissive = 8,
+            roughness = 8, -- 流动熔岩有橘色高光
+            metallic = 0,
         },
         ice = {
             name = "ice",
             color = tknMath.rgbaToAbgr(0xADD8E6FF),
-            roughness = 15, -- 冰，极其光滑（接近镜面反射）
+            emissive = 0,
+            roughness = 1, -- 冰面极光滑
+            metallic = 1, -- 轻微镜面反射感
         },
         snow = {
             name = "snow",
             color = tknMath.rgbaToAbgr(0xFFFFFF80),
-            roughness = 240, -- 雪，极其粗糙（漫反射散射）
-        },
-        volcanic = {
-            name = "volcanic",
-            color = tknMath.rgbaToAbgr(0x8B0000FF),
-            roughness = 250, -- 火山岩，表面凸凹不平
+            emissive = 0,
+            roughness = 14, -- 雪花结构，极强漫反射
+            metallic = 0,
         },
     }
 end
@@ -409,8 +436,7 @@ function mapSystem.createMesh(pTknGfxContext)
         position = {},
         color = {},
         normal = {},
-        roughness = {},
-        -- TODO: Add roughness, metallic, etc. for PBR if needed in the future
+        pbr = {},
     }
     local voxelPerMeter = mapSystem.voxelPerMeter
     for x = 1, mapSystem.length * mapSystem.voxelPerMeter do
@@ -425,7 +451,10 @@ function mapSystem.createMesh(pTknGfxContext)
                     table.insert(vertices.color, voxel.color)
                     local normal = calculateNormal(mapSystem.voxelMap, x, y, z)
                     table.insert(vertices.normal, normal)
-                    table.insert(vertices.roughness, voxel.roughness)
+                    -- bits[0-3]=emissive, bits[4-7]=roughness, bits[8-11]=metallic
+                    -- clamp to 0-15 to fit in 4 bits each
+                    local pbr = (voxel.emissive & 0xF) | ((voxel.roughness & 0xF) << 4) | ((voxel.metallic & 0xF) << 8)
+                    table.insert(vertices.pbr, pbr)
                 end
             end
         end

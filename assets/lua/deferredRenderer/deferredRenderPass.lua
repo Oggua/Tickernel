@@ -19,7 +19,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         type = tkn.type.uint32,
         count = 1,
     }, {
-        name = "roughness",
+        name = "pbr",
         type = tkn.type.uint32,
         count = 1,
     }}
@@ -58,7 +58,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
     }}
 
     deferredRenderPass.pAlbedoAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vulkan.VK_FORMAT_R8G8B8A8_UNORM, vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, vulkan.VK_IMAGE_ASPECT_COLOR_BIT, 1)
-    deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vulkan.VK_FORMAT_A2R10G10B10_UNORM_PACK32, vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, vulkan.VK_IMAGE_ASPECT_COLOR_BIT, 1)
+    deferredRenderPass.pNormalAttachment = tkn.tknCreateDynamicAttachmentPtr(pTknGfxContext, vulkan.VK_FORMAT_A8B8G8R8_UNORM_PACK32, vulkan.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | vulkan.VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, vulkan.VK_IMAGE_ASPECT_COLOR_BIT, 1)
 
     local pAttachments = {pDepthStencilAttachment, deferredRenderPass.pAlbedoAttachment, deferredRenderPass.pNormalAttachment, pSwapchainAttachment}
 
@@ -193,10 +193,10 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
 
     -- Create lights uniform buffer
     local lightsUniformBuffer = {
-        directionalLightColor = {1.0, 1.0, 1.0, 1.0},
+        directionalLightColor = {1.0, 1.0, 1.0, 2.0},
         directionalLightDirection = {0.4, 0.4, -0.8, 0.0},
         pointLights = { -- Light 3: warm orange
-        1.00, 0.0, 0.5, 8.0, 32, 32, 16, 20.0, 0.6, 0.5, 0.3, 4.0, 38, 38, 38, 20.0, 0.6, 0.5, 0.3, 4.0, 0, 0, 16, 20.0},
+        0.6, 0.3, 0.9, 8.0, 4, 4, 1, 4.0, 0.6, 0.5, 0.3, 4.0, 8, 8, 1, 4.0, 0.6, 0.5, 0.3, 4.0, 8, 4, 1, 4.0},
         pointLightCount = 3,
     }
     -- pad pointLights to exactly 128 * 8 floats

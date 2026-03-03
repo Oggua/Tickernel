@@ -26,7 +26,7 @@ function mainScene.start(game, pTknGfxContext)
     -- mainScene.pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, mainScene.pTknMesh, mainScene.pTknInstance)
     mapSystem.setup()
     print("Generating map...")
-    mapSystem.generateRoom(321312, 32, 64, game.voxelPerMeter)
+    mapSystem.generateRoom(321312, 16, 16, game.voxelPerMeter)
     print("Generated map with " .. #mapSystem.terrainMap .. "x" .. #mapSystem.terrainMap[1] .. " tiles")
     mainScene.pTknMesh, mainScene.pTknInstance, mainScene.pTknDrawCall = mapSystem.createMesh(pTknGfxContext)
 end

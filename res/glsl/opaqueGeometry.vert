@@ -6,11 +6,11 @@
 layout(location = 0) in vec3 position;
 layout(location = 1) in uint color;
 layout(location = 2) in uint normal;
-layout(location = 3) in uint roughness;
+layout(location = 3) in uint pbr;
 layout(location = 4) in mat4 model;
 
 layout(location = 0) out vec4 outputAlbedo;
-layout(location = 1) out vec3 outputNormal;
+layout(location = 1) out vec4 outputNormal;
 
 void main(void) {
     vec3 unpackedColor = unpackUnorm4x8(color).rgb;
@@ -56,7 +56,17 @@ void main(void) {
     // float tanHalfFov = 1.0 / globalUniform.proj[1][1];  // derive tan(FOV/2) from projection matrix
     // float obliqueFactor = (1.0 + perspectiveGap * tanHalfFov) / max(cosAngle, 0.25); // clamp to max 4x base
 
+    // Unpack pbr: bits[0-3]=emissive, bits[4-7]=roughness, bits[8-11]=metallic
+    uint emissive4  = (pbr >> 0u) & 0xFu;
+    uint roughness4 = (pbr >> 4u) & 0xFu;
+    uint metallic4  = (pbr >> 8u) & 0xFu;
+
+    // outputAlbedo.a = emissive
+    float emissiveF  = float(emissive4) / 15.0;
+    // outputNormal.a  = roughness(low 4) | metallic(high 4)
+    float normalAlpha = float(roughness4 | (metallic4 << 4u)) / 255.0;
+
     gl_PointSize = 1.0 / -viewPosition.z * geometryUniform.pointSize;
-    outputNormal = bestNormal;
-    outputAlbedo = vec4(unpackedColor, roughness / 255.0);
+    outputNormal = vec4(bestNormal * 0.5 + 0.5, normalAlpha);
+    outputAlbedo = vec4(unpackedColor, emissiveF);
 }
