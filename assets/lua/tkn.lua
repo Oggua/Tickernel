@@ -121,17 +121,6 @@ tkn.type = {
     double = 9,
 }
 
--- TickernelVoxel deserialization and format building moved to tknVox module
-
-function tkn.tknCreateMeshPtrWithTknVoxFile(pTknGfxContext, pTknMeshVertexInputLayout, vertexFormat, tknvoxFilePath, indexType)
-    local tknVox = require("tknVox")
-    local vertices = tknVox.loadVoxFile(tknvoxFilePath)
-    if not vertices then
-        return nil
-    end
-    return tkn.tknCreateMeshPtrWithData(pTknGfxContext, pTknMeshVertexInputLayout, vertexFormat, vertices, indexType, nil)
-end
-
 -- Function declarations for IDE support (only used if C binding not available)
 if not tkn.tknGetSupportedFormat then
     ---Find first supported image format from candidates list

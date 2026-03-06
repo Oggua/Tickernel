@@ -1,10 +1,11 @@
 local tknMath = require("tknMath")
 local tkn = require("tkn")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+local voxelConfig = require("game.voxelConfig")
 local mapSystem = {}
 
 function mapSystem.setup()
-    mapSystem.terrain = {
+    mapSystem.ground = {
         snow = 1,
         ice = 2,
         sand = 3,
@@ -13,168 +14,53 @@ function mapSystem.setup()
         lava = 6,
         volcanic = 7,
     }
-    mapSystem.terrainToTemperature = {-1, -1, 0, 0, 0, 1, 1}
-    mapSystem.terrainToHumidity = {0, 1, -1, 0, 1, -1, 0}
+    mapSystem.groundToTemperature = {-1, -1, 0, 0, 0, 1, 1}
+    mapSystem.groundToHumidity = {0, 1, -1, 0, 1, -1, 0}
     mapSystem.temperatureNoiseScale = 0.37
     mapSystem.humidityNoiseScale = 0.37
 
     mapSystem.temperatureStep = 0.27
     mapSystem.humidityStep = 0.27
-
-    mapSystem.voxel = {
-        baseRock = {
-            name = "baseRock",
-            color = tknMath.rgbaToAbgr(0x080808FF),
-            emissive = 0,
-            roughness = 14, -- 地底岩石，极粗糙
-            metallic = 0,
-        },
-        darkDirt = {
-            name = "darkDirt",
-            color = tknMath.rgbaToAbgr(0x654321FF),
-            emissive = 0,
-            roughness = 14, -- 湿润泥土，极粗糙
-            metallic = 0,
-        },
-        dirt = {
-            name = "dirt",
-            color = tknMath.rgbaToAbgr(0x8B4513FF),
-            emissive = 0,
-            roughness = 13, -- 普通泥土
-            metallic = 0,
-        },
-        lightDirt = {
-            name = "lightDirt",
-            color = tknMath.rgbaToAbgr(0xA0522DFF),
-            emissive = 0,
-            roughness = 12, -- 干燥表层土
-            metallic = 0,
-        },
-        darkRock = {
-            name = "darkRock",
-            color = tknMath.rgbaToAbgr(0x111111FF),
-            emissive = 0,
-            roughness = 13, -- 粗糙深色岩石
-            metallic = 0,
-        },
-        rock = {
-            name = "rock",
-            color = tknMath.rgbaToAbgr(0x171717FF),
-            emissive = 0,
-            roughness = 12, -- 普通岩石
-            metallic = 0,
-        },
-        lightRock = {
-            name = "lightRock",
-            color = tknMath.rgbaToAbgr(0x212121FF),
-            emissive = 0,
-            roughness = 10, -- 较光滑的浅色岩石
-            metallic = 0,
-        },
-        darkGrass = {
-            name = "darkGrass",
-            color = tknMath.rgbaToAbgr(0x6B8E23FF),
-            emissive = 0,
-            roughness = 13, -- 草叶漫反射，很粗糙
-            metallic = 0,
-        },
-        grass = {
-            name = "grass",
-            color = tknMath.rgbaToAbgr(0x9ACD32FF),
-            emissive = 0,
-            roughness = 12, -- 普通草地
-            metallic = 0,
-        },
-        lightGrass = {
-            name = "lightGrass",
-            color = tknMath.rgbaToAbgr(0xBDB76BFF),
-            emissive = 0,
-            roughness = 11, -- 浅草/枯草稍光滑
-            metallic = 0,
-        },
-        sand = {
-            name = "sand",
-            color = tknMath.rgbaToAbgr(0xD4B368FF),
-            emissive = 0,
-            roughness = 11, -- 沙粒细腻，比岩石光滑
-            metallic = 0,
-        },
-        lightSand = {
-            name = "lightSand",
-            color = tknMath.rgbaToAbgr(0xD4B388FF),
-            emissive = 0,
-            roughness = 9, -- 浅色沙，更细腻
-            metallic = 0,
-        },
-        water = {
-            name = "water",
-            color = tknMath.rgbaToAbgr(0x41A5FFFF),
-            emissive = 0,
-            roughness = 0, -- 水面接近镜面
-            metallic = 1, -- 半金属：产生镜面反射带蓝色调
-        },
-        lava = {
-            name = "lava",
-            color = tknMath.rgbaToAbgr(0xEE1F00FF),
-            emissive = 8,
-            roughness = 8, -- 流动熔岩有橘色高光
-            metallic = 0,
-        },
-        ice = {
-            name = "ice",
-            color = tknMath.rgbaToAbgr(0xADD8E6FF),
-            emissive = 0,
-            roughness = 1, -- 冰面极光滑
-            metallic = 1, -- 轻微镜面反射感
-        },
-        snow = {
-            name = "snow",
-            color = tknMath.rgbaToAbgr(0xFFFFFF80),
-            emissive = 0,
-            roughness = 14, -- 雪花结构，极强漫反射
-            metallic = 0,
-        },
-    }
 end
 
 function mapSystem.teardown()
     mapSystem.temperatureStep = nil
     mapSystem.humidityStep = nil
 
-    mapSystem.terrain = nil
-    mapSystem.terrainToTemperature = nil
-    mapSystem.terrainToHumidity = nil
+    mapSystem.ground = nil
+    mapSystem.groundToTemperature = nil
+    mapSystem.groundToHumidity = nil
 end
 
-function mapSystem.getTerrain(temperature, humidity)
-    local terrain
+function mapSystem.getGround(temperature, humidity)
+    local ground
     if temperature < -mapSystem.temperatureStep then
         if humidity < -mapSystem.humidityStep then
-            terrain = mapSystem.terrain.snow
+            ground = mapSystem.ground.snow
         elseif humidity < mapSystem.humidityStep then
-            terrain = mapSystem.terrain.snow
+            ground = mapSystem.ground.snow
         else
-            terrain = mapSystem.terrain.ice
+            ground = mapSystem.ground.ice
         end
     elseif temperature < mapSystem.temperatureStep then
         if humidity < -mapSystem.humidityStep then
-            terrain = mapSystem.terrain.sand
+            ground = mapSystem.ground.sand
         elseif humidity < mapSystem.humidityStep then
-            terrain = mapSystem.terrain.grass
+            ground = mapSystem.ground.grass
         else
-            terrain = mapSystem.terrain.water
+            ground = mapSystem.ground.water
         end
     else
         if humidity < -mapSystem.humidityStep then
-            terrain = mapSystem.terrain.lava
+            ground = mapSystem.ground.lava
         elseif humidity < mapSystem.humidityStep then
-            terrain = mapSystem.terrain.volcanic
+            ground = mapSystem.ground.volcanic
         else
-            terrain = mapSystem.terrain.volcanic
+            ground = mapSystem.ground.volcanic
         end
     end
 
-    return terrain
+    return ground
 end
 
 function mapSystem.getHumidity(seed, x, y)
@@ -193,52 +79,36 @@ end
 
 local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy, vx, vy)
     local voxel
-    local terrain = mapSystem.getTerrain(temperature, humidity)
+    local ground = mapSystem.getGround(temperature, humidity)
     local height
-    if terrain == mapSystem.terrain.snow or terrain == mapSystem.terrain.ice then
+    if ground == mapSystem.ground.snow or ground == mapSystem.ground.ice then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 14, rvy * 14)
         noise = noise * noise * noise
-        voxel = mapSystem.voxel.rock
-        height = (noise + 1) * 0.5 * 5
-    elseif terrain == mapSystem.terrain.sand or terrain == mapSystem.terrain.grass or terrain == mapSystem.terrain.water then
+        voxel = voxelConfig.rock
+        height = (noise + 1) * 1.5
+    elseif ground == mapSystem.ground.sand or ground == mapSystem.ground.grass or ground == mapSystem.ground.water then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 7.77, rvy * 7.77)
         local step = 0.2
-        voxel = mapSystem.voxel.dirt
-        height = (noise + 1) * 0.5 * 5
-    elseif terrain == mapSystem.terrain.lava or terrain == mapSystem.terrain.volcanic then
+        voxel = voxelConfig.dirt
+        height = (noise + 1) * 1.5
+    elseif ground == mapSystem.ground.lava or ground == mapSystem.ground.volcanic then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 17, rvy * 17)
         noise = noise * noise * noise
-        voxel = mapSystem.voxel.darkRock
-        height = (noise + 1) * 0.5 * 6
+        voxel = voxelConfig.darkRock
+        height = (noise + 1) * 2
     else
-        error("Unsupported terrain for base voxel: " .. terrain)
+        error("Unsupported ground for base voxel: " .. ground)
     end
 
     for h = 1, height, 1 do
-        -- columnVoxels[1 + h] = voxels[tknMath.lcgRandom(seed + vx + vy + h) % #voxels + 1]
-        columnVoxels[1 + h] = voxel
+        -- columnVoxels[h] = voxels[tknMath.lcgRandom(seed + vx + vy + h) % #voxels + 1]
+        columnVoxels[h] = voxel
     end
 
-    if terrain == mapSystem.terrain.snow then
+    if ground == mapSystem.ground.snow then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 4, rvy * 4)
-        local voxel = mapSystem.voxel.snow
+        local voxel = voxelConfig.snow
         local step = 0.2
-        if noise > step then
-            height = 5
-        elseif noise > -step then
-            height = 4
-        else
-            height = 3
-        end
-        for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
-            end
-        end
-    elseif terrain == mapSystem.terrain.ice then
-        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 4, rvy * 4)
-        local voxel = mapSystem.voxel.ice
-        local step = 0.4
         if noise > step then
             height = 4
         elseif noise > -step then
@@ -247,115 +117,131 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
             height = 2
         end
         for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
             end
         end
-    elseif terrain == mapSystem.terrain.sand then
+    elseif ground == mapSystem.ground.ice then
+        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 4, rvy * 4)
+        local voxel = voxelConfig.ice
+        local step = 0.4
+        if noise > step then
+            height = 3
+        elseif noise > -step then
+            height = 2
+        else
+            height = 1
+        end
+        for h = 1, height, 1 do
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
+            end
+        end
+    elseif ground == mapSystem.ground.sand then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 2, rvy * 2)
         local voxel
         if noise > 0.27 then
-            height = 5
-        elseif noise > -0.27 then
             height = 4
-        else
+        elseif noise > -0.27 then
             height = 3
+        else
+            height = 2
         end
         noise = tknMath.lcgRandom(seed + tknMath.cantorPair(vx, vy)) % 16
         if noise < 2 then
-            voxel = mapSystem.voxel.lightSand
+            voxel = voxelConfig.lightSand
         else
-            voxel = mapSystem.voxel.sand
+            voxel = voxelConfig.sand
         end
         for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
             end
         end
-    elseif terrain == mapSystem.terrain.grass then
+    elseif ground == mapSystem.ground.grass then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 21, rvy * 21)
         local voxel
         if noise > 0.5 then
-            voxel = mapSystem.voxel.darkGrass
-            height = 5
+            voxel = voxelConfig.darkGrass
+            height = 4
         elseif noise > -0.5 then
-            voxel = mapSystem.voxel.dirt
-            height = 2
+            voxel = voxelConfig.dirt
+            height = 1
         else
-            voxel = mapSystem.voxel.lightGrass
-            height = 4
+            voxel = voxelConfig.lightGrass
+            height = 3
         end
         for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
             end
         end
-    elseif terrain == mapSystem.terrain.water then
+    elseif ground == mapSystem.ground.water then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 1, rvy * 3)
-        local voxel = mapSystem.voxel.water
-        if noise > 0 then
-            height = 5
-        else
-            height = 4
-        end
-        for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
-            end
-        end
-    elseif terrain == mapSystem.terrain.lava then
-        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 2, rvy * 2)
-        local voxel = mapSystem.voxel.lava
+        local voxel = voxelConfig.water
         if noise > 0 then
             height = 4
         else
             height = 3
         end
         for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
             end
         end
-    elseif terrain == mapSystem.terrain.volcanic then
+    elseif ground == mapSystem.ground.lava then
+        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 2, rvy * 2)
+        local voxel = voxelConfig.lava
+        if noise > 0 then
+            height = 3
+        else
+            height = 2
+        end
+        for h = 1, height, 1 do
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
+            end
+        end
+    elseif ground == mapSystem.ground.volcanic then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 21, rvy * 21)
         local voxel
         if noise > 0.3 then
-            voxel = mapSystem.voxel.rock
-            height = 5
-        elseif noise > -0.3 then
-            voxel = mapSystem.voxel.lightRock
+            voxel = voxelConfig.rock
             height = 4
-        else
-            voxel = mapSystem.voxel.lava
+        elseif noise > -0.3 then
+            voxel = voxelConfig.lightRock
             height = 3
+        else
+            voxel = voxelConfig.lava
+            height = 2
         end
         for h = 1, height, 1 do
-            if not columnVoxels[1 + h] then
-                columnVoxels[1 + h] = voxel
+            if not columnVoxels[h] then
+                columnVoxels[h] = voxel
             end
         end
     else
-        error("Unsupported terrain for base voxel: " .. terrain)
+        error("Unsupported ground for base voxel: " .. ground)
     end
 
 end
 
 local function getSurfaceVoxel(temperature, humidity)
-    local terrain = mapSystem.getTerrain(temperature, humidity)
-    if terrain == mapSystem.terrain.snow then
-        return mapSystem.voxel.snow
-    elseif terrain == mapSystem.terrain.ice then
-        return mapSystem.voxel.ice
-    elseif terrain == mapSystem.terrain.sand then
-        return mapSystem.voxel.sand
-    elseif terrain == mapSystem.terrain.grass then
-        return mapSystem.voxel.grass
-    elseif terrain == mapSystem.terrain.water then
-        return mapSystem.voxel.water
-    elseif terrain == mapSystem.terrain.lava then
-        return mapSystem.voxel.lava
-    elseif terrain == mapSystem.terrain.volcanic then
-        return mapSystem.voxel.volcanic
+    local ground = mapSystem.getGround(temperature, humidity)
+    if ground == mapSystem.ground.snow then
+        return voxelConfig.snow
+    elseif ground == mapSystem.ground.ice then
+        return voxelConfig.ice
+    elseif ground == mapSystem.ground.sand then
+        return voxelConfig.sand
+    elseif ground == mapSystem.ground.grass then
+        return voxelConfig.grass
+    elseif ground == mapSystem.ground.water then
+        return voxelConfig.water
+    elseif ground == mapSystem.ground.lava then
+        return voxelConfig.lava
+    elseif ground == mapSystem.ground.volcanic then
+        return voxelConfig.volcanic
     end
 end
 
@@ -365,26 +251,26 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
     mapSystem.humiditySeed = seed + 2
     mapSystem.length = length
     mapSystem.width = width
-    mapSystem.terrainMap = {}
+    mapSystem.groundMap = {}
     mapSystem.voxelPerMeter = voxelPerMeter
     for x = 1, mapSystem.length do
-        mapSystem.terrainMap[x] = {}
+        mapSystem.groundMap[x] = {}
         for y = 1, mapSystem.width do
             local temperature = mapSystem.getTemperature(mapSystem.temperatureSeed, x, y)
             local humidity = mapSystem.getHumidity(mapSystem.humiditySeed, x, y)
-            mapSystem.terrainMap[x][y] = mapSystem.getTerrain(temperature, humidity)
+            mapSystem.groundMap[x][y] = mapSystem.getGround(temperature, humidity)
         end
     end
 
-    -- Generate voxel map based on terrain map
+    -- Generate voxel map based on ground map
     local metersPerVoxel = 1 / voxelPerMeter
     local halfVoxelPerMeter = voxelPerMeter / 2
     mapSystem.voxelMap = {}
     for x = 1, mapSystem.length do
         for y = 1, mapSystem.width do
-            local terrain = mapSystem.terrainMap[x][y]
-            local temperature = mapSystem.terrainToTemperature[terrain]
-            local humidity = mapSystem.terrainToHumidity[terrain]
+            local ground = mapSystem.groundMap[x][y]
+            local temperature = mapSystem.groundToTemperature[ground]
+            local humidity = mapSystem.groundToHumidity[ground]
             for lvx = 1, voxelPerMeter do
                 local vx = (x - 1) * voxelPerMeter + lvx
                 if not mapSystem.voxelMap[vx] then
@@ -405,7 +291,6 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
 
                     voxelTemperature = tknMath.lerp(temperature, voxelTemperature, t)
                     voxelHumidity = tknMath.lerp(humidity, voxelHumidity, t)
-                    mapSystem.voxelMap[vx][vy][1] = mapSystem.voxel.baseRock
                     setBaseVoxel(voxelTemperature, voxelHumidity, mapSystem.voxelMap[vx][vy], seed, rvx, rvy, vx, vy)
                 end
             end
@@ -448,7 +333,7 @@ function mapSystem.createMesh(pTknGfxContext)
                     table.insert(vertices.position, x)
                     table.insert(vertices.position, y)
                     table.insert(vertices.position, z)
-                    table.insert(vertices.color, voxel.color)
+                    table.insert(vertices.color, tknMath.rgbaToAbgr(voxel.color))
                     local normal = calculateNormal(mapSystem.voxelMap, x, y, z)
                     table.insert(vertices.normal, normal)
                     -- bits[0-3]=emissive, bits[4-7]=roughness, bits[8-11]=metallic

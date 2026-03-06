@@ -3,7 +3,7 @@ local ui = require("ui.ui")
 local input = require("input")
 local mainPanel = require("game.panels.mainPanel")
 local tkn = require("tkn")
-local tknVox = require("tknVox")
+local tknVoxel = require("game.tknVoxel")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local mapSystem = require("game.mapSystem")
 function mainScene.start(game, pTknGfxContext)
@@ -16,9 +16,9 @@ function mainScene.start(game, pTknGfxContext)
         print("Quit Game button clicked")
     end)
 
-    -- mainScene.terrainMeshData = tknVox.loadVoxFile(game.assetsPath .. "/models/Garden_0.tknvox")
-    -- -- mainScene.terrainMeshData = tknVox.loadVoxFile(game.assetsPath .. "/models/TallBuilding02_0.tknvox")
-    -- mainScene.pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, mainScene.terrainMeshData, 0, nil)
+    -- mainScene.groundMeshData = tknVoxel.loadVoxFile(game.assetsPath .. "/models/Garden_0.tknvox")
+    -- -- mainScene.groundMeshData = tknVoxel.loadVoxFile(game.assetsPath .. "/models/TallBuilding02_0.tknvox")
+    -- mainScene.pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, mainScene.groundMeshData, 0, nil)
     -- local scale = 1.0 / 64
     -- mainScene.pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
     --     model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1},
@@ -27,7 +27,7 @@ function mainScene.start(game, pTknGfxContext)
     mapSystem.setup()
     print("Generating map...")
     mapSystem.generateRoom(321312, 16, 16, game.voxelPerMeter)
-    print("Generated map with " .. #mapSystem.terrainMap .. "x" .. #mapSystem.terrainMap[1] .. " tiles")
+    print("Generated map with " .. #mapSystem.groundMap .. "x" .. #mapSystem.groundMap[1] .. " tiles")
     mainScene.pTknMesh, mainScene.pTknInstance, mainScene.pTknDrawCall = mapSystem.createMesh(pTknGfxContext)
 end
 

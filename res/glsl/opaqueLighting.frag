@@ -6,6 +6,10 @@ layout(location = 0) in vec2 inputUv;
 layout(location = 0) out vec4 outputColor;
 
 const float PI = 3.14159265359;
+const float dielectricF0 = 0.04;
+const float ambientDiffuseStrength = 0.03;
+const float ambientSpecularStrength = 0.03;
+const float emissiveStrength = 2.0;
 
 // GGX 法线分布函数
 float dGgx(float ndotH, float a2) {
@@ -35,11 +39,11 @@ vec3 pbr(vec3 n, vec3 v, vec3 l, vec3 albedo, float roughness, float metallic, v
     float ndotH = max(dot(n, h), 0.0);
     float hdotV = max(dot(h, v), 0.0);
 
-    float a2 = roughness * roughness * roughness * roughness;
-    // 非金属 F0=0.04，金属 F0=albedo
-    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+    roughness = roughness * roughness * roughness * roughness;
+    // 非金属 F0=dielectricF0，金属 F0=albedo
+    vec3 f0 = mix(vec3(dielectricF0), albedo, metallic);
 
-    float d = dGgx(ndotH, a2);
+    float d = dGgx(ndotH, roughness);
     vec3 f = fSchlick(hdotV, f0);
     float g = gSmith(ndotV, ndotL, roughness);
 
@@ -90,13 +94,13 @@ void main() {
     }
 
     // 环境光：非金属用 albedo，金属用 F0（albedo 染色的反射）
-    vec3 f0Ambient = mix(vec3(0.04), albedo, metallic);
-    vec3 ambientDiffuse = vec3(0.1) * albedo * (1.0 - metallic);
-    vec3 ambientSpecular = vec3(0.1) * f0Ambient * metallic;
+    vec3 f0Ambient = mix(vec3(dielectricF0), albedo, metallic);
+    vec3 ambientDiffuse = vec3(ambientDiffuseStrength) * albedo * (1.0 - metallic);
+    vec3 ambientSpecular = vec3(ambientSpecularStrength) * f0Ambient * metallic;
     outputRgb += ambientDiffuse + ambientSpecular;
 
     // 自发光：emissive=1.0 时亮度 = albedo * 5
-    outputRgb += albedo * emissive * 5.0;
+    outputRgb += albedo * emissive * emissiveStrength;
 
     const vec3 fogColor = vec3(0.13, 0.28, 0.36);
     float distanceToCamera = length(position - cameraPosition);
