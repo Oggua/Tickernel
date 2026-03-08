@@ -5,7 +5,7 @@ local tknDropdownWidget = require("engine.widgets.tknDropdownWidget")
 local tknButtonWidget = require("engine.widgets.tknButtonWidget")
 local tknTextNode = require("engine.widgets.tknTextNode")
 local tknImageNode = require("engine.widgets.tknImageNode")
-
+local tknInputFieldWidget = require("engine.widgets.tknInputFieldWidget")
 local uiInspectorPanel = require("engine.panels.uiInspectorPanel")
 local luaInspectorPanel = require("engine.panels.luaInspectorPanel")
 local editorPanel = {}
@@ -95,6 +95,21 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         offset = 0,
     }, tknWidgetConfig.defaultTransform)
 
+    tknInputFieldWidget.add(pTknGfxContext, "testInputFieldWidget", panel.topBarBackgroundNode, 1, {
+        type = ui.layoutType.anchored,
+        anchor = 1,
+        pivot = 1,
+        length = 512,
+        offset = tknWidgetConfig.defaultSpacing,
+    }, {
+        type = ui.layoutType.anchored,
+        anchor = 0.5,
+        pivot = 0.5,
+        length = tknWidgetConfig.largeInteractableWidth,
+        offset = 0,
+    }, "Test Input Field", function(widget, text)
+        -- print("Input field text changed: " .. text)
+    end)
     return panel
 end
 

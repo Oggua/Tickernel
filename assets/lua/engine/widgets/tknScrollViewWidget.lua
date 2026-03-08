@@ -93,24 +93,18 @@ function tknScrollViewWidget.add(pTknGfxContext, name, parent, index, horizontal
     }, ui.orientationType.horizontal, 0, onBottomSliderValueChange)
 
     widget.handleLengthDirty = true
-    widget.postUpdateGfxCallback = function()
-        if widget.handleLengthDirty then
-            local contentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
-            local contentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min
-            local viewWidth = widget.scrollViewBackgroundNode.rect.horizontal.max - widget.scrollViewBackgroundNode.rect.horizontal.min
-            local viewHeight = widget.scrollViewBackgroundNode.rect.vertical.max - widget.scrollViewBackgroundNode.rect.vertical.min
-            local horizontalLength = tknMath.clamp(viewWidth / contentWidth, 0.0, 1.0) * (widget.bottomSliderWidget.sliderNode.rect.horizontal.max - widget.bottomSliderWidget.sliderNode.rect.horizontal.min)
-            local verticalLength = tknMath.clamp(viewHeight / contentHeight, 0.0, 1.0) * (widget.rightSliderWidget.sliderNode.rect.vertical.max - widget.rightSliderWidget.sliderNode.rect.vertical.min)
-            tknSliderWidget.setHandleLength(widget.bottomSliderWidget, horizontalLength)
-            tknSliderWidget.setHandleLength(widget.rightSliderWidget, verticalLength)
-            widget.handleLengthDirty = false
-        end
+    widget.update = function()
+
     end
-    ui.addPostUpdateGfxCallback(widget.postUpdateGfxCallback)
+    if not tknScrollViewWidget.widgets then
+        tknScrollViewWidget.widgets = {}
+    end
+    table.insert(tknScrollViewWidget.widgets, widget)
     return widget
 end
 
 function tknScrollViewWidget.remove(pTknGfxContext, widget)
+    table.remove(tknScrollViewWidget.widgets, table.find(tknScrollViewWidget.widgets, widget))
     ui.removePostUpdateGfxCallback(widget.postUpdateGfxCallback)
     widget.postUpdateGfxCallback = nil
     tknSliderWidget.remove(pTknGfxContext, widget.bottomSliderWidget)
@@ -121,9 +115,26 @@ function tknScrollViewWidget.remove(pTknGfxContext, widget)
 end
 
 function tknScrollViewWidget.setContentOrientation(widget, orientationType, orientation)
-
     ui.setNodeOrientation(widget.contentNode, orientationType, orientation)
     widget.handleLengthDirty = true
+end
+
+function tknScrollViewWidget.update()
+    if tknScrollViewWidget.widgets then
+        for i, widget in ipairs(tknScrollViewWidget.widgets) do
+            if widget.handleLengthDirty then
+                local contentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
+                local contentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min
+                local viewWidth = widget.scrollViewBackgroundNode.rect.horizontal.max - widget.scrollViewBackgroundNode.rect.horizontal.min
+                local viewHeight = widget.scrollViewBackgroundNode.rect.vertical.max - widget.scrollViewBackgroundNode.rect.vertical.min
+                local horizontalLength = tknMath.clamp(viewWidth / contentWidth, 0.0, 1.0) * (widget.bottomSliderWidget.sliderNode.rect.horizontal.max - widget.bottomSliderWidget.sliderNode.rect.horizontal.min)
+                local verticalLength = tknMath.clamp(viewHeight / contentHeight, 0.0, 1.0) * (widget.rightSliderWidget.sliderNode.rect.vertical.max - widget.rightSliderWidget.sliderNode.rect.vertical.min)
+                tknSliderWidget.setHandleLength(widget.bottomSliderWidget, horizontalLength)
+                tknSliderWidget.setHandleLength(widget.rightSliderWidget, verticalLength)
+                widget.handleLengthDirty = false
+            end
+        end
+    end
 end
 
 return tknScrollViewWidget

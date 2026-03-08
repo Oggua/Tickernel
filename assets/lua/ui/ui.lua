@@ -468,12 +468,9 @@ function ui.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilAttachment,
         color = colorPreset.white,
         active = true,
     })
-
-    ui.postUpdateGfxCallbacks = {}
 end
 
 function ui.teardown(pTknGfxContext)
-    ui.postUpdateGfxCallbacks = nil
     ui.removeNode(pTknGfxContext, ui.rootNode)
     ui.renderPass = nil
     tkn.tknDestroySamplerPtr(pTknGfxContext, ui.pTknSampler)
@@ -510,9 +507,6 @@ function ui.update(pTknGfxContext, screenWidth, screenHeight)
     ui.screenWidth = screenWidth
     ui.screenHeight = screenHeight
 
-    for _, callback in ipairs(ui.postUpdateGfxCallbacks) do
-        callback()
-    end
 end
 
 function ui.recordDrawCalls(node, pTknGfxContext, pTknFrame, maskIndex)
@@ -657,24 +651,19 @@ function ui.setImageOrTextNodeColor(node, color)
     node.colorDirty = true
 end
 
-function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textString, font, size, color, alphaThreshold, horizontalAlign, verticalAlign, bold)
+function ui.addTextNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform, textContent, font, size, color, alphaThreshold, horizontalAlign, verticalAlign, bold)
     local node = ui.addNode(pTknGfxContext, parent, index, name, horizontal, vertical, transform);
-    textNode.setupNode(pTknGfxContext, textString, font, size, color, alphaThreshold, horizontalAlign or 0, verticalAlign or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
+    textNode.setupNode(pTknGfxContext, textContent, font, size, color, alphaThreshold, horizontalAlign or 0, verticalAlign or 0, bold, font.pTknMaterial, ui.vertexFormat, ui.instanceFormat, ui.renderPass.pTextPipeline, node)
     return node
-end
-
-function ui.setTextString(node, textString)
-    assert(node.type == "textNode", "ui.setTextString: node is not a textNode")
-    textNode.setTextString(node, textString)
 end
 
 function ui.removeNode(pTknGfxContext, node)
     removeNodeInternal(pTknGfxContext, node)
 end
 
-function ui.setTextContent(node, textString)
+function ui.setTextContent(node, textContent)
     assert(node.type == "textNode", "ui.setTextContent: node is not a textNode")
-    textNode.setTextString(node, textString)
+    textNode.setTextContent(node, textContent)
 end
 
 function ui.rectContainsPoint(rect, xNdc, yNdc)
@@ -696,21 +685,8 @@ function ui.rectContainsPoint(rect, xNdc, yNdc)
     return xNdc >= minX and xNdc <= maxX and yNdc >= minY and yNdc <= maxY
 end
 
-function ui.addPostUpdateGfxCallback(callback)
-    table.insert(ui.postUpdateGfxCallbacks, callback)
-end
-
-function ui.removePostUpdateGfxCallback(callback)
-    for i, cb in ipairs(ui.postUpdateGfxCallbacks) do
-        if cb == callback then
-            table.remove(ui.postUpdateGfxCallbacks, i)
-            return
-        end
-    end
-end
-
-function ui.measureText(font, textString, size, rectWidth, screenWidth, screenHeight)
-    return textNode.measureText(font, textString, size, rectWidth, screenWidth, screenHeight)
+function ui.measureText(font, textContent, size, rectWidth, screenWidth, screenHeight)
+    return textNode.measureText(font, textContent, size, rectWidth, screenWidth, screenHeight)
 end
 
 return ui

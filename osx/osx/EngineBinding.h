@@ -126,12 +126,15 @@ typedef enum {
 
 - (void)teardownEngine;
 
-- (BOOL)updateEngine:(uint32_t)width
+- (void)updateEngine:(uint32_t)width
               height:(uint32_t)height
        keyCodeStates:(InputState *)keyCodeStates
      mouseCodeStates:(InputState *)mouseCodeStates
      scrollingDeltaX:(CGFloat)scrollingDeltaX
      scrollingDeltaY:(CGFloat)scrollingDeltaY
-    mousePositionNDC:(NSPoint)mousePositionNDC;
+    mousePositionNDC:(NSPoint)mousePositionNDC
+           inputText:(NSString *)inputText
+         shouldQuit:(bool *)pShouldQuit
+         imeEnabled:(bool *)pImeEnabled;
 
 @end

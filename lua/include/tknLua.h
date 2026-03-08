@@ -23,5 +23,5 @@ typedef struct
 
 TknContext *createTknContextPtr(const char *assetsPath, uint32_t luaLibraryCount, LuaLibrary *luaLibraries, int targetSwapchainImageCount, VkSurfaceFormatKHR targetVkSurfaceFormat, VkPresentModeKHR targetVkPresentMode, VkInstance vkInstance, VkSurfaceKHR vkSurface, VkExtent2D swapchainExtent);
 void destroyTknContextPtr(TknContext *pTknContext);
-bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyCodeStateCount, InputState *keyCodeStates, uint32_t mouseCodeStateCount, InputState *mouseCodeStates, float scrollingDeltaX, float scrollingDeltaY, float mousePositionNDCX, float mousePositionNDCY);
+void updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyCodeStateCount, InputState *keyCodeStates, uint32_t mouseCodeStateCount, InputState *mouseCodeStates, float scrollingDeltaX, float scrollingDeltaY, float mousePositionNDCX, float mousePositionNDCY, const char *inputText, bool *pShouldQuit, bool *pImeEnabled);
 #endif

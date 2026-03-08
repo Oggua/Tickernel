@@ -9,6 +9,8 @@ local input = {
         x = 0.0,
         y = 0.0,
     },
+    inputText = "",
+    imeEnabled = false,
 }
 
 input.inputState = {

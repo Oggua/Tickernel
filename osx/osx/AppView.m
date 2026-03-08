@@ -3,13 +3,19 @@
 @implementation AppView
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
-    BOOL shouldQuit = [self.pEngineBinding updateEngine:size.width
+    bool shouldQuit, imeEnabled;
+    [self.pEngineBinding updateEngine:size.width
                                                  height:size.height
                                           keyCodeStates:self.keyCodeStates
                                         mouseCodeStates:self.mouseCodeStates
                                         scrollingDeltaX:self.scrollingDeltaX
                                         scrollingDeltaY:self.scrollingDeltaY
-                                       mousePositionNDC:self.mousePositionNDC];
+                                       mousePositionNDC:self.mousePositionNDC
+                                              inputText:self.inputText
+                                             shouldQuit:&shouldQuit
+                                             imeEnabled:&imeEnabled];
+    [self.inputText setString:@""];
+    self.imeEnabled = imeEnabled;
     if (shouldQuit) {
         [self.window close];
     }
@@ -18,13 +24,19 @@
 - (void)drawInMTKView:(MTKView *)view {
     NSCAssert([NSThread isMainThread], @"Rendering must be on main thread!");
 
-    BOOL shouldQuit = [self.pEngineBinding updateEngine:view.drawableSize.width
+    bool shouldQuit, imeEnabled;
+    [self.pEngineBinding updateEngine:view.drawableSize.width
                                                  height:view.drawableSize.height
                                           keyCodeStates:self.keyCodeStates
                                         mouseCodeStates:self.mouseCodeStates
                                         scrollingDeltaX:self.scrollingDeltaX
                                         scrollingDeltaY:self.scrollingDeltaY
-                                       mousePositionNDC:self.mousePositionNDC];
+                                       mousePositionNDC:self.mousePositionNDC
+                                              inputText:self.inputText
+                                             shouldQuit:&shouldQuit
+                                             imeEnabled:&imeEnabled];
+    [self.inputText setString:@""];
+    self.imeEnabled = imeEnabled;
     if (shouldQuit) {
         [self.window close];
         return;
@@ -127,7 +139,9 @@
 
 - (void)keyDown:(NSEvent *)event {
     [self updateKeyCode:event keyState:INPUT_STATE_DOWN];
-    [super keyDown:event];
+    if (self.imeEnabled) {
+        [self interpretKeyEvents:@[event]];
+    }
 }
 
 - (void)keyUp:(NSEvent *)event {
@@ -436,6 +450,7 @@
 
     self.keyCodeStates = calloc(KEY_CODE_COUNT, sizeof(InputState));
     self.mouseCodeStates = calloc(MOUSE_CODE_COUNT, sizeof(InputState));
+    self.inputText = [[NSMutableString alloc] init];
 
     self.pEngineBinding = [[EngineBinding alloc] init];
 
@@ -453,7 +468,67 @@
     return self;
 }
 
+#pragma mark - NSTextInputClient
+
+- (void)insertText:(id)string replacementRange:(NSRange)replacementRange {
+    NSString *text = [string isKindOfClass:[NSAttributedString class]]
+                         ? [(NSAttributedString *)string string]
+                         : (NSString *)string;
+    [self.inputText appendString:text];
+}
+
+- (void)setMarkedText:(id)string selectedRange:(NSRange)selectedRange replacementRange:(NSRange)replacementRange {
+    // markedText not needed; IME confirmation will arrive via insertText:
+}
+
+- (void)unmarkText {
+}
+
+- (BOOL)hasMarkedText {
+    return NO;
+}
+
+- (NSRange)markedRange {
+    return NSMakeRange(NSNotFound, 0);
+}
+
+- (NSRange)selectedRange {
+    return NSMakeRange(0, 0);
+}
+
+- (nullable NSAttributedString *)attributedSubstringForProposedRange:(NSRange)range actualRange:(nullable NSRangePointer)actualRange {
+    return nil;
+}
+
+- (NSArray<NSAttributedStringKey> *)validAttributesForMarkedText {
+    return @[];
+}
+
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(nullable NSRangePointer)actualRange {
+    NSRect viewRect = self.bounds;
+    NSPoint viewCenter = NSMakePoint(viewRect.size.width / 2.0, viewRect.size.height / 2.0);
+    NSPoint windowPoint = [self convertPoint:viewCenter toView:nil];
+    NSRect windowRect = NSMakeRect(windowPoint.x, windowPoint.y, 0, 16);
+    return [self.window convertRectToScreen:windowRect];
+}
+
+- (NSUInteger)characterIndexForPoint:(NSPoint)point {
+    return 0;
+}
+
+- (void)doCommandBySelector:(SEL)selector {
+    // Let the system handle standard commands (e.g. move cursor, delete)
+    if ([self respondsToSelector:selector]) {
+        [self performSelector:selector withObject:nil];
+    }
+}
+
+#pragma mark - Window
+
 - (void)windowWillClose:(NSNotification *)notification {
+    if (notification.object != self.window) {
+        return;
+    }
     [self.pEngineBinding teardownEngine];
     free(self.keyCodeStates);
     free(self.mouseCodeStates);

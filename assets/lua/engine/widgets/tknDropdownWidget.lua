@@ -63,7 +63,7 @@ function tknDropdownWidget.add(pTknGfxContext, name, parent, index, horizontal, 
                     item.onSelect(widget)
                 end
                 widget.selectedIndex = index
-                ui.setTextString(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
+                ui.setTextContent(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
             end
         end)
         tknTextNode.addNode(pTknGfxContext, name .. "itemTextNode" .. i, itemButtonWidget.backgroundNode, 1, paddedRelativeOrientation, paddedRelativeOrientation, tknWidgetConfig.defaultTransform, item.name, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)

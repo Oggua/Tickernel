@@ -104,10 +104,11 @@ void destroyTknContextPtr(TknContext *pTknContext)
     tknFree(pTknContext);
 }
 
-bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyCodeStateCount, InputState *keyCodeStates, uint32_t mouseCodeStateCount, InputState *mouseCodeStates, float scrollingDeltaX, float scrollingDeltaY, float mousePositionNDCX, float mousePositionNDCY)
+void updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint32_t keyCodeStateCount, InputState *keyCodeStates, uint32_t mouseCodeStateCount, InputState *mouseCodeStates, float scrollingDeltaX, float scrollingDeltaY, float mousePositionNDCX, float mousePositionNDCY, const char *inputText, bool *pShouldQuit, bool *pImeEnabled)
 {
     lua_State *pLuaState = pTknContext->pLuaState;
-    bool shouldQuit = false;
+    *pShouldQuit = false;
+    *pImeEnabled = false;
 
     // Update input states first
     if (keyCodeStates && keyCodeStateCount > 0)
@@ -147,7 +148,11 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
         lua_setfield(pLuaState, -2, "x");
         lua_pushnumber(pLuaState, mousePositionNDCY);
         lua_setfield(pLuaState, -2, "y");
-        lua_pop(pLuaState, 2);
+        lua_pop(pLuaState, 1);
+
+        lua_pushstring(pLuaState, inputText ? inputText : "");
+        lua_setfield(pLuaState, -2, "inputText");
+        lua_pop(pLuaState, 1);
     }
 
     TknGfxContext *pTknGfxContext = pTknContext->pTknGfxContext;
@@ -166,7 +171,7 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
     // Get return value if present
     if (lua_isboolean(pLuaState, -1))
     {
-        shouldQuit = lua_toboolean(pLuaState, -1);
+        *pShouldQuit = lua_toboolean(pLuaState, -1);
     }
     lua_pop(pLuaState, 1); // Pop return value, errorHandler and tknEngine table
     TknFrame *pTknFrame = tknAcquireFramePtr(pTknGfxContext, swapchainExtent);
@@ -186,5 +191,11 @@ bool updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
         lua_pop(pLuaState, 2);
     }
 
-    return shouldQuit;
+    // Read imeEnabled from input module
+    lua_getglobal(pLuaState, "require");
+    lua_pushstring(pLuaState, "input");
+    lua_call(pLuaState, 1, 1);
+    lua_getfield(pLuaState, -1, "imeEnabled");
+    *pImeEnabled = lua_toboolean(pLuaState, -1);
+    lua_pop(pLuaState, 2);
 }

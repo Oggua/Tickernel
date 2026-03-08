@@ -41,10 +41,10 @@ function tknTreeNodeWidget.add(pTknGfxContext, parent, index, horizontal, vertic
         onClick = function(widget)
             if widget.isOn then
                 widget.isOn = false
-                ui.setTextString(widget.textNode, collapsedString)
+                ui.setTextContent(widget.textNode, collapsedString)
             else
                 widget.isOn = true
-                ui.setTextString(widget.textNode, expandedString)
+                ui.setTextContent(widget.textNode, expandedString)
             end
             onExpandedChange(treeNodeWidget, widget.isOn)
         end

@@ -242,22 +242,26 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     [self destroyVkInstance];
 }
 
-- (BOOL)updateEngine:(uint32_t)width
+- (void)updateEngine:(uint32_t)width
               height:(uint32_t)height
        keyCodeStates:(InputState *)keyCodeStates
      mouseCodeStates:(InputState *)mouseCodeStates
      scrollingDeltaX:(CGFloat)scrollingDeltaX
      scrollingDeltaY:(CGFloat)scrollingDeltaY
-    mousePositionNDC:(NSPoint)mousePositionNDC;
+    mousePositionNDC:(NSPoint)mousePositionNDC
+           inputText:(NSString *)inputText
+         shouldQuit:(bool *)pShouldQuit
+         imeEnabled:(bool *)pImeEnabled;
 {
     VkExtent2D swapchainExtent = {
         .width = width,
         .height = height,
     };
-    return updateTknContext(self.pTknContext, swapchainExtent, KEY_CODE_COUNT,
+    updateTknContext(self.pTknContext, swapchainExtent, KEY_CODE_COUNT,
                             keyCodeStates, MOUSE_CODE_COUNT, mouseCodeStates,
                             scrollingDeltaX, scrollingDeltaY,
-                            mousePositionNDC.x, mousePositionNDC.y);
+                            mousePositionNDC.x, mousePositionNDC.y,
+                            [inputText UTF8String], pShouldQuit, pImeEnabled);
 }
 
 @end

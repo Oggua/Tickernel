@@ -9,7 +9,8 @@ local transformSystem = require("game.transformSystem")
 local cameraSystem = require("game.cameraSystem")
 local cameraTransformController = require("cameraTransformController")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
-
+local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
+local tknInputFieldWidget = require("engine.widgets.tknInputFieldWidget")
 local tknEngine = {}
 
 local function setupGlobalMaterial(pTknGfxContext)
@@ -118,6 +119,7 @@ local function updateDeferredGeometrySubpassMaterial(pTknGfxContext, camera, scr
 end
 
 function tknEngine.start(pTknGfxContext, assetsPath)
+    tknEngine.frameCount = 0
     tknEngine.assetsPath = assetsPath
     -- Global uniform buffer format (view, projection, etc.)
     local depthVkFormat = tkn.tknGetSupportedFormat(pTknGfxContext, {vulkan.VK_FORMAT_D24_UNORM_S8_UINT, vulkan.VK_FORMAT_D32_SFLOAT_S8_UINT}, vulkan.VK_IMAGE_TILING_OPTIMAL, vulkan.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
@@ -166,9 +168,11 @@ function tknEngine.stop(pTknGfxContext)
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, tknEngine.pDepthStencilAttachment)
     tknEngine.pDepthStencilAttachment = nil
     tknEngine.pSwapchainAttachment = nil
+    tknEngine.frameCount = nil
 end
 
 function tknEngine.update(pTknGfxContext, width, height)
+    tknEngine.frameCount = tknEngine.frameCount + 1
     game.update()
     cameraTransformController.update(tknEngine.cameraTransform)
     transformSystem.update()
@@ -178,6 +182,8 @@ function tknEngine.update(pTknGfxContext, width, height)
     tkn.tknWaitRenderFence(pTknGfxContext)
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)
     ui.update(pTknGfxContext, width, height)
+    tknScrollViewWidget.update()
+    tknInputFieldWidget.update(tknEngine.frameCount)
     return shouldQuit
 end
 
