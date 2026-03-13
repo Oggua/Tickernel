@@ -168,6 +168,7 @@ function tknEngine.stop(pTknGfxContext)
     tkn.tknDestroyDynamicAttachmentPtr(pTknGfxContext, tknEngine.pDepthStencilAttachment)
     tknEngine.pDepthStencilAttachment = nil
     tknEngine.pSwapchainAttachment = nil
+    error("Tickernel engine stopped")
     tknEngine.frameCount = nil
 end
 

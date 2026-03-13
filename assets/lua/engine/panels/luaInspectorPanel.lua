@@ -1,5 +1,5 @@
 local luaInspectorPanel = {}
-
+local ui = require("ui.ui")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local tknDropdownWidget = require("engine.widgets.tknDropdownWidget")
 local tknButtonWidget = require("engine.widgets.tknButtonWidget")
@@ -9,7 +9,7 @@ local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknTextNode = require("engine.widgets.tknTextNode")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknTreeNodeWidget = require("engine.widgets.tknTreeNodeWidget")
-local ui = require("ui.ui")
+local tknInputFieldWidget = require("engine.widgets.tknInputFieldWidget")
 
 local function isChildOfFieldNode(fields, parentFields)
     if #fields <= #parentFields then
@@ -129,15 +129,64 @@ end
 function luaInspectorPanel.create(pTknGfxContext, parent, index)
     local panel = {}
     -- Window 
+    local defaultItemVertical = {
+        type = ui.layoutType.anchored,
+        anchor = 0,
+        pivot = 0,
+        length = tknWidgetConfig.largeInteractableWidth,
+        offset = tknWidgetConfig.defaultSpacing,
+    }
     panel.windowWidget = tknWindowWidget.add(pTknGfxContext, "windowNode", parent, index, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, "\xee\xa9\xbe Lua Inspector")
-    -- ScrollView
-    panel.scrollViewWidget = tknScrollViewWidget.add(pTknGfxContext, "scrollViewNode", panel.windowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, {
+    panel.codeInputFieldWidget = tknInputFieldWidget.add(pTknGfxContext, "codeInputField", panel.windowWidget.contentNode, 1, {
+        type = ui.layoutType.relative,
+        pivot = 0,
+        minOffset = 0,
+        maxOffset = -128 - tknWidgetConfig.defaultSpacing,
+        offset = 0,
+    }, defaultItemVertical, "Code...")
+    panel.runButtonWidget = tknButtonWidget.add(pTknGfxContext, "runButton", panel.windowWidget.contentNode, 2, {
+        type = ui.layoutType.anchored,
+        anchor = 1,
+        pivot = 1,
+        length = 128,
+        offset = 0,
+    }, defaultItemVertical, function()
+        local code = panel.codeInputFieldWidget.text
+        local fn, compileErr = load(code)
+        if not fn then
+            luaInspectorPanel.bind(pTknGfxContext, panel, {
+                error = compileErr,
+            }, "[compile error]")
+            return
+        end
+        local results = table.pack(pcall(fn))
+        local ok = table.remove(results, 1)
+        results.n = results.n - 1
+        if not ok then
+            luaInspectorPanel.bind(pTknGfxContext, panel, {
+                error = results[1],
+            }, "[runtime error]")
+        elseif results.n == 1 then
+            luaInspectorPanel.bind(pTknGfxContext, panel, results[1], "result")
+        else
+            luaInspectorPanel.bind(pTknGfxContext, panel, results, "results")
+        end
+    end)
+    panel.runButtonTextNode = tknTextNode.addNode(pTknGfxContext, "runButtonText", panel.runButtonWidget.backgroundNode, 1, tknWidgetConfig.paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "\xef\x80\x8b Run", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
+    panel.scrollViewWidget = tknScrollViewWidget.add(pTknGfxContext, "scrollViewNode", panel.windowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, {
+        type = ui.layoutType.relative,
+        pivot = 0,
+        minOffset = tknWidgetConfig.largeInteractableWidth + tknWidgetConfig.defaultSpacing,
+        maxOffset = 0,
+        offset = 0,
+    }, tknWidgetConfig.fullRelativeOrientation, {
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
         length = 0,
-        offset = 0,
+        offset = tknWidgetConfig.largeInteractableWidth + tknWidgetConfig.defaultSpacing,
     })
+
     panel.treeNodeWidgets = {}
     return panel
 end

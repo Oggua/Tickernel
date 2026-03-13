@@ -11,7 +11,7 @@ function uiRenderPass.setup(pTknGfxContext, pSwapchainAttachment, pDepthStencilA
         storeOp = vulkan.VK_ATTACHMENT_STORE_OP_STORE,
         stencilLoadOp = vulkan.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         stencilStoreOp = vulkan.VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        initialLayout = vulkan.VK_IMAGE_LAYOUT_UNDEFINED,
+        initialLayout = vulkan.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         finalLayout = vulkan.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     };
     local depthStencilAttachmentDescription = {

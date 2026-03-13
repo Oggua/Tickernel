@@ -437,6 +437,7 @@
 - (instancetype)initWithFrame:(CGRect)frameRect device:(id<MTLDevice>)device {
     self = [super initWithFrame:frameRect device:device];
     self.delegate = self;
+    self.autoResizeDrawable = YES;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
     self.preferredFramesPerSecond = 120;
 
@@ -466,6 +467,16 @@
                name:NSWindowWillCloseNotification
              object:nil];
     return self;
+}
+
+- (void)viewDidChangeBackingProperties {
+    [super viewDidChangeBackingProperties];
+
+    NSRect backingBounds = [self convertRectToBacking:self.bounds];
+    self.drawableSize = backingBounds.size;
+
+    CGFloat backingScale = self.window.screen ? self.window.screen.backingScaleFactor : NSScreen.mainScreen.backingScaleFactor;
+    self.layer.contentsScale = backingScale;
 }
 
 #pragma mark - NSTextInputClient

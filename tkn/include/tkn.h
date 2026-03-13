@@ -78,6 +78,7 @@ void tknWaitGfxRenderFence(TknGfxContext *pTknGfxContext);
 void tknWaitGfxDeviceIdle(TknGfxContext *pTknGfxContext);
 TknFrame *tknAcquireFramePtr(TknGfxContext *pTknGfxContext, VkExtent2D tknSwapchainExtent);
 void tknSubmitAndPresentFramePtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);
+void tknResetFrameSyncPrimitivesPtr(TknGfxContext *pTknGfxContext);
 void tknDestroyGfxContextPtr(TknGfxContext *pTknGfxContext);
 void tknBeginRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame, TknRenderPass *pTknRenderPass);
 void tknEndRenderPassPtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFrame);

@@ -913,6 +913,14 @@ void tknSubmitAndPresentFramePtr(TknGfxContext *pTknGfxContext, TknFrame *pTknFr
     }
 }
 
+void tknResetFrameSyncPrimitivesPtr(TknGfxContext *pTknGfxContext)
+{
+    VkDevice vkDevice = pTknGfxContext->vkDevice;
+    tknAssertVkResult(vkDeviceWaitIdle(vkDevice));
+    tknCleanupSignals(pTknGfxContext);
+    tknPopulateSignals(pTknGfxContext);
+}
+
 void tknWaitGfxRenderFence(TknGfxContext *pTknGfxContext)
 {
     tknAssertVkResult(vkWaitForFences(pTknGfxContext->vkDevice, 1, &pTknGfxContext->vkRenderFinishedFence, VK_TRUE, UINT64_MAX));

@@ -104,9 +104,12 @@ function tknScrollViewWidget.add(pTknGfxContext, name, parent, index, horizontal
 end
 
 function tknScrollViewWidget.remove(pTknGfxContext, widget)
-    table.remove(tknScrollViewWidget.widgets, table.find(tknScrollViewWidget.widgets, widget))
-    ui.removePostUpdateGfxCallback(widget.postUpdateGfxCallback)
-    widget.postUpdateGfxCallback = nil
+    for i, w in ipairs(tknScrollViewWidget.widgets) do
+        if w == widget then
+            table.remove(tknScrollViewWidget.widgets, i)
+            break
+        end
+    end
     tknSliderWidget.remove(pTknGfxContext, widget.bottomSliderWidget)
     tknSliderWidget.remove(pTknGfxContext, widget.rightSliderWidget)
     ui.removeNode(pTknGfxContext, widget.scrollViewNode)

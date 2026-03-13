@@ -43,7 +43,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
             print("Add Debug Inspector selected")
             closeLastPanel(widget)
             panel.debugInspectorPanel = luaInspectorPanel.create(pTknGfxContext, panel.contentNode, 1)
-            luaInspectorPanel.bind(pTknGfxContext, panel.debugInspectorPanel, _G, "_G")
+
         end,
     }, {
         name = "\xef\x8b\x86 UI Inspector",
@@ -95,21 +95,7 @@ function editorPanel.create(pTknGfxContext, editorRootNode)
         offset = 0,
     }, tknWidgetConfig.defaultTransform)
 
-    tknInputFieldWidget.add(pTknGfxContext, "testInputFieldWidget", panel.topBarBackgroundNode, 1, {
-        type = ui.layoutType.anchored,
-        anchor = 1,
-        pivot = 1,
-        length = 512,
-        offset = tknWidgetConfig.defaultSpacing,
-    }, {
-        type = ui.layoutType.anchored,
-        anchor = 0.5,
-        pivot = 0.5,
-        length = tknWidgetConfig.largeInteractableWidth,
-        offset = 0,
-    }, "Test Input Field", function(widget, text)
-        -- print("Input field text changed: " .. text)
-    end)
+
     return panel
 end
 

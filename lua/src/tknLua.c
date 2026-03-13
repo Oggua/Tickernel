@@ -175,19 +175,27 @@ void updateTknContext(TknContext *pTknContext, VkExtent2D swapchainExtent, uint3
     }
     lua_pop(pLuaState, 1); // Pop return value, errorHandler and tknEngine table
     TknFrame *pTknFrame = tknAcquireFramePtr(pTknGfxContext, swapchainExtent);
-    if (pTknFrame)
-    {   
+    if (pTknFrame != NULL)
+    {
         lua_getfield(pLuaState, -1, "recordFrame");
         lua_pushlightuserdata(pLuaState, pTknGfxContext);
         lua_pushlightuserdata(pLuaState, pTknFrame);
-        assertLuaResult(pLuaState, lua_pcall(pLuaState, 2, 0, -5));
-        // Submit and present
-        tknSubmitAndPresentFramePtr(pTknGfxContext, pTknFrame);
+        int recordFrameResult = lua_pcall(pLuaState, 2, 0, -5);
+        if (recordFrameResult == LUA_OK)
+        {
+            // Submit and present
+            tknSubmitAndPresentFramePtr(pTknGfxContext, pTknFrame);
+        }
+        else
+        {
+            assertLuaResult(pLuaState, recordFrameResult);
+        }
         lua_pop(pLuaState, 2);
     }
     else
     {
-        // printf("Failed to acquire frame!\n");
+        // On skipped frames (e.g. swapchain recreate path), force sync primitives back to a clean state.
+        tknResetFrameSyncPrimitivesPtr(pTknGfxContext);
         lua_pop(pLuaState, 2);
     }
 

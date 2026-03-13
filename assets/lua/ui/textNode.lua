@@ -2,11 +2,13 @@ local tkn = require("tkn")
 local vulkan = require("vulkan")
 local colorPreset = require("ui.colorPreset")
 local textNode = {}
+
 function textNode.setup(assetsPath)
     textNode.pTknFontLibrary = tkn.tknCreateTknFontLibraryPtr()
     textNode.pathToFont = {}
     textNode.assetsPath = assetsPath
 end
+
 function textNode.teardown()
     tkn.tknDestroyTknFontLibraryPtr(textNode.pTknFontLibrary)
     textNode.pTknFontLibrary = nil

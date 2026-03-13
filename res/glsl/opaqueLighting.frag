@@ -11,6 +11,15 @@ const float ambientDiffuseStrength = 0.03;
 const float ambientSpecularStrength = 0.03;
 const float emissiveStrength = 2.0;
 
+// ACES Filmic Tone Mapping
+// exposure: 根据场景灯光强度调整。灯光用旧值(1~10)时设1.0，用物理Lux时设1.0/39322.0
+const float exposure = 1.0;
+vec3 ACESToneMapping(vec3 color) {
+    color *= exposure;
+    const float A = 2.51, B = 0.03, C = 2.43, D = 0.59, E = 0.14;
+    return clamp((color * (A * color + B)) / (color * (C * color + D) + E), 0.0, 1.0);
+}
+
 // GGX 法线分布函数
 float dGgx(float ndotH, float a2) {
     float d = ndotH * ndotH * (a2 - 1.0) + 1.0;
@@ -133,6 +142,8 @@ void main() {
             }
         }
     }
+
+    outputRgb = ACESToneMapping(outputRgb);
 
     outputColor = vec4(outputRgb, 1.0);
 }
