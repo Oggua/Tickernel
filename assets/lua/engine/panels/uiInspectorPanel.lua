@@ -265,7 +265,7 @@ function uiInspectorPanel.create(pTknGfxContext, parent, index)
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
-        length = 1024,
+        length = 512,
         offset = 0,
     }, tknWidgetConfig.fullRelativeOrientation, "\xee\xbe\x90 UI Tree Inspector")
 
@@ -273,7 +273,7 @@ function uiInspectorPanel.create(pTknGfxContext, parent, index)
         type = ui.layoutType.anchored,
         anchor = 0,
         pivot = 0,
-        length = 1024,
+        length = 0,
         offset = 0,
     })
 

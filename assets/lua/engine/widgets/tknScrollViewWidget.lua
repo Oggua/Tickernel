@@ -118,10 +118,12 @@ function tknScrollViewWidget.remove(pTknGfxContext, widget)
 end
 
 function tknScrollViewWidget.setContentOrientation(widget, orientationType, orientation)
-    widget.oldContentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
-    widget.oldContentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min
-    ui.setNodeOrientation(widget.contentNode, orientationType, orientation)
-    widget.handleLengthDirty = true
+    if widget.contentNode.rect then
+        widget.oldContentWidth = widget.contentNode.rect.horizontal.max - widget.contentNode.rect.horizontal.min
+        widget.oldContentHeight = widget.contentNode.rect.vertical.max - widget.contentNode.rect.vertical.min
+        ui.setNodeOrientation(widget.contentNode, orientationType, orientation)
+        widget.handleLengthDirty = true
+    end
 end
 
 function tknScrollViewWidget.update()
@@ -136,14 +138,13 @@ function tknScrollViewWidget.update()
                 local verticalLength = tknMath.clamp(viewHeight / contentHeight, 0.0, 1.0) * (widget.rightSliderWidget.sliderNode.rect.vertical.max - widget.rightSliderWidget.sliderNode.rect.vertical.min)
                 tknSliderWidget.setHandleLength(widget.bottomSliderWidget, horizontalLength)
                 tknSliderWidget.setHandleLength(widget.rightSliderWidget, verticalLength)
-                if widget.oldContentHeight ~= nil and widget.oldContentWidth ~= nil then
+                if widget.oldContentHeight and widget.oldContentWidth then
                     local absoluteVerticalPosition = widget.oldContentHeight * widget.rightSliderWidget.handleNode.vertical.anchor
                     local absoluteHorizontalPosition = widget.oldContentWidth * widget.bottomSliderWidget.handleNode.horizontal.anchor
 
                     tknSliderWidget.setValue(widget.rightSliderWidget, absoluteVerticalPosition / contentHeight)
                     tknSliderWidget.setValue(widget.bottomSliderWidget, absoluteHorizontalPosition / contentWidth)
                 end
-
                 widget.handleLengthDirty = false
             end
         end

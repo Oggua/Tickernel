@@ -46,9 +46,9 @@ function tknWidgetConfig.setup(pTknGfxContext, assetsPath)
     tknWidgetConfig.squareImage, tknWidgetConfig.squareImageFitMode, tknWidgetConfig.squareImageUv, tknWidgetConfig.squareCornerRadius = uiDefault.getSprite(uiDefault.cornerRadiusPreset.none)
 
     tknWidgetConfig.font = ui.loadFont(pTknGfxContext, {"/fonts/Monaco.ttf", "/fonts/RemixIcon.ttf"}, 32, 2048, {32, 0})
-    tknWidgetConfig.smallFontSize = 16
-    tknWidgetConfig.normalFontSize = 22
-    tknWidgetConfig.largeFontSize = 28
+    tknWidgetConfig.smallFontSize = 14
+    tknWidgetConfig.normalFontSize = 20
+    tknWidgetConfig.largeFontSize = 26
 
     tknWidgetConfig.smallInteractableWidth = 32
     tknWidgetConfig.largeInteractableWidth = 48
