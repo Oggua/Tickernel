@@ -355,10 +355,10 @@ function mapSystem.createMesh(pTknGfxContext)
     return pTknMesh, pTknInstance, pTknDrawCall
 end
 
-function mapSystem.destroyMesh(pTknMesh, pTknInstance, pTknDrawCall)
-    tkn.tknDestroyDrawCallPtr(pTknDrawCall)
-    tkn.tknDestroyInstancePtr(pTknInstance)
-    tkn.tknDestroyMeshPtr(pTknMesh)
+function mapSystem.destroyMesh(pTknGfxContext, pTknMesh, pTknInstance, pTknDrawCall)
+    tkn.tknDestroyDrawCallPtr(pTknGfxContext, pTknDrawCall)
+    tkn.tknDestroyInstancePtr(pTknGfxContext, pTknInstance)
+    tkn.tknDestroyMeshPtr(pTknGfxContext, pTknMesh)
 end
 
 return mapSystem

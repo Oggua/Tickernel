@@ -200,8 +200,9 @@ function luaInspectorPanel.destroy(pTknGfxContext, panel)
 end
 
 function luaInspectorPanel.bind(pTknGfxContext, panel, data, dataName)
-    for i, v in ipairs(panel.treeNodeWidgets) do
-        tknTreeNodeWidget.remove(pTknGfxContext, v)
+    for i = #panel.treeNodeWidgets, 1, -1 do
+        tknTreeNodeWidget.remove(pTknGfxContext, panel.treeNodeWidgets[i])
+        table.remove(panel.treeNodeWidgets, i)
     end
 
     panel.data = data

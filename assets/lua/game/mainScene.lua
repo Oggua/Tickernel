@@ -39,7 +39,7 @@ function mainScene.stopGfx(game, pTknGfxContext)
     -- tkn.tknDestroyDrawCallPtr(pTknGfxContext, mainScene.pTknDrawCall)
     -- tkn.tknDestroyMeshPtr(pTknGfxContext, mainScene.pTknMesh)
     -- tkn.tknDestroyInstancePtr(pTknGfxContext, mainScene.pTknInstance)
-    mapSystem.destroyMesh(mainScene.pTknMesh, mainScene.pTknInstance, mainScene.pTknDrawCall)
+    mapSystem.destroyMesh(pTknGfxContext, mainScene.pTknMesh, mainScene.pTknInstance, mainScene.pTknDrawCall)
 
     mainPanel.destroy(mainScene.mainPanel, pTknGfxContext)
     mainScene.mainPanel = nil
