@@ -104,5 +104,20 @@ local voxelConfig = {
         roughness = 14,
         metallic = 0,
     },
+
+    whiteMushroom = {
+        name = "whiteMushroom",
+        color = 0xAC9A85FF,
+        emissive = 0,
+        roughness = 12,
+        metallic = 0,
+    },
+    redMushroom = {
+        name = "redMushroom",
+        color = 0x7B2F27FF,
+        emissive = 0,
+        roughness = 12,
+        metallic = 0,
+    },
 }
 return voxelConfig

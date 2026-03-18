@@ -306,6 +306,17 @@ if not tkn.tknCreateInstancePtr then
     end
 end
 
+if not tkn.tknUpdateInstancePtr then
+    ---Update instance data with vertex attributes
+    ---@param pTknGfxContext lightuserdata Graphics context pointer
+    ---@param pTknInstance lightuserdata TknInstance pointer
+    ---@param format table Field layout descriptors
+    ---@param instances table Data table with named arrays
+    function tkn.tknUpdateInstancePtr(pTknGfxContext, pTknInstance, format, instances)
+        error("tkn.tknUpdateInstancePtr: C binding not loaded")
+    end
+end
+
 if not tkn.tknDestroyInstancePtr then
     ---Destroy instance data
     ---@param pTknGfxContext lightuserdata Graphics context pointer
@@ -314,6 +325,8 @@ if not tkn.tknDestroyInstancePtr then
         error("tkn.tknDestroyInstancePtr: C binding not loaded")
     end
 end
+
+
 
 if not tkn.tknCreateMeshPtrWithData then
     ---Create a mesh with vertex and index data

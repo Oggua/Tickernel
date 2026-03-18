@@ -209,7 +209,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
             voxel = voxelConfig.rock
             height = 4
         elseif noise > -0.3 then
-            voxel = voxelConfig.lightRock
+            voxel = voxelConfig.darkRock
             height = 3
         else
             voxel = voxelConfig.lava
@@ -336,8 +336,6 @@ function mapSystem.createMesh(pTknGfxContext)
                     table.insert(vertices.color, tknMath.rgbaToAbgr(voxel.color))
                     local normal = calculateNormal(mapSystem.voxelMap, x, y, z)
                     table.insert(vertices.normal, normal)
-                    -- bits[0-3]=emissive, bits[4-7]=roughness, bits[8-11]=metallic
-                    -- clamp to 0-15 to fit in 4 bits each
                     local pbr = (voxel.emissive & 0xF) | ((voxel.roughness & 0xF) << 4) | ((voxel.metallic & 0xF) << 8)
                     table.insert(vertices.pbr, pbr)
                 end
@@ -349,7 +347,7 @@ function mapSystem.createMesh(pTknGfxContext)
 
     local scale = 1.0 / mapSystem.voxelPerMeter
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
-        model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, 1},
+        model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, 0, 1},
     })
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, pTknMesh, pTknInstance)
     return pTknMesh, pTknInstance, pTknDrawCall

@@ -9,7 +9,7 @@ const float PI = 3.14159265359;
 const float dielectricF0 = 0.04;
 const float ambientDiffuseStrength = 0.03;
 const float ambientSpecularStrength = 0.03;
-const float emissiveStrength = 2.0;
+const float emissiveStrength = 1.0;
 
 // ACES Filmic Tone Mapping
 // exposure: 根据场景灯光强度调整。灯光用旧值(1~10)时设1.0，用物理Lux时设1.0/39322.0
@@ -122,15 +122,14 @@ void main() {
         float t = -cameraPosition.z / rayDir.z;
         if(t > 0.0) {
             vec3 gridPos = cameraPosition + t * rayDir;
-            float gx = fract(gridPos.x);
-            float gy = fract(gridPos.y);
+            float gx = fract(gridPos.x - 0.5);
+            float gy = fract(gridPos.y - 0.5);
             float lx = min(gx, 1.0 - gx);
             float ly = min(gy, 1.0 - gy);
-            float lineWidth = 0.03;
+            float lineWidth = 0.02;
             if(lx < lineWidth || ly < lineWidth) {
-                // 原点白色，X轴→红，Y轴→绿，距离越远越暗
                 float dist = length(gridPos.xy);
-                float brightness = exp(-dist * 0.05); // 距离衰减
+                float brightness = exp(-dist * 0.05);
                 vec3 axisColor = vec3(max(gridPos.x / (dist + 0.001), 0.0), // +X = R
                 max(gridPos.y / (dist + 0.001), 0.0), // +Y = G
                 1.0);

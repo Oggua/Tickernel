@@ -5,10 +5,12 @@ local mainPanel = require("game.panels.mainPanel")
 local tkn = require("tkn")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local mapSystem = require("game.mapSystem")
-local voxParser = require("game.voxParser")
+local tknVoxel = require("game.tknVoxel")
+local structure = require("game.structure")
 function mainScene.start(game, pTknGfxContext)
     mainScene.mainPanel = mainPanel.create(pTknGfxContext, game, game.gameRootNode, function()
         print("Start Game button clicked")
+        game.switchScene(game)
     end, function()
         print("Settings button clicked")
     end, function()
@@ -18,49 +20,22 @@ function mainScene.start(game, pTknGfxContext)
 
     mapSystem.setup()
     print("Generating map...")
-    mapSystem.generateRoom(321312, 16, 16, game.voxelPerMeter)
-    print("Generated map with " .. #mapSystem.groundMap .. "x" .. #mapSystem.groundMap[1] .. " tiles")
-    mainScene.pTknMesh, mainScene.pTknInstance, mainScene.pTknDrawCall = mapSystem.createMesh(pTknGfxContext)
+    mapSystem.generateRoom(321312, 32, 32, game.voxelPerMeter)
 
-    mainScene.rockWallCount = 0
-    mainScene.pRockWallMesh = nil
-    mainScene.pRockWallInstance = nil
-    mainScene.pRockWallDrawCall = nil
-    local rockWallPath = game.assetsPath .. "/models/rockWall.tvox"
-    local ok, pRockWallMeshOrErr = pcall(voxParser.readTvox, rockWallPath, pTknGfxContext)
-    if not ok then
-        print("Failed to load rockWall mesh via voxParser.readTvox: " .. tostring(pRockWallMeshOrErr))
-    else
-        mainScene.pRockWallMesh = pRockWallMeshOrErr
-        local count = 1
-        local s = 1.0 / game.voxelPerMeter
-        local models = {}
-        local tx = 0
-        local ty = 0
-        local tz = 0
-        table.insert(models, s)
-        table.insert(models, 0)
-        table.insert(models, 0)
-        table.insert(models, tx)
-        table.insert(models, 0)
-        table.insert(models, s)
-        table.insert(models, 0)
-        table.insert(models, ty)
-        table.insert(models, 0)
-        table.insert(models, 0)
-        table.insert(models, s)
-        table.insert(models, tz)
-        table.insert(models, 0)
-        table.insert(models, 0)
-        table.insert(models, 0)
-        table.insert(models, 1)
-        mainScene.pRockWallInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
-            model = models,
-        })
-        mainScene.pRockWallDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, mainScene.pRockWallMesh, mainScene.pRockWallInstance)
-        mainScene.rockWallCount = count
+    print("Generated map with " .. #mapSystem.groundMap .. "x" .. #mapSystem.groundMap[1] .. " tiles")
+    mainScene.pGroundTknMesh, mainScene.pGroundTknInstance, mainScene.pGroundTknDrawCall = mapSystem.createMesh(pTknGfxContext)
+
+    structure.setup(game.assetsPath, game.voxelPerMeter)
+    mainScene.structures = {}
+    for i = 1, 64 do
+        local x = math.random(1, mapSystem.length)
+        local y = math.random(1, mapSystem.width)
+        if x % 2 == 1 then
+            table.insert(mainScene.structures, structure.create(pTknGfxContext, "rockWall", x, y))
+        else
+            table.insert(mainScene.structures, structure.create(pTknGfxContext, "mushroom", x, y))
+        end
     end
-    print("Loaded random rockWalls: " .. tostring(mainScene.rockWallCount))
 end
 
 function mainScene.stop(game)
@@ -68,24 +43,12 @@ function mainScene.stop(game)
 end
 
 function mainScene.stopGfx(game, pTknGfxContext)
-
-    mapSystem.destroyMesh(pTknGfxContext, mainScene.pTknMesh, mainScene.pTknInstance, mainScene.pTknDrawCall)
-
-    if mainScene.pRockWallDrawCall then
-        tkn.tknDestroyDrawCallPtr(pTknGfxContext, mainScene.pRockWallDrawCall)
-        mainScene.pRockWallDrawCall = nil
+    for i, v in ipairs(mainScene.structures) do
+        structure.destroy(pTknGfxContext, v)
     end
+    structure.teardown()
 
-    if mainScene.pRockWallInstance then
-        tkn.tknDestroyInstancePtr(pTknGfxContext, mainScene.pRockWallInstance)
-        mainScene.pRockWallInstance = nil
-    end
-
-    if mainScene.pRockWallMesh then
-        voxParser.destroyMesh(pTknGfxContext, mainScene.pRockWallMesh)
-        mainScene.pRockWallMesh = nil
-    end
-    mainScene.rockWallCount = 0
+    mapSystem.destroyMesh(pTknGfxContext, mainScene.pGroundTknMesh, mainScene.pGroundTknInstance, mainScene.pGroundTknDrawCall)
 
     mainPanel.destroy(mainScene.mainPanel, pTknGfxContext)
     mainScene.mainPanel = nil
@@ -100,10 +63,9 @@ function mainScene.updateGfx(game, pTknGfxContext, width, height)
 end
 
 function mainScene.recordFrame(game, pTknGfxContext, pTknFrame)
-    -- Main scene rendering logic here
-    tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, mainScene.pTknDrawCall)
-    if mainScene.pRockWallDrawCall then
-        tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, mainScene.pRockWallDrawCall)
+    tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, mainScene.pGroundTknDrawCall)
+    for k, v in pairs(structure.typeToPDrawCall) do
+        tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, v)
     end
 end
 
