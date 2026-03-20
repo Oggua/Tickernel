@@ -1,9 +1,7 @@
 local voxelConfig = require("game.voxelConfig")
-
-local tknVoxel = {}
-
 local tkn = nil
 local deferredRenderPass = nil
+local tknVoxel = {}
 
 local function ensureRenderDeps()
     if not tkn then
@@ -27,12 +25,29 @@ for _, material in pairs(voxelConfig) do
     end
 end
 
-local function asTvoxPath(voxFilePath)
-    local replaced = voxFilePath:gsub("%.vox$", ".tvox")
-    if replaced == voxFilePath then
-        replaced = voxFilePath .. ".tvox"
+local function normalizePath(path)
+    while path:find("//") do
+        path = path:gsub("//", "/")
     end
-    return replaced
+    return path
+end
+
+local function getFileNameNoExt(path)
+    local name = path:match("([^/\\]+)$") or path
+    return name:gsub("%.vox$", "")
+end
+
+local function asTvoxPath(voxFilePath, output)
+    output = output or "."
+    if output:match("%.tvox$") then
+        return normalizePath(output)
+    end
+
+    local dir = output
+    if not dir:match(".*/$") then
+        dir = dir .. "/"
+    end
+    return normalizePath(dir .. getFileNameNoExt(voxFilePath) .. ".tvox")
 end
 
 local function writeTvoxFile(tvoxFilePath, sizeX, sizeY, sizeZ, records)
@@ -369,10 +384,17 @@ local function normalizeAndFinalizeRecords(records, options)
     return finalized
 end
 
-function tknVoxel.writeTvox(voxFilePath)
+function tknVoxel.writeTvox(voxFilePath, output)
     local model, palette = parseVoxFile(voxFilePath)
     local records = buildPackedVoxelRecords(model, palette)
-    local tvoxFilePath = asTvoxPath(voxFilePath)
+    local tvoxFilePath = asTvoxPath(voxFilePath, output)
+
+    -- 如果输出目录不存在，尝试创建
+    local outDir = tvoxFilePath:match("^(.*)/") or "."
+    if outDir and outDir ~= "" then
+        os.execute("mkdir -p '" .. outDir .. "'")
+    end
+
     writeTvoxFile(tvoxFilePath, model.size.x, model.size.y, model.size.z, records)
 
     return tvoxFilePath, #records
@@ -435,15 +457,21 @@ local function readTvoxRaw(tvoxFilePath)
 end
 
 function tknVoxel.readTvox(tvoxFilePath, pTknGfxContext, pivot)
-    ensureRenderDeps()
     local tvox = readTvoxRaw(tvoxFilePath)
-    if not pivot then
-        error("tknVoxel.readTvox: pivot is required")
+
+    -- 保留参数兼容：不传渲染上下文时，只返回数据
+    if not pTknGfxContext and not pivot then
+        return tvox
     end
 
-    local pivotX = pivot.x or pivot[1]
-    local pivotY = pivot.y or pivot[2]
-    local pivotZ = pivot.z or pivot[3]
+    if not pivot then
+        error("tknVoxel.readTvox: pivot is required when pTknGfxContext is provided")
+    end
+    ensureRenderDeps()
+
+    local pivotX = pivot.x or pivot[1] or 0
+    local pivotY = pivot.y or pivot[2] or 0
+    local pivotZ = pivot.z or pivot[3] or 0
 
     local pivotOffsetX = tvox.sizeX * pivotX
     local pivotOffsetY = tvox.sizeY * pivotY
@@ -469,11 +497,6 @@ function tknVoxel.readTvox(tvoxFilePath, pTknGfxContext, pivot)
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
 
     return pTknMesh, tvox
-end
-
-function tknVoxel.destroyMesh(pTknGfxContext, pTknMesh)
-    ensureRenderDeps()
-    tkn.tknDestroyMeshPtr(pTknGfxContext, pTknMesh)
 end
 
 return tknVoxel

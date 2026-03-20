@@ -196,7 +196,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         directionalLightColor = {1.0, 1.0, 1.0, 1.0},
         directionalLightDirection = {-0.4, -0.4, -0.8, 0.0},
         pointLights = { -- Light 3: warm orange
-        0.6, 0.3, 0.9, 8.0, 4, 4, 1, 4.0, 0.6, 0.5, 0.3, 4.0, 8, 8, 1, 4.0, 0.6, 0.5, 0.3, 4.0, 8, 4, 1, 4.0},
+        0.6, 0.3, 0.9, 8.0, 16, 16, 3, 5.0, 0.6, 0.5, 0.3, 4.0, 8, 8, 1, 4.0, 0.6, 0.5, 0.3, 4.0, 8, 4, 1, 4.0},
         pointLightCount = 3,
     }
     -- pad pointLights to exactly 128 * 8 floats

@@ -27,10 +27,12 @@ function mainScene.start(game, pTknGfxContext)
 
     structure.setup(game.assetsPath, game.voxelPerMeter)
     mainScene.structures = {}
-    for i = 1, 64 do
+    for i = 1, 256 do
         local x = math.random(1, mapSystem.length)
         local y = math.random(1, mapSystem.width)
-        if x % 2 == 1 then
+        if x % 3 == 1 then
+            table.insert(mainScene.structures, structure.create(pTknGfxContext, "iceWall", x, y))
+        elseif x % 3 == 2 then
             table.insert(mainScene.structures, structure.create(pTknGfxContext, "rockWall", x, y))
         else
             table.insert(mainScene.structures, structure.create(pTknGfxContext, "mushroom", x, y))

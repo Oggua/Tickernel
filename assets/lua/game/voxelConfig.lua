@@ -92,7 +92,7 @@ local voxelConfig = {
     },
     ice = {
         name = "ice",
-        color = 0xADD8E6FF,
+        color = 0xC1FAFFFF,
         emissive = 0,
         roughness = 1,
         metallic = 1,
