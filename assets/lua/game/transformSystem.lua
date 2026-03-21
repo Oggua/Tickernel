@@ -6,19 +6,14 @@ local function updateTransformRecursively(transform, parentModel, parentDirty)
         transform.dirty = false
         parentDirty = true
         -- local model = T * R * S
-        local px = transform.position and transform.position.x or 0
-        local py = transform.position and transform.position.y or 0
-        local pz = transform.position and transform.position.z or 0
-        local sx = transform.scale and transform.scale.x or 1
-        local sy = transform.scale and transform.scale.y or 1
-        local sz = transform.scale and transform.scale.z or 1
-        local q = transform.rotation or {
-            x = 0,
-            y = 0,
-            z = 0,
-            w = 1,
-        }
-        local qx, qy, qz, qw = q.x or 0, q.y or 0, q.z or 0, q.w or 1
+        local px = transform.position and transform.position[1] or 0
+        local py = transform.position and transform.position[2] or 0
+        local pz = transform.position and transform.position[3] or 0
+        local sx = transform.scale and transform.scale[1] or 1
+        local sy = transform.scale and transform.scale[2] or 1
+        local sz = transform.scale and transform.scale[3] or 1
+        local q = transform.rotation or {0, 0, 0, 1}
+        local qx, qy, qz, qw = q[1] or 0, q[2] or 0, q[3] or 0, q[4] or 1
 
         -- rotation matrix from quaternion (row-major)
         local xx = qx * qx
@@ -44,15 +39,9 @@ local function updateTransformRecursively(transform, parentModel, parentDirty)
         local r22 = 1 - 2 * (xx + yy)
 
         -- apply scale to rotation (R * S) by scaling each column of R
-        r00 = r00 * sx;
-        r10 = r10 * sx;
-        r20 = r20 * sx
-        r01 = r01 * sy;
-        r11 = r11 * sy;
-        r21 = r21 * sy
-        r02 = r02 * sz;
-        r12 = r12 * sz;
-        r22 = r22 * sz
+        r00 = r00 * sx; r10 = r10 * sx; r20 = r20 * sx
+        r01 = r01 * sy; r11 = r11 * sy; r21 = r21 * sy
+        r02 = r02 * sz; r12 = r12 * sz; r22 = r22 * sz
 
         local localModel = {r00, r01, r02, px, r10, r11, r12, py, r20, r21, r22, pz, 0, 0, 0, 1}
 
@@ -66,32 +55,38 @@ local function updateTransformRecursively(transform, parentModel, parentDirty)
     end
 end
 
+-- position: {x, y, z}  (array indices [1][2][3])
 function transformSystem.setPosition(transform, x, y, z)
-    local valueDirty = x ~= transform.position.x or y ~= transform.position.y or z ~= transform.position.z
+    local p = transform.position
+    local valueDirty = x ~= p[1] or y ~= p[2] or z ~= p[3]
     transform.dirty = transform.dirty or valueDirty
-    transform.position.x = x
-    transform.position.y = y
-    transform.position.z = z
+    p[1] = x
+    p[2] = y
+    p[3] = z
 end
 
+-- scale: {x, y, z}  (array indices [1][2][3])
 function transformSystem.setScale(transform, x, y, z)
-    local valueDirty = x ~= transform.scale.x or y ~= transform.scale.y or z ~= transform.scale.z
+    local s = transform.scale
+    local valueDirty = x ~= s[1] or y ~= s[2] or z ~= s[3]
     transform.dirty = transform.dirty or valueDirty
-    transform.scale.x = x
-    transform.scale.y = y
-    transform.scale.z = z
+    s[1] = x
+    s[2] = y
+    s[3] = z
 end
 
+-- rotation: {x, y, z, w}  (array indices [1][2][3][4], quaternion)
 function transformSystem.setRotation(transform, x, y, z, w)
-    local valueDirty = x ~= transform.rotation.x or y ~= transform.rotation.y or z ~= transform.rotation.z or w ~= transform.rotation.w
+    local r = transform.rotation
+    local valueDirty = x ~= r[1] or y ~= r[2] or z ~= r[3] or w ~= r[4]
     transform.dirty = transform.dirty or valueDirty
-    transform.rotation.x = x
-    transform.rotation.y = y
-    transform.rotation.z = z
-    transform.rotation.w = w
+    r[1] = x
+    r[2] = y
+    r[3] = z
+    r[4] = w
 end
 
-function transformSystem.add(position, rotation, scale, parent, index)
+function transformSystem.add(px, py, pz, rx, ry, rz, rw, sx, sy, sz, parent, index)
     local result = {
         parent = parent,
         position = {},
@@ -99,9 +94,9 @@ function transformSystem.add(position, rotation, scale, parent, index)
         scale = {},
         children = {},
     }
-    transformSystem.setPosition(result, position.x, position.y, position.z)
-    transformSystem.setRotation(result, rotation.x, rotation.y, rotation.z, rotation.w)
-    transformSystem.setScale(result, scale.x, scale.y, scale.z)
+    transformSystem.setPosition(result, px, py, pz)
+    transformSystem.setRotation(result, rx, ry, rz, rw)
+    transformSystem.setScale(result, sx, sy, sz)
     if parent then
         if index then
             assert(index >= 1 and index <= #parent.children + 1, "transform.add: index out of bounds")
@@ -134,20 +129,7 @@ end
 local defaultModel = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
 
 function transformSystem.setup()
-    transformSystem.add({
-        x = 0,
-        y = 0,
-        z = 0,
-    }, {
-        x = 0,
-        y = 0,
-        z = 0,
-        w = 1,
-    }, {
-        x = 1,
-        y = 1,
-        z = 1,
-    }, nil, nil)
+    transformSystem.add(0, 0, 0, 0, 0, 0, 1, 1, 1, 1, nil, nil)
 end
 
 function transformSystem.teardown()
@@ -159,4 +141,5 @@ function transformSystem.update()
         updateTransformRecursively(transformSystem.rootTransform, defaultModel, false)
     end
 end
+
 return transformSystem

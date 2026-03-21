@@ -94,7 +94,6 @@ local function updateGlobalMaterial(pTknGfxContext, camera, time, frameCount, sc
         screenWidth = screenWidth,
         screenHeight = screenHeight,
     }
-    -- tknEngine.pGlobalUniformBuffer = tkn.tknCreateUniformBufferPtr(pTknGfxContext, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer)
     tkn.tknUpdateUniformBufferPtr(pTknGfxContext, tknEngine.pGlobalUniformBuffer, tknEngine.globalUniformBufferFormat, pGlobalUniformBuffer, nil)
     local inputBindings = {{
         vkDescriptorType = vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -140,7 +139,7 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     transformSystem.setup()
     cameraSystem.setup()
 
-    tknEngine.cameraTransform = transformSystem.add({10, 0, 0}, {0, 0, 0, 0}, {1, 1, 1}, transformSystem.rootTransform, nil)
+    tknEngine.cameraTransform = transformSystem.add(10, 0, 0, 0, 0, 0, 1, 1, 1, 1, transformSystem.rootTransform, nil)
     tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 0.01, 16, 60)
 end
 
@@ -178,7 +177,7 @@ function tknEngine.update(pTknGfxContext, width, height)
     cameraTransformController.update(tknEngine.cameraTransform)
     transformSystem.update()
     cameraSystem.update(pTknGfxContext, width, height)
-    updateGlobalMaterial(pTknGfxContext, tknEngine.camera, 0, 0, width, height)
+    updateGlobalMaterial(pTknGfxContext, tknEngine.camera, 0, tknEngine.frameCount, width, height)
     updateDeferredGeometrySubpassMaterial(pTknGfxContext, tknEngine.camera, width, height, 1.414 / tknEngine.voxelPerMeter)
     tkn.tknWaitRenderFence(pTknGfxContext)
     local shouldQuit = game.updateGfx(pTknGfxContext, width, height)

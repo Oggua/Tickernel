@@ -22,6 +22,7 @@ function tknMath.multiplyColors(c1, c2)
     local b = (b1 * b2) // 255
     return (a << 24) | (r << 16) | (g << 8) | b
 end
+
 -- 3x3 matrix multiplication for flat ROW-MAJOR arrays (returns new table)
 -- Matrices are stored as: [m00, m01, m02, m10, m11, m12, m20, m21, m22]
 -- Computes r = a * b where a,b are row-major flat arrays
@@ -40,9 +41,6 @@ function tknMath.multiplyMatrix3x3(a, b)
     r[9] = a[7] * b[3] + a[8] * b[6] + a[9] * b[9]
     return r
 end
-
--- backward compatibility aliases
--- (no backward-compat aliases; project uses descriptive names)
 
 -- 4x4 matrix multiplication for flat row-major arrays (returns new table)
 function tknMath.multiplyMatrix4x4(a, b)
@@ -69,9 +67,6 @@ function tknMath.multiplyMatrix4x4(a, b)
     c[16] = a[13] * b[4] + a[14] * b[8] + a[15] * b[12] + a[16] * b[16]
     return c
 end
-
--- backward compatibility alias
--- (no backward-compat alias; project uses descriptive names)
 
 function tknMath.round(v)
     return math.floor(0.5 + v)
@@ -120,87 +115,88 @@ function tknMath.smoothLerp(a, b, t)
     return a + (b - a) * t
 end
 
+-- Shared scratch matrices for applyTransformations (avoids per-call allocation)
 local rotationMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-
-local scaleMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-
+local scaleMatrix    = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 local translateMatrix = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}
-
-local modelMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
+local modelMatrix    = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 
 local function rotateAroundZ(angle)
     local rad = math.rad(angle)
-    rotationMatrix[1][1] = math.cos(rad)
-    rotationMatrix[1][2] = -math.sin(rad)
-    rotationMatrix[1][3] = 0
-    rotationMatrix[1][4] = 0
-
-    rotationMatrix[2][1] = math.sin(rad)
-    rotationMatrix[2][2] = math.cos(rad)
-    rotationMatrix[2][3] = 0
-    rotationMatrix[2][4] = 0
-
-    rotationMatrix[3][1] = 0
-    rotationMatrix[3][2] = 0
-    rotationMatrix[3][3] = 1
-    rotationMatrix[3][4] = 0
-
-    rotationMatrix[4][1] = 0
-    rotationMatrix[4][2] = 0
-    rotationMatrix[4][3] = 0
-    rotationMatrix[4][4] = 1
-
+    local c = math.cos(rad)
+    local s = math.sin(rad)
+    rotationMatrix[1][1] = c;  rotationMatrix[1][2] = -s; rotationMatrix[1][3] = 0; rotationMatrix[1][4] = 0
+    rotationMatrix[2][1] = s;  rotationMatrix[2][2] =  c; rotationMatrix[2][3] = 0; rotationMatrix[2][4] = 0
+    rotationMatrix[3][1] = 0;  rotationMatrix[3][2] =  0; rotationMatrix[3][3] = 1; rotationMatrix[3][4] = 0
+    rotationMatrix[4][1] = 0;  rotationMatrix[4][2] =  0; rotationMatrix[4][3] = 0; rotationMatrix[4][4] = 1
     return rotationMatrix
 end
 
 local function scaleModel(scale)
-    scaleMatrix[1][1] = scale
-    scaleMatrix[1][2] = 0
-    scaleMatrix[1][3] = 0
-    scaleMatrix[1][4] = 0
-
-    scaleMatrix[2][1] = 0
-    scaleMatrix[2][2] = scale
-    scaleMatrix[2][3] = 0
-    scaleMatrix[2][4] = 0
-
-    scaleMatrix[3][1] = 0
-    scaleMatrix[3][2] = 0
-    scaleMatrix[3][3] = scale
-    scaleMatrix[3][4] = 0
-
-    scaleMatrix[4][1] = 0
-    scaleMatrix[4][2] = 0
-    scaleMatrix[4][3] = 0
-    scaleMatrix[4][4] = 1
-
+    scaleMatrix[1][1] = scale; scaleMatrix[1][2] = 0;     scaleMatrix[1][3] = 0;     scaleMatrix[1][4] = 0
+    scaleMatrix[2][1] = 0;     scaleMatrix[2][2] = scale; scaleMatrix[2][3] = 0;     scaleMatrix[2][4] = 0
+    scaleMatrix[3][1] = 0;     scaleMatrix[3][2] = 0;     scaleMatrix[3][3] = scale; scaleMatrix[3][4] = 0
+    scaleMatrix[4][1] = 0;     scaleMatrix[4][2] = 0;     scaleMatrix[4][3] = 0;     scaleMatrix[4][4] = 1
     return scaleMatrix
 end
 
 local function translateModel(x, y, z)
-    translateMatrix[1][4] = x
-    translateMatrix[2][4] = y
-    translateMatrix[3][4] = z
+    translateMatrix[1][1] = 1; translateMatrix[1][2] = 0; translateMatrix[1][3] = 0; translateMatrix[1][4] = x
+    translateMatrix[2][1] = 0; translateMatrix[2][2] = 1; translateMatrix[2][3] = 0; translateMatrix[2][4] = y
+    translateMatrix[3][1] = 0; translateMatrix[3][2] = 0; translateMatrix[3][3] = 1; translateMatrix[3][4] = z
+    translateMatrix[4][1] = 0; translateMatrix[4][2] = 0; translateMatrix[4][3] = 0; translateMatrix[4][4] = 1
     return translateMatrix
 end
 
-local function matrixMultiply(A, B, result)
+local function matrixMultiply(a, b, result)
     for i = 1, 4 do
         for j = 1, 4 do
             result[i][j] = 0
             for k = 1, 4 do
-                result[i][j] = result[i][j] + A[i][k] * B[k][j]
+                result[i][j] = result[i][j] + a[i][k] * b[k][j]
             end
         end
     end
-    return result
 end
 
-local function applyTransformations(scale, x, y, z, angle)
-    local rotationMatrix = rotateAroundZ(angle)
-    local scaleMatrix = scaleModel(scale)
-    local translateMatrix = translateModel(x, y, z)
-    return matrixMultiply(translateMatrix, matrixMultiply(rotationMatrix, scaleMatrix, modelMatrix), modelMatrix)
+function tknMath.applyTransformations(scale, x, y, z, angle, matrix)
+    local rMat = rotateAroundZ(angle)
+    local sMat = scaleModel(scale)
+    local tMat = translateModel(x, y, z)
+    matrixMultiply(rMat, sMat, modelMatrix)
+    matrixMultiply(tMat, modelMatrix, matrix)
+end
+
+function tknMath.cross2D(ax, ay, bx, by)
+    return ax * by - ay * bx
+end
+
+function tknMath.cross3D(ax, ay, az, bx, by, bz)
+    return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
+end
+
+function tknMath.normalize3D(x, y, z)
+    local len = math.sqrt(x * x + y * y + z * z)
+    if len < 0.000001 then
+        return 0.0, 0.0, 0.0
+    end
+    return x / len, y / len, z / len
+end
+
+function tknMath.normalize2D(x, y)
+    local len = math.sqrt(x * x + y * y)
+    if len < 0.000001 then
+        return 0.0, 0.0
+    end
+    return x / len, y / len
+end
+
+function tknMath.dot3D(ax, ay, az, bx, by, bz)
+    return ax * bx + ay * by + az * bz
+end
+
+function tknMath.dot2D(ax, ay, bx, by)
+    return ax * bx + ay * by
 end
 
 local grad2D = function(hash, x, y)
@@ -220,8 +216,6 @@ local dotGridGradient2D = function(ix, iy, x, y, seed)
     return grad2D(hash, dx, dy)
 end
 
-tknMath.minN, tknMath.maxN = math.maxinteger, math.mininteger
----comment
 ---@param seed integer
 ---@param x number
 ---@param y number
@@ -233,7 +227,6 @@ function tknMath.perlinNoise2D(seed, x, y)
     local y0 = math.floor(y)
     local y1 = y0 + 1
     -- Determine interpolation weights
-    -- Could also use higher order polynomial/s-curve here
     local sx = x - x0
     local sy = y - y0
     -- Interpolate between grid point gradients
@@ -265,7 +258,6 @@ local dotGridGradient3D = function(ix, iy, iz, x, y, z, seed)
     return grad3D(hash, dx, dy, dz)
 end
 
----comment
 ---@param seed number
 ---@param x number
 ---@param y number
@@ -280,7 +272,6 @@ function tknMath.perlinNoise3D(seed, x, y, z)
     local z0 = math.floor(z)
     local z1 = z0 + 1
     -- Determine interpolation weights
-    -- Could also use higher order polynomial/s-curve here
     local sx = x - x0
     local sy = y - y0
     local sz = z - z0
@@ -290,10 +281,10 @@ function tknMath.perlinNoise3D(seed, x, y, z)
     local x01 = tknMath.smoothLerp(dotGridGradient3D(x0, y0, z1, x, y, z, seed), dotGridGradient3D(x1, y0, z1, x, y, z, seed), sx)
     local x11 = tknMath.smoothLerp(dotGridGradient3D(x0, y1, z1, x, y, z, seed), dotGridGradient3D(x1, y1, z1, x, y, z, seed), sx)
 
-    local y0 = tknMath.smoothLerp(x00, x10, sy)
-    local y1 = tknMath.smoothLerp(x01, x11, sy)
+    local ly0 = tknMath.smoothLerp(x00, x10, sy)
+    local ly1 = tknMath.smoothLerp(x01, x11, sy)
 
-    return tknMath.smoothLerp(y0, y1, sz)
+    return tknMath.smoothLerp(ly0, ly1, sz)
 end
 
 function tknMath.fractalPerlinNoise2D(seed, x, y, octaves)
@@ -308,143 +299,7 @@ function tknMath.fractalPerlinNoise2D(seed, x, y, octaves)
         freq = freq * 2
         currentSeed = tknMath.lcgRandom(currentSeed)
     end
-    if result < tknMath.minN then
-        tknMath.minN = result
-    end
-    if result > tknMath.maxN then
-        tknMath.maxN = result
-    end
     return result
-end
-local rotationMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-
-local scaleMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-
-local translateMatrix = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}
-
-local function rotateAroundZ(angle)
-    local rad = math.rad(angle)
-    rotationMatrix[1][1] = math.cos(rad)
-    rotationMatrix[1][2] = -math.sin(rad)
-    rotationMatrix[1][3] = 0
-    rotationMatrix[1][4] = 0
-
-    rotationMatrix[2][1] = math.sin(rad)
-    rotationMatrix[2][2] = math.cos(rad)
-    rotationMatrix[2][3] = 0
-    rotationMatrix[2][4] = 0
-
-    rotationMatrix[3][1] = 0
-    rotationMatrix[3][2] = 0
-    rotationMatrix[3][3] = 1
-    rotationMatrix[3][4] = 0
-
-    rotationMatrix[4][1] = 0
-    rotationMatrix[4][2] = 0
-    rotationMatrix[4][3] = 0
-    rotationMatrix[4][4] = 1
-
-    return rotationMatrix
-end
-
-local function scaleModel(scale)
-    scaleMatrix[1][1] = scale
-    scaleMatrix[1][2] = 0
-    scaleMatrix[1][3] = 0
-    scaleMatrix[1][4] = 0
-
-    scaleMatrix[2][1] = 0
-    scaleMatrix[2][2] = scale
-    scaleMatrix[2][3] = 0
-    scaleMatrix[2][4] = 0
-
-    scaleMatrix[3][1] = 0
-    scaleMatrix[3][2] = 0
-    scaleMatrix[3][3] = scale
-    scaleMatrix[3][4] = 0
-
-    scaleMatrix[4][1] = 0
-    scaleMatrix[4][2] = 0
-    scaleMatrix[4][3] = 0
-    scaleMatrix[4][4] = 1
-
-    return scaleMatrix
-end
-
-local function translateModel(x, y, z)
-    translateMatrix[1][1] = 1
-    translateMatrix[1][2] = 0
-    translateMatrix[1][3] = 0
-    translateMatrix[1][4] = x
-
-    translateMatrix[2][1] = 0
-    translateMatrix[2][2] = 1
-    translateMatrix[2][3] = 0
-    translateMatrix[2][4] = y
-
-    translateMatrix[3][1] = 0
-    translateMatrix[3][2] = 0
-    translateMatrix[3][3] = 1
-    translateMatrix[3][4] = z
-
-    translateMatrix[4][1] = 0
-    translateMatrix[4][2] = 0
-    translateMatrix[4][3] = 0
-    translateMatrix[4][4] = 1
-    return translateMatrix
-end
-
-local function matrixMultiply(a, b, result)
-    for i = 1, 4 do
-        for j = 1, 4 do
-            result[i][j] = 0
-            for k = 1, 4 do
-                result[i][j] = result[i][j] + a[i][k] * b[k][j]
-            end
-        end
-    end
-end
-
-local modelMatrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-function tknMath.applyTransformations(scale, x, y, z, angle, matrix)
-    local rotationMatrix = rotateAroundZ(angle)
-    local scaleMatrix = scaleModel(scale)
-    local translateMatrix = translateModel(x, y, z)
-    matrixMultiply(rotationMatrix, scaleMatrix, modelMatrix)
-    matrixMultiply(translateMatrix, modelMatrix, matrix)
-end
-
-function tknMath.cross2D(ax, ay, bx, by)
-    return ax * by - ay * bx
-end
-
-function tknMath.cross3D(ax, ay, az, bx, by, bz)
-    return ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx
-end
-
-function tknMath.normalize3D(x, y, z)
-    local len = math.sqrt(x * x + y * y + z * z)
-    if len < 0.000001 then
-        return 0.0, 0.0, 0.0
-    end
-    return x / len, y / len, z / len
-end
-
-function tknMath.normalize2D(x, y)
-    local len = math.sqrt(x * x + y * y)
-    if len < 0.000001 then
-        return 0.0, 0.0
-    end
-    return x / len, y / len
-
-end
-
-function tknMath.dot3D(ax, ay, az, bx, by, bz)
-    return ax * bx + ay * by + az * bz
-end
-
-function tknMath.dot2D(ax, ay, bx, by)
-    return ax * bx + ay * by
 end
 
 return tknMath

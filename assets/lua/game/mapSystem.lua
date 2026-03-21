@@ -26,10 +26,22 @@ end
 function mapSystem.teardown()
     mapSystem.temperatureStep = nil
     mapSystem.humidityStep = nil
+    mapSystem.temperatureNoiseScale = nil
+    mapSystem.humidityNoiseScale = nil
 
     mapSystem.ground = nil
     mapSystem.groundToTemperature = nil
     mapSystem.groundToHumidity = nil
+
+    -- Fields set by generateRoom
+    mapSystem.seed = nil
+    mapSystem.temperatureSeed = nil
+    mapSystem.humiditySeed = nil
+    mapSystem.length = nil
+    mapSystem.width = nil
+    mapSystem.groundMap = nil
+    mapSystem.voxelMap = nil
+    mapSystem.voxelPerMeter = nil
 end
 
 function mapSystem.getGround(temperature, humidity)
@@ -64,13 +76,11 @@ function mapSystem.getGround(temperature, humidity)
 end
 
 function mapSystem.getHumidity(seed, x, y)
-    local level = 2
     local humidity = tknMath.perlinNoise2D(seed, x * mapSystem.humidityNoiseScale, y * mapSystem.humidityNoiseScale)
     return humidity
 end
 
 function mapSystem.getTemperature(seed, x, y)
-    local level = 2
     local temperature = tknMath.perlinNoise2D(seed, x * mapSystem.temperatureNoiseScale, y * mapSystem.temperatureNoiseScale)
     -- local t = (1.0 * y / mapSystem.width - 0.5)
     -- temperature = temperature * temperature * temperature + t * t * t * 5
@@ -88,7 +98,6 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         height = (noise + 1) * 1.5
     elseif ground == mapSystem.ground.sand or ground == mapSystem.ground.grass or ground == mapSystem.ground.water then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 7.77, rvy * 7.77)
-        local step = 0.2
         voxel = voxelConfig.dirt
         height = (noise + 1) * 1.5
     elseif ground == mapSystem.ground.lava or ground == mapSystem.ground.volcanic then
@@ -302,8 +311,9 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
                     end
                     local rvx = (x + (lvx - halfVoxelPerMeter - 0.5) * metersPerVoxel)
                     local rvy = (y + (lvy - halfVoxelPerMeter - 0.5) * metersPerVoxel)
-                    local voxelTemperature = mapSystem.getTemperature(mapSystem.temperatureSeed, rvx * mapSystem.temperatureNoiseScale, rvy * mapSystem.temperatureNoiseScale)
-                    local voxelHumidity = mapSystem.getHumidity(mapSystem.humiditySeed, rvx * mapSystem.humidityNoiseScale, rvy * mapSystem.humidityNoiseScale)
+                    -- getTemperature/getHumidity apply noiseScale internally; pass rvx/rvy directly
+                    local voxelTemperature = mapSystem.getTemperature(mapSystem.temperatureSeed, rvx, rvy)
+                    local voxelHumidity = mapSystem.getHumidity(mapSystem.humiditySeed, rvx, rvy)
                     local t = (math.abs(halfVoxelPerMeter - 0.5 - lvx) + math.abs(halfVoxelPerMeter - 0.5 - lvy)) / (voxelPerMeter - 1)
                     t = t * t * t
 
@@ -314,10 +324,6 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
             end
         end
     end
-end
-
-function mapSystem.generateRoom()
-    
 end
 
 function mapSystem.createMesh(pTknGfxContext)
@@ -346,7 +352,6 @@ function mapSystem.createMesh(pTknGfxContext)
             end
         end
     end
-    print(tknMath.minN, tknMath.maxN, "!@!#!")
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
 
     local scale = 1.0 / mapSystem.voxelPerMeter

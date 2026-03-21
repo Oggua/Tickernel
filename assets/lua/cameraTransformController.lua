@@ -2,6 +2,7 @@ local input = require("input")
 local transformSystem = require("game.transformSystem")
 local tknMath = require("tknMath")
 local cameraTransformController = {}
+
 -- store previous mouse position for delta calculation
 cameraTransformController.prevMouseX = nil
 cameraTransformController.prevMouseY = nil
@@ -48,29 +49,15 @@ function cameraTransformController.update(transform)
     local moveSpeed = 0.05
     local rotateSpeed = 0.5
 
-    -- ensure transform.position/rotation tables exist
-    transform.position = transform.position or {
-        x = transform.x or 0,
-        y = transform.y or 0,
-        z = transform.z or 0,
-    }
-    transform.rotation = transform.rotation or {
-        x = 0,
-        y = 0,
-        z = 0,
-        w = 1,
-    }
-
-    -- current orientation
-    local qx, qy, qz, qw = transform.rotation.x or 0, transform.rotation.y or 0, transform.rotation.z or 0, transform.rotation.w or 1
+    -- current orientation: rotation is {qx, qy, qz, qw}  ([1][2][3][4])
+    local qx = transform.rotation[1] or 0
+    local qy = transform.rotation[2] or 0
+    local qz = transform.rotation[3] or 0
+    local qw = transform.rotation[4] or 1
 
     -- compute forward by rotating local +X (1,0,0) by quaternion (match cameraSystem forward)
     local fx, fy, fz = quatRotateVec(1, 0, 0, qx, qy, qz, qw)
     fx, fy, fz = tknMath.normalize3D(fx, fy, fz)
-
-    -- compute camera "up" by rotating local +Z (0,0,1) by quaternion
-    local upX, upY, upZ = quatRotateVec(0, 0, 1, qx, qy, qz, qw)
-    upX, upY, upZ = tknMath.normalize3D(upX, upY, upZ)
 
     -- project forward to horizontal (XY) plane because z is world-up
     local hfx, hfy, hfz = fx, fy, 0
@@ -81,9 +68,10 @@ function cameraTransformController.update(transform)
     local rx, ry, rz = tknMath.cross3D(worldUpX, worldUpY, worldUpZ, hfx, hfy, hfz)
     rx, ry, rz = tknMath.normalize3D(rx, ry, rz)
 
-    local px = transform.position.x or 0
-    local py = transform.position.y or 0
-    local pz = transform.position.z or 0
+    -- current position: {px, py, pz}  ([1][2][3])
+    local px = transform.position[1] or 0
+    local py = transform.position[2] or 0
+    local pz = transform.position[3] or 0
 
     if (input.getKeyState(input.keyCode.w) == input.inputState.down) then
         px = px - fx * moveSpeed
@@ -104,8 +92,6 @@ function cameraTransformController.update(transform)
         py = py - ry * moveSpeed
     end
 
-    -- Q/E removed: vertical control disabled here
-
     -- write position using transformSystem API
     transformSystem.setPosition(transform, px, py, pz)
 
@@ -124,30 +110,26 @@ function cameraTransformController.update(transform)
         local dx = mx - cameraTransformController.prevMouseX
         local dy = my - cameraTransformController.prevMouseY
 
-        -- sensitivity: scale screen NDC delta to rotation (increased)
-        local yawDelta = -dx * rotateSpeed
+        local yawDelta   = -dx * rotateSpeed
         local pitchDelta = -dy * rotateSpeed
 
         -- initialize yaw/pitch from current forward vector if missing
         if cameraTransformController.yaw == nil or cameraTransformController.pitch == nil then
-            -- derive from forward vector
-            local fxx, fyy, fzz = fx, fy, fz
-            cameraTransformController.yaw = math.atan(fyy, fxx)
-            -- clamp asin input
-            local v = math.max(-1, math.min(1, fzz))
+            cameraTransformController.yaw   = math.atan(fy, fx)
+            local v = math.max(-1, math.min(1, fz))
             cameraTransformController.pitch = math.asin(v)
         end
 
-        cameraTransformController.yaw = cameraTransformController.yaw + yawDelta
+        cameraTransformController.yaw   = cameraTransformController.yaw   + yawDelta
         cameraTransformController.pitch = cameraTransformController.pitch + pitchDelta
         cameraTransformController.pitch = tknMath.clamp(cameraTransformController.pitch, -1.45, 1.45)
 
         -- build quaternion from yaw (around world Z) and pitch (around local Y)
-        local yx, yy, yz, yw = quatFromAxisAngle(0, 0, 1, cameraTransformController.yaw)
+        local yx, yy, yz, yw   = quatFromAxisAngle(0, 0, 1, cameraTransformController.yaw)
         local pxq, pyq, pzq, pwq = quatFromAxisAngle(0, 1, 0, cameraTransformController.pitch)
         local newQx, newQy, newQz, newQw = quatMul(yx, yy, yz, yw, pxq, pyq, pzq, pwq)
-
         newQx, newQy, newQz, newQw = quatNormalize(newQx, newQy, newQz, newQw)
+
         transformSystem.setRotation(transform, newQx, newQy, newQz, newQw)
 
         cameraTransformController.prevMouseX = mx

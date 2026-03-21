@@ -123,7 +123,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         pPreserveAttachments = {},
     }
 
-    local ligthtingSubpassDescription = {
+    local lightingSubpassDescription = {
         pipelineBindPoint = vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
         pInputAttachments = {{
             attachment = 0,
@@ -144,7 +144,7 @@ function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, p
         pPreserveAttachments = {},
     }
 
-    local vkSubpassDescriptions = {geometrySubpassDescription, ligthtingSubpassDescription}
+    local vkSubpassDescriptions = {geometrySubpassDescription, lightingSubpassDescription}
 
     local spvPathsArray = {{assetsPath .. "/shaders/geometry.subpass.vert.spv"}, {assetsPath .. "/shaders/lighting.subpass.frag.spv"}}
 

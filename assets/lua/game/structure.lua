@@ -24,7 +24,7 @@ function structure.teardown()
 end
 
 function structure.create(pTknGfxContext, type, x, y)
-    local structureObj = {
+    local result = {
         type = type,
         position = {x, y},
     }
@@ -59,8 +59,8 @@ function structure.create(pTknGfxContext, type, x, y)
     table.insert(instances.model, 1)
 
     tkn.tknUpdateInstancePtr(pTknGfxContext, structure.typeToPInstance[type], deferredRenderPass.instanceFormat, instances)
-    table.insert(structure.typeToStructures[type], structureObj)
-    return structureObj
+    table.insert(structure.typeToStructures[type], result)
+    return result
 end
 
 function structure.destroy(pTknGfxContext, structureObj)
