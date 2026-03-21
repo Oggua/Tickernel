@@ -72,8 +72,8 @@ end
 function mapSystem.getTemperature(seed, x, y)
     local level = 2
     local temperature = tknMath.perlinNoise2D(seed, x * mapSystem.temperatureNoiseScale, y * mapSystem.temperatureNoiseScale)
-    local t = (1.0 * y / mapSystem.width - 0.5)
-    temperature = temperature * temperature * temperature + t * t * t * 5
+    -- local t = (1.0 * y / mapSystem.width - 0.5)
+    -- temperature = temperature * temperature * temperature + t * t * t * 5
     return temperature
 end
 
@@ -163,13 +163,13 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         local voxel
         if noise > 0.5 then
             voxel = voxelConfig.darkGrass
-            height = 4
+            height = 3
         elseif noise > -0.5 then
             voxel = voxelConfig.dirt
             height = 1
         else
             voxel = voxelConfig.lightGrass
-            height = 3
+            height = 2
         end
         for h = 1, height, 1 do
             if not columnVoxels[h] then
@@ -245,6 +245,24 @@ local function getSurfaceVoxel(temperature, humidity)
     end
 end
 
+local function calculateNormal(voxelMap, x, y, z)
+    local mask = 0
+    -- 必须与 opaqueGeometry.vert 中 normalTable[26] 顺序完全一致
+    local neighbors = { -- 6 faces
+    {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, -- 12 edges
+    {-1, -1, 0}, {-1, 1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 0, -1}, {-1, 0, 1}, {1, 0, -1}, {1, 0, 1}, {0, -1, -1}, {0, -1, 1}, {0, 1, -1}, {0, 1, 1}, -- 8 corners
+    {-1, -1, -1}, {-1, -1, 1}, {-1, 1, -1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {1, 1, -1}, {1, 1, 1}}
+    for i, d in ipairs(neighbors) do
+        local nx = x + d[1]
+        local ny = y + d[2]
+        local nz = z + d[3]
+        if not (voxelMap[nx] and voxelMap[nx][ny] and voxelMap[nx][ny][nz]) then
+            mask = mask | (1 << (i - 1))
+        end
+    end
+    return mask
+end
+
 function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
     mapSystem.seed = seed
     mapSystem.temperatureSeed = seed + 1
@@ -298,22 +316,8 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
     end
 end
 
-local function calculateNormal(voxelMap, x, y, z)
-    local mask = 0
-    -- 必须与 opaqueGeometry.vert 中 normalTable[26] 顺序完全一致
-    local neighbors = { -- 6 faces
-    {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, -- 12 edges
-    {-1, -1, 0}, {-1, 1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 0, -1}, {-1, 0, 1}, {1, 0, -1}, {1, 0, 1}, {0, -1, -1}, {0, -1, 1}, {0, 1, -1}, {0, 1, 1}, -- 8 corners
-    {-1, -1, -1}, {-1, -1, 1}, {-1, 1, -1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {1, 1, -1}, {1, 1, 1}}
-    for i, d in ipairs(neighbors) do
-        local nx = x + d[1]
-        local ny = y + d[2]
-        local nz = z + d[3]
-        if not (voxelMap[nx] and voxelMap[nx][ny] and voxelMap[nx][ny][nz]) then
-            mask = mask | (1 << (i - 1))
-        end
-    end
-    return mask
+function mapSystem.generateRoom()
+    
 end
 
 function mapSystem.createMesh(pTknGfxContext)

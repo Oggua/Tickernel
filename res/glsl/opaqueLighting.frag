@@ -111,7 +111,7 @@ void main() {
     // 自发光：emissive=1.0 时亮度 = albedo * 5
     outputRgb += albedo * emissive * emissiveStrength;
 
-    const vec3 fogColor = vec3(0.13, 0.28, 0.36);
+    const vec3 fogColor = vec3(0.0);
     float distanceToCamera = length(position - cameraPosition);
     float fogFactor = smoothstep(globalUniform.near, globalUniform.far, distanceToCamera);
     outputRgb = mix(outputRgb, fogColor, fogFactor);

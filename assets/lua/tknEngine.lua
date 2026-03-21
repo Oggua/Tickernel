@@ -141,7 +141,7 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     cameraSystem.setup()
 
     tknEngine.cameraTransform = transformSystem.add({10, 0, 0}, {0, 0, 0, 0}, {1, 1, 1}, transformSystem.rootTransform, nil)
-    tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 0.01, 16, 90)
+    tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 0.01, 16, 60)
 end
 
 function tknEngine.stop(pTknGfxContext)
