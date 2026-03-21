@@ -132,27 +132,26 @@ function tknEngine.start(pTknGfxContext, assetsPath)
 
     deferredRenderPass.setup(pTknGfxContext, assetsPath, 0, tknEngine.pDepthStencilAttachment, tknEngine.pSwapchainAttachment)
 
-    tknEngine.voxelPerMeter = 16
-    game.start(pTknGfxContext, assetsPath, tknEngine.gameRootUINode, tknEngine.voxelPerMeter)
-
     setupGlobalMaterial(pTknGfxContext)
     transformSystem.setup()
     cameraSystem.setup()
 
-    tknEngine.cameraTransform = transformSystem.add(10, 0, 0, 0, 0, 0, 1, 1, 1, 1, transformSystem.rootTransform, nil)
-    tknEngine.camera = cameraSystem.add(tknEngine.cameraTransform, 0.01, 16, 60)
+    tknEngine.voxelPerMeter = 16
+    game.start(pTknGfxContext, assetsPath, tknEngine.gameRootUINode, tknEngine.voxelPerMeter)
+
+    tknEngine.camera = cameraSystem.add(10, 0, 0, 0, 0, 0, 1, transformSystem.rootTransform, 0.01, 16, 60)
 end
 
 function tknEngine.stop(pTknGfxContext)
     cameraSystem.remove(tknEngine.camera)
-    transformSystem.remove(tknEngine.cameraTransform)
 
-    transformSystem.teardown()
-    cameraSystem.teardown()
     game.stop()
 
     tkn.tknWaitRenderFence(pTknGfxContext)
     game.stopGfx(pTknGfxContext)
+
+    transformSystem.teardown()
+    cameraSystem.teardown()
 
     editorPanel.destroy(pTknGfxContext, tknEngine.editorPanel)
 
@@ -174,7 +173,7 @@ end
 function tknEngine.update(pTknGfxContext, width, height)
     tknEngine.frameCount = tknEngine.frameCount + 1
     game.update()
-    cameraTransformController.update(tknEngine.cameraTransform)
+    cameraTransformController.update(tknEngine.camera.transform)
     transformSystem.update()
     cameraSystem.update(pTknGfxContext, width, height)
     updateGlobalMaterial(pTknGfxContext, tknEngine.camera, 0, tknEngine.frameCount, width, height)

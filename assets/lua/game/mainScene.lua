@@ -61,7 +61,7 @@ function mainScene.update(game)
 end
 
 function mainScene.updateGfx(game, pTknGfxContext, width, height)
-
+    structure.updateInstances(pTknGfxContext)
 end
 
 function mainScene.recordFrame(game, pTknGfxContext, pTknFrame)

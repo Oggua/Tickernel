@@ -4,6 +4,7 @@ local tkn = require("tkn")
 local input = require("input")
 local tknMath = require("tknMath")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+local transformSystem = require("game.transformSystem")
 
 -- local function buildViewMatrix(eyeX, eyeY, eyeZ, centerX, centerY, centerZ)
 --     local fx, fy, fz = tknMath.normalize3D(centerX - eyeX, centerY - eyeY, centerZ - eyeZ)
@@ -189,7 +190,8 @@ function cameraSystem.update(pTknGfxContext, screenWidth, screenHeight)
     end
 end
 
-function cameraSystem.add(transform, near, far, fov)
+function cameraSystem.add(px, py, pz, rx, ry, rz, rw, parentTransform, near, far, fov)
+    local transform = transformSystem.add(px, py, pz, rx, ry, rz, rw, 1, 1, 1, parentTransform, nil)
     local camera = {
         transform = transform,
         near = near,
@@ -209,6 +211,8 @@ function cameraSystem.remove(camera)
             break
         end
     end
+    transformSystem.remove(camera.transform)
+    camera.transform = nil
 end
 
 function cameraSystem.setup(maxCameraCount)
