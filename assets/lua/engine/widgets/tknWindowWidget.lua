@@ -145,7 +145,7 @@ function tknWindowWidget.add(pTknGfxContext, name, parent, index, horizontal, ve
         offset = 0,
     }, defaultTransform, tknWidgetConfig.color.semiDarker, false, true)
 
-    widget.titleNode = tknTextNode.addNode(pTknGfxContext, "titleNode", titleBackgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, title or "Window Title", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
+    widget.titleNode = tknTextNode.add(pTknGfxContext, "titleNode", titleBackgroundNode, 1, paddedRelativeOrientation, relativeOrientation, defaultTransform, title or "Window Title", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
 
     -- widget.closeButtonWidget = tknButtonWidget.add(pTknGfxContext, "closeButtonWidget", titleBackgroundNode, 2, {
     --     type = ui.layoutType.anchored,

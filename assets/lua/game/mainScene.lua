@@ -7,77 +7,24 @@ local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local mapSystem = require("game.mapSystem")
 local tknVoxel = require("game.tknVoxel")
 local structure = require("game.structure")
-function mainScene.start(game, pTknGfxContext)
-    mainScene.mainPanel = mainPanel.create(pTknGfxContext, game, game.gameRootNode, function()
-        print("Start Game button clicked")
-        game.switchScene(game)
-    end, function()
-        print("Settings button clicked")
-    end, function()
-        game.switchScene(nil)
-        print("Quit Game button clicked")
-    end)
-
-    mapSystem.setup()
-    print("Generating map...")
-    local groundMap = {}
-    for x = 1, 32 do
-        groundMap[x] = {}
-        for y = 1, 32 do
-            local temperature = mapSystem.getTemperature(8, x, y)
-            local humidity = mapSystem.getHumidity(9, x, y)
-            groundMap[x][y] = mapSystem.getGround(temperature, humidity)
-        end
-    end
-    mapSystem.generateRoom(321312, 32, 32, game.voxelPerMeter, groundMap)
-
-    print("Generated map with " .. #groundMap .. "x" .. #groundMap[1] .. " tiles")
-    mainScene.pGroundTknMesh, mainScene.pGroundTknInstance, mainScene.pGroundTknDrawCall = mapSystem.createMesh(pTknGfxContext)
-
-    structure.setup(game.assetsPath, game.voxelPerMeter)
-    mainScene.structures = {}
-    for i = 1, 256 do
-        local x = math.random(1, mapSystem.length)
-        local y = math.random(1, mapSystem.width)
-        if x % 3 == 1 then
-            table.insert(mainScene.structures, structure.create(pTknGfxContext, "iceWall", x, y))
-        elseif x % 3 == 2 then
-            table.insert(mainScene.structures, structure.create(pTknGfxContext, "rockWall", x, y))
-        else
-            table.insert(mainScene.structures, structure.create(pTknGfxContext, "dirtWall", x, y))
-        end
-    end
+function mainScene.start(pTknGfxContext, game)
+    mainScene.mainPanel = mainPanel.create(pTknGfxContext, game, game.rootUINode)
 end
 
 function mainScene.stop(game)
-    mapSystem.teardown()
 end
 
 function mainScene.stopGfx(game, pTknGfxContext)
-    for i, v in ipairs(mainScene.structures) do
-        structure.destroy(pTknGfxContext, v)
-    end
-    structure.teardown()
-
-    mapSystem.destroyMesh(pTknGfxContext, mainScene.pGroundTknMesh, mainScene.pGroundTknInstance, mainScene.pGroundTknDrawCall)
-
-    mainPanel.destroy(mainScene.mainPanel, pTknGfxContext)
-    mainScene.mainPanel = nil
+    mainPanel.destroy(pTknGfxContext, mainScene.mainPanel)
 end
 
 function mainScene.update(game)
-
 end
 
 function mainScene.updateGfx(game, pTknGfxContext, width, height)
-    structure.updateInstances(pTknGfxContext)
 end
 
 function mainScene.recordFrame(game, pTknGfxContext, pTknFrame)
-    tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, mainScene.pGroundTknDrawCall)
-    for k, v in pairs(structure.typeToPDrawCall) do
-        tkn.tknRecordDrawCallPtr(pTknGfxContext, pTknFrame, v)
-    end
 end
 
 return mainScene

@@ -54,7 +54,7 @@ function tknInputFieldWidget.add(pTknGfxContext, name, parent, index, horizontal
 
     widget.backgroundNode = tknImageNode.addNode(pTknGfxContext, "inputFieldBackground", widget.inputFieldNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, tknWidgetConfig.color.semiDark, false, true)
 
-    widget.textNode = tknTextNode.addNode(pTknGfxContext, "inputFieldText", widget.backgroundNode, 1, tknWidgetConfig.paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, widget.placeholder, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
+    widget.textNode = tknTextNode.add(pTknGfxContext, "inputFieldText", widget.backgroundNode, 1, tknWidgetConfig.paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, widget.placeholder, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
 
     return widget
 end

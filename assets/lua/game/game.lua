@@ -12,7 +12,7 @@ function game.start(pTknGfxContext, assetsPath, rootUINode, voxelPerMeter)
     game.nextScene = mainScene
     game.rootUINode = rootUINode
     game.voxelPerMeter = voxelPerMeter
-    game.currentScene.start(game, pTknGfxContext)
+    game.currentScene.start(pTknGfxContext, game)
 end
 
 function game.stop()

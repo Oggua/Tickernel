@@ -172,7 +172,7 @@ function luaInspectorPanel.create(pTknGfxContext, parent, index)
             luaInspectorPanel.bind(pTknGfxContext, panel, results, "results")
         end
     end)
-    panel.runButtonTextNode = tknTextNode.addNode(pTknGfxContext, "runButtonText", panel.runButtonWidget.backgroundNode, 1, tknWidgetConfig.paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "\xef\x80\x8b Run", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
+    panel.runButtonTextNode = tknTextNode.add(pTknGfxContext, "runButtonText", panel.runButtonWidget.backgroundNode, 1, tknWidgetConfig.paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "\xef\x80\x8b Run", tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
     panel.scrollViewWidget = tknScrollViewWidget.add(pTknGfxContext, "scrollViewNode", panel.windowWidget.contentNode, 1, tknWidgetConfig.fullRelativeOrientation, {
         type = ui.layoutType.relative,
         pivot = 0,

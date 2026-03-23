@@ -28,9 +28,9 @@ function tknDropdownWidget.add(pTknGfxContext, name, parent, index, horizontal, 
         offset = 0,
     }
 
-    widget.dropdownTextNode = tknTextNode.addNode(pTknGfxContext, name .. "buttonTextNode", widget.buttonWidget.backgroundNode, 1, paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, widget.items[widget.selectedIndex].name, tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 0, 0.5, false)
+    widget.dropdownTextNode = tknTextNode.add(pTknGfxContext, name .. "buttonTextNode", widget.buttonWidget.backgroundNode, 1, paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, widget.items[widget.selectedIndex].name, tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 0, 0.5, false)
 
-    widget.dropdownArrowTextNode = tknTextNode.addNode(pTknGfxContext, "arrowTextNode", widget.buttonWidget.backgroundNode, 2, paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "\xef\x8c\xa6", tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 1, 0.5, false)
+    widget.dropdownArrowTextNode = tknTextNode.add(pTknGfxContext, "arrowTextNode", widget.buttonWidget.backgroundNode, 2, paddedRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "\xef\x8c\xa6", tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 1, 0.5, false)
 
     local inactiveTransform = {
         rotation = 0,
@@ -66,7 +66,7 @@ function tknDropdownWidget.add(pTknGfxContext, name, parent, index, horizontal, 
                 ui.setTextContent(widget.dropdownTextNode, widget.items[widget.selectedIndex].name)
             end
         end)
-        tknTextNode.addNode(pTknGfxContext, name .. "itemTextNode" .. i, itemButtonWidget.backgroundNode, 1, paddedRelativeOrientation, paddedRelativeOrientation, tknWidgetConfig.defaultTransform, item.name, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
+        tknTextNode.add(pTknGfxContext, name .. "itemTextNode" .. i, itemButtonWidget.backgroundNode, 1, paddedRelativeOrientation, paddedRelativeOrientation, tknWidgetConfig.defaultTransform, item.name, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0, 0.5, false)
         table.insert(widget.itemButtonWidgets, itemButtonWidget)
     end
 

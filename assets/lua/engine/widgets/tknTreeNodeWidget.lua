@@ -24,7 +24,7 @@ function tknTreeNodeWidget.add(pTknGfxContext, parent, index, horizontal, vertic
         end
     end
     treeNodeWidget.selectedToggleWidget = tknToggleWidget.add(pTknGfxContext, "selectedToggleNode", parent, index, horizontal, vertical, 1, onValueChange)
-    treeNodeWidget.selectedToggleWidget.textNode = tknTextNode.addNode(pTknGfxContext, "contentText", treeNodeWidget.selectedToggleWidget.backgroundNode, 2, {
+    treeNodeWidget.selectedToggleWidget.textNode = tknTextNode.add(pTknGfxContext, "contentText", treeNodeWidget.selectedToggleWidget.backgroundNode, 2, {
         type = ui.layoutType.relative,
         pivot = 0,
         minOffset = tknWidgetConfig.smallInteractableWidth + tknWidgetConfig.defaultSpacing * 2,
@@ -65,9 +65,9 @@ function tknTreeNodeWidget.add(pTknGfxContext, parent, index, horizontal, vertic
     }, onClick)
 
     if onExpandedChange then
-        treeNodeWidget.expandedButtonWidget.textNode = tknTextNode.addNode(pTknGfxContext, "buttonTextNode", treeNodeWidget.expandedButtonWidget.backgroundNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, collapsedString, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
+        treeNodeWidget.expandedButtonWidget.textNode = tknTextNode.add(pTknGfxContext, "buttonTextNode", treeNodeWidget.expandedButtonWidget.backgroundNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, collapsedString, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
     else
-        treeNodeWidget.expandedButtonWidget.textNode = tknTextNode.addNode(pTknGfxContext, "buttonTextNode", treeNodeWidget.expandedButtonWidget.backgroundNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, noChildrenString, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
+        treeNodeWidget.expandedButtonWidget.textNode = tknTextNode.add(pTknGfxContext, "buttonTextNode", treeNodeWidget.expandedButtonWidget.backgroundNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, noChildrenString, tknWidgetConfig.normalFontSize, tknWidgetConfig.color.semiLighter, 0.5, 0.5, false)
     end
 
     treeNodeWidget.bottomInteractionNode = ui.addInteractableNode(pTknGfxContext, function(widget, xNdc, yNdc, inputState)
