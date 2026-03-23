@@ -16,7 +16,7 @@ function mapSystem.setup()
     }
     mapSystem.groundToTemperature = {-1, -1, 0, 0, 0, 1, 1}
     mapSystem.groundToHumidity = {0, 1, -1, 0, 1, -1, 0}
-    
+
     mapSystem.groundToTemperatureVariance = {0.15, 0.15, 0.18, 0.18, 0.15, 0.15, 0.15}
     mapSystem.groundToHumidityVariance = {0.15, 0.12, 0.15, 0.18, 0.12, 0.12, 0.15}
 
@@ -325,7 +325,6 @@ end
 
 local function calculateNormal(voxelMap, x, y, z)
     local mask = 0
-    -- 必须与 opaqueGeometry.vert 中 normalTable[26] 顺序完全一致
     local neighbors = { -- 6 faces
     {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, -- 12 edges
     {-1, -1, 0}, {-1, 1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 0, -1}, {-1, 0, 1}, {1, 0, -1}, {1, 0, 1}, {0, -1, -1}, {0, -1, 1}, {0, 1, -1}, {0, 1, 1}, -- 8 corners
@@ -351,10 +350,10 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter, groundMap)
     mapSystem.length = length
     mapSystem.width = width
     mapSystem.voxelPerMeter = voxelPerMeter
+    mapSystem.groundMap = groundMap
 
     -- Build or adopt the ground map
     if groundMap then
-        mapSystem.groundMap = groundMap
     else
         mapSystem.groundMap = {}
         for x = 1, mapSystem.length do

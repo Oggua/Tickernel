@@ -20,9 +20,18 @@ function mainScene.start(game, pTknGfxContext)
 
     mapSystem.setup()
     print("Generating map...")
-    mapSystem.generateRoom(321312, 32, 32, game.voxelPerMeter)
+    local groundMap = {}
+    for x = 1, 32 do
+        groundMap[x] = {}
+        for y = 1, 32 do
+            local temperature = mapSystem.getTemperature(8, x, y)
+            local humidity = mapSystem.getHumidity(9, x, y)
+            groundMap[x][y] = mapSystem.getGround(temperature, humidity)
+        end
+    end
+    mapSystem.generateRoom(321312, 32, 32, game.voxelPerMeter, groundMap)
 
-    print("Generated map with " .. #mapSystem.groundMap .. "x" .. #mapSystem.groundMap[1] .. " tiles")
+    print("Generated map with " .. #groundMap .. "x" .. #groundMap[1] .. " tiles")
     mainScene.pGroundTknMesh, mainScene.pGroundTknInstance, mainScene.pGroundTknDrawCall = mapSystem.createMesh(pTknGfxContext)
 
     structure.setup(game.assetsPath, game.voxelPerMeter)
