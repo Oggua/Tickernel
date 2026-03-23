@@ -11,7 +11,7 @@ local cameraTransformController = require("cameraTransformController")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknInputFieldWidget = require("engine.widgets.tknInputFieldWidget")
-local tknEngine = {}
+local tknEngine = {} 
 
 local function setupGlobalMaterial(pTknGfxContext)
     tknEngine.globalUniformBufferFormat = {{
@@ -73,12 +73,14 @@ local function setupGlobalMaterial(pTknGfxContext)
     tknEngine.pGlobalMaterial = tkn.tknGetGlobalMaterialPtr(pTknGfxContext)
     tkn.tknUpdateMaterialPtr(pTknGfxContext, tknEngine.pGlobalMaterial, inputBindings)
 end
+
 local function teardownGlobalMaterial(pTknGfxContext)
     tkn.tknDestroyUniformBufferPtr(pTknGfxContext, tknEngine.pGlobalUniformBuffer)
     tknEngine.pGlobalUniformBuffer = nil
     tknEngine.pGlobalMaterial = nil
     tknEngine.globalUniformBufferFormat = nil
 end
+
 local function updateGlobalMaterial(pTknGfxContext, camera, time, frameCount, screenWidth, screenHeight)
     local view = camera.view
     local proj = camera.proj

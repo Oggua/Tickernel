@@ -16,6 +16,10 @@ function mapSystem.setup()
     }
     mapSystem.groundToTemperature = {-1, -1, 0, 0, 0, 1, 1}
     mapSystem.groundToHumidity = {0, 1, -1, 0, 1, -1, 0}
+    
+    mapSystem.groundToTemperatureVariance = {0.15, 0.15, 0.18, 0.18, 0.15, 0.15, 0.15}
+    mapSystem.groundToHumidityVariance = {0.15, 0.12, 0.15, 0.18, 0.12, 0.12, 0.15}
+
     mapSystem.temperatureNoiseScale = 0.37
     mapSystem.humidityNoiseScale = 0.37
 
@@ -32,6 +36,8 @@ function mapSystem.teardown()
     mapSystem.ground = nil
     mapSystem.groundToTemperature = nil
     mapSystem.groundToHumidity = nil
+    mapSystem.groundToTemperatureVariance = nil
+    mapSystem.groundToHumidityVariance = nil
 
     -- Fields set by generateRoom
     mapSystem.seed = nil
@@ -85,6 +91,69 @@ function mapSystem.getTemperature(seed, x, y)
     -- local t = (1.0 * y / mapSystem.width - 0.5)
     -- temperature = temperature * temperature * temperature + t * t * t * 5
     return temperature
+end
+
+-- Returns temperature and humidity for a single ground cell at integer coords (gx, gy),
+-- with LCG-based fluctuation whose range is determined by the ground type.
+local function getGroundTempHumidity(gx, gy)
+    gx = math.max(1, math.min(mapSystem.length, math.floor(gx)))
+    gy = math.max(1, math.min(mapSystem.width, math.floor(gy)))
+
+    local ground = mapSystem.groundMap[gx][gy]
+    local baseTemp = mapSystem.groundToTemperature[ground]
+    local baseHumidity = mapSystem.groundToHumidity[ground]
+    local tempVariance = mapSystem.groundToTemperatureVariance[ground]
+    local humidVariance = mapSystem.groundToHumidityVariance[ground]
+
+    local pairKey = tknMath.cantorPair(gx, gy)
+    local tempRand = tknMath.lcgRandom(mapSystem.temperatureSeed + pairKey)
+    local humidRand = tknMath.lcgRandom(mapSystem.humiditySeed + pairKey)
+
+    -- Normalise [0, 0xFFFFFFFF] → [-1, 1]
+    local tempNorm = (tempRand % 65536) / 32767.5 - 1.0
+    local humidNorm = (humidRand % 65536) / 32767.5 - 1.0
+
+    return baseTemp + tempNorm * tempVariance, baseHumidity + humidNorm * humidVariance
+end
+
+-- Bilinear-interpolates temperature and humidity from the 4 ground cells
+-- surrounding the real-space position (rvx, rvy).
+-- A power-curve is applied to tx/ty so each ground cell dominates the
+-- majority of its area and transitions only occur near cell boundaries.
+local function sharpenT(t)
+    -- Exponent of the symmetric power curve applied to the bilinear weights.
+    -- Controls how strongly each ground cell dominates its own area:
+    --   1.0 = linear (most natural blend, heavy neighbour influence)
+    --   2.0 = quadratic (gentle dominance)
+    --   3.0 = cubic (cells clearly distinct, recommended default)
+    --   5.0 = quintic (very sharp biome borders, may look blocky)
+    local groundSharpen = 4.5
+    -- Symmetric power curve: pushes values toward 0 or 1.
+    -- groundSharpen is the exponent; higher = more distinct cells.
+    if t <= 0.5 then
+        return 0.5 * (2.0 * t) ^ groundSharpen
+    else
+        return 1.0 - 0.5 * (2.0 * (1.0 - t)) ^ groundSharpen
+    end
+end
+
+local function getTemperatureHumidityFromGroundMap(rvx, rvy)
+    local gx0 = math.floor(rvx)
+    local gy0 = math.floor(rvy)
+    local gx1 = gx0 + 1
+    local gy1 = gy0 + 1
+    -- Apply sharpening so each cell's centre strongly dominates
+    local tx = sharpenT(rvx - gx0)
+    local ty = sharpenT(rvy - gy0)
+
+    local t00, h00 = getGroundTempHumidity(gx0, gy0)
+    local t10, h10 = getGroundTempHumidity(gx1, gy0)
+    local t01, h01 = getGroundTempHumidity(gx0, gy1)
+    local t11, h11 = getGroundTempHumidity(gx1, gy1)
+
+    local temperature = tknMath.lerp(tknMath.lerp(t00, t10, tx), tknMath.lerp(t01, t11, tx), ty)
+    local humidity = tknMath.lerp(tknMath.lerp(h00, h10, tx), tknMath.lerp(h01, h11, tx), ty)
+    return temperature, humidity
 end
 
 local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy, vx, vy)
@@ -170,10 +239,10 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
     elseif ground == mapSystem.ground.grass then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 21, rvy * 21)
         local voxel
-        if noise > 0.5 then
+        if noise > 0.6 then
             voxel = voxelConfig.darkGrass
             height = 3
-        elseif noise > -0.5 then
+        elseif noise > -0.6 then
             voxel = voxelConfig.dirt
             height = 1
         else
@@ -272,32 +341,40 @@ local function calculateNormal(voxelMap, x, y, z)
     return mask
 end
 
-function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
+-- groundMap is optional.  When provided it must be a 2-D table [1..length][1..width]
+-- whose values are mapSystem.ground constants.  When omitted the groundMap is built
+-- from Perlin-noise temperature / humidity as before.
+function mapSystem.generateRoom(seed, length, width, voxelPerMeter, groundMap)
     mapSystem.seed = seed
     mapSystem.temperatureSeed = seed + 1
     mapSystem.humiditySeed = seed + 2
     mapSystem.length = length
     mapSystem.width = width
-    mapSystem.groundMap = {}
     mapSystem.voxelPerMeter = voxelPerMeter
-    for x = 1, mapSystem.length do
-        mapSystem.groundMap[x] = {}
-        for y = 1, mapSystem.width do
-            local temperature = mapSystem.getTemperature(mapSystem.temperatureSeed, x, y)
-            local humidity = mapSystem.getHumidity(mapSystem.humiditySeed, x, y)
-            mapSystem.groundMap[x][y] = mapSystem.getGround(temperature, humidity)
+
+    -- Build or adopt the ground map
+    if groundMap then
+        mapSystem.groundMap = groundMap
+    else
+        mapSystem.groundMap = {}
+        for x = 1, mapSystem.length do
+            mapSystem.groundMap[x] = {}
+            for y = 1, mapSystem.width do
+                local temperature = mapSystem.getTemperature(mapSystem.temperatureSeed, x, y)
+                local humidity = mapSystem.getHumidity(mapSystem.humiditySeed, x, y)
+                mapSystem.groundMap[x][y] = mapSystem.getGround(temperature, humidity)
+            end
         end
     end
 
-    -- Generate voxel map based on ground map
+    -- Generate voxel map.
+    -- Temperature/humidity for each voxel are derived from the 4 surrounding
+    -- ground cells via bilinear interpolation + per-ground-type LCG fluctuation.
     local metersPerVoxel = 1 / voxelPerMeter
     local halfVoxelPerMeter = voxelPerMeter / 2
     mapSystem.voxelMap = {}
     for x = 1, mapSystem.length do
         for y = 1, mapSystem.width do
-            local ground = mapSystem.groundMap[x][y]
-            local temperature = mapSystem.groundToTemperature[ground]
-            local humidity = mapSystem.groundToHumidity[ground]
             for lvx = 1, voxelPerMeter do
                 local vx = (x - 1) * voxelPerMeter + lvx
                 if not mapSystem.voxelMap[vx] then
@@ -309,16 +386,12 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter)
                     if not mapSystem.voxelMap[vx][vy] then
                         mapSystem.voxelMap[vx][vy] = {}
                     end
-                    local rvx = (x + (lvx - halfVoxelPerMeter - 0.5) * metersPerVoxel)
-                    local rvy = (y + (lvy - halfVoxelPerMeter - 0.5) * metersPerVoxel)
-                    -- getTemperature/getHumidity apply noiseScale internally; pass rvx/rvy directly
-                    local voxelTemperature = mapSystem.getTemperature(mapSystem.temperatureSeed, rvx, rvy)
-                    local voxelHumidity = mapSystem.getHumidity(mapSystem.humiditySeed, rvx, rvy)
-                    local t = (math.abs(halfVoxelPerMeter - 0.5 - lvx) + math.abs(halfVoxelPerMeter - 0.5 - lvy)) / (voxelPerMeter - 1)
-                    t = t * t * t
+                    -- Real-space position of this voxel in ground-cell coordinates
+                    local rvx = x + (lvx - halfVoxelPerMeter - 0.5) * metersPerVoxel
+                    local rvy = y + (lvy - halfVoxelPerMeter - 0.5) * metersPerVoxel
 
-                    voxelTemperature = tknMath.lerp(temperature, voxelTemperature, t)
-                    voxelHumidity = tknMath.lerp(humidity, voxelHumidity, t)
+                    local voxelTemperature, voxelHumidity = getTemperatureHumidityFromGroundMap(rvx, rvy)
+
                     setBaseVoxel(voxelTemperature, voxelHumidity, mapSystem.voxelMap[vx][vy], seed, rvx, rvy, vx, vy)
                 end
             end
@@ -353,7 +426,6 @@ function mapSystem.createMesh(pTknGfxContext)
         end
     end
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
-
     local scale = 1.0 / mapSystem.voxelPerMeter
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
         model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, scale * -2, 1},

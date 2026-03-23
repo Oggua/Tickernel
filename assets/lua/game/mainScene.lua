@@ -35,7 +35,7 @@ function mainScene.start(game, pTknGfxContext)
         elseif x % 3 == 2 then
             table.insert(mainScene.structures, structure.create(pTknGfxContext, "rockWall", x, y))
         else
-            table.insert(mainScene.structures, structure.create(pTknGfxContext, "mushroom", x, y))
+            table.insert(mainScene.structures, structure.create(pTknGfxContext, "dirtWall", x, y))
         end
     end
 end
