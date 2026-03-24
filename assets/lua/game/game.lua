@@ -38,7 +38,7 @@ function game.updateGfx(pTknGfxContext, width, height)
             game.currentScene.stop(game)
             game.currentScene.stopGfx(game, pTknGfxContext)
             game.currentScene = game.nextScene
-            game.currentScene.start(game, pTknGfxContext, game.assetsPath)
+            game.currentScene.start(pTknGfxContext, game, game.assetsPath)
             game.currentScene.updateGfx(game, pTknGfxContext, width, height)
         end
     end
