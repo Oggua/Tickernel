@@ -2,10 +2,10 @@ local tknMath = require("tknMath")
 local tkn = require("tkn")
 local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
 local voxelConfig = require("game.voxelConfig")
-local mapSystem = {}
+local groundSystem = {}
 
-function mapSystem.setup()
-    mapSystem.ground = {
+function groundSystem.setup()
+    groundSystem.ground = {
         snow = 1,
         ice = 2,
         sand = 3,
@@ -14,100 +14,90 @@ function mapSystem.setup()
         lava = 6,
         volcanic = 7,
     }
-    mapSystem.groundToTemperature = {-1, -1, 0, 0, 0, 1, 1}
-    mapSystem.groundToHumidity = {0, 1, -1, 0, 1, -1, 0}
+    groundSystem.groundToTemperature = {-1, -1, 0, 0, 0, 1, 1}
+    groundSystem.groundToHumidity = {0, 1, -1, 0, 1, -1, 0}
 
-    mapSystem.groundToTemperatureVariance = {0.15, 0.15, 0.18, 0.18, 0.15, 0.15, 0.15}
-    mapSystem.groundToHumidityVariance = {0.15, 0.12, 0.15, 0.18, 0.12, 0.12, 0.15}
+    groundSystem.groundToTemperatureVariance = {0.15, 0.15, 0.18, 0.18, 0.15, 0.15, 0.15}
+    groundSystem.groundToHumidityVariance = {0.15, 0.12, 0.15, 0.18, 0.12, 0.12, 0.15}
 
-    mapSystem.temperatureNoiseScale = 0.37
-    mapSystem.humidityNoiseScale = 0.37
+    groundSystem.temperatureNoiseScale = 0.37
+    groundSystem.humidityNoiseScale = 0.37
 
-    mapSystem.temperatureStep = 0.27
-    mapSystem.humidityStep = 0.27
+    groundSystem.temperatureStep = 0.27
+    groundSystem.humidityStep = 0.27
 end
 
-function mapSystem.teardown()
-    mapSystem.temperatureStep = nil
-    mapSystem.humidityStep = nil
-    mapSystem.temperatureNoiseScale = nil
-    mapSystem.humidityNoiseScale = nil
+function groundSystem.teardown()
+    groundSystem.temperatureStep = nil
+    groundSystem.humidityStep = nil
+    groundSystem.temperatureNoiseScale = nil
+    groundSystem.humidityNoiseScale = nil
 
-    mapSystem.ground = nil
-    mapSystem.groundToTemperature = nil
-    mapSystem.groundToHumidity = nil
-    mapSystem.groundToTemperatureVariance = nil
-    mapSystem.groundToHumidityVariance = nil
-
-    -- Fields set by generateRoom
-    mapSystem.seed = nil
-    mapSystem.temperatureSeed = nil
-    mapSystem.humiditySeed = nil
-    mapSystem.length = nil
-    mapSystem.width = nil
-    mapSystem.groundMap = nil
-    mapSystem.voxelMap = nil
-    mapSystem.voxelPerMeter = nil
+    groundSystem.ground = nil
+    groundSystem.groundToTemperature = nil
+    groundSystem.groundToHumidity = nil
+    groundSystem.groundToTemperatureVariance = nil
+    groundSystem.groundToHumidityVariance = nil
 end
 
-function mapSystem.getGround(temperature, humidity)
-    local ground
-    if temperature < -mapSystem.temperatureStep then
-        if humidity < -mapSystem.humidityStep then
-            ground = mapSystem.ground.snow
-        elseif humidity < mapSystem.humidityStep then
-            ground = mapSystem.ground.snow
+function groundSystem.getGround(temperature, humidity)
+    local result
+    if temperature < -groundSystem.temperatureStep then
+        if humidity < -groundSystem.humidityStep then
+            result = groundSystem.ground.snow
+        elseif humidity < groundSystem.humidityStep then
+            result = groundSystem.ground.snow
         else
-            ground = mapSystem.ground.ice
+            result = groundSystem.ground.ice
         end
-    elseif temperature < mapSystem.temperatureStep then
-        if humidity < -mapSystem.humidityStep then
-            ground = mapSystem.ground.sand
-        elseif humidity < mapSystem.humidityStep then
-            ground = mapSystem.ground.grass
+    elseif temperature < groundSystem.temperatureStep then
+        if humidity < -groundSystem.humidityStep then
+            result = groundSystem.ground.sand
+        elseif humidity < groundSystem.humidityStep then
+            result = groundSystem.ground.grass
         else
-            ground = mapSystem.ground.water
+            result = groundSystem.ground.water
         end
     else
-        if humidity < -mapSystem.humidityStep then
-            ground = mapSystem.ground.lava
-        elseif humidity < mapSystem.humidityStep then
-            ground = mapSystem.ground.volcanic
+        if humidity < -groundSystem.humidityStep then
+            result = groundSystem.ground.lava
+        elseif humidity < groundSystem.humidityStep then
+            result = groundSystem.ground.volcanic
         else
-            ground = mapSystem.ground.volcanic
+            result = groundSystem.ground.volcanic
         end
     end
 
-    return ground
+    return result
 end
 
-function mapSystem.getHumidity(seed, x, y)
-    local humidity = tknMath.perlinNoise2D(seed, x * mapSystem.humidityNoiseScale, y * mapSystem.humidityNoiseScale)
+function groundSystem.getHumidity(seed, x, y)
+    local humidity = tknMath.perlinNoise2D(seed, x * groundSystem.humidityNoiseScale, y * groundSystem.humidityNoiseScale)
     return humidity
 end
 
-function mapSystem.getTemperature(seed, x, y)
-    local temperature = tknMath.perlinNoise2D(seed, x * mapSystem.temperatureNoiseScale, y * mapSystem.temperatureNoiseScale)
-    -- local t = (1.0 * y / mapSystem.width - 0.5)
+function groundSystem.getTemperature(seed, x, y)
+    local temperature = tknMath.perlinNoise2D(seed, x * groundSystem.temperatureNoiseScale, y * groundSystem.temperatureNoiseScale)
+    -- local t = (1.0 * y / map.width - 0.5)
     -- temperature = temperature * temperature * temperature + t * t * t * 5
     return temperature
 end
 
 -- Returns temperature and humidity for a single ground cell at integer coords (gx, gy),
 -- with LCG-based fluctuation whose range is determined by the ground type.
-local function getGroundTempHumidity(gx, gy)
-    gx = math.max(1, math.min(mapSystem.length, math.floor(gx)))
-    gy = math.max(1, math.min(mapSystem.width, math.floor(gy)))
+local function getGroundTempHumidity(map, gx, gy)
+    gx = math.max(1, math.min(map.length, math.floor(gx)))
+    gy = math.max(1, math.min(map.width, math.floor(gy)))
 
-    local ground = mapSystem.groundMap[gx][gy]
-    local baseTemp = mapSystem.groundToTemperature[ground]
-    local baseHumidity = mapSystem.groundToHumidity[ground]
-    local tempVariance = mapSystem.groundToTemperatureVariance[ground]
-    local humidVariance = mapSystem.groundToHumidityVariance[ground]
+    local ground = map.groundMap[gx][gy]
+    local baseTemp = groundSystem.groundToTemperature[ground]
+    local baseHumidity = groundSystem.groundToHumidity[ground]
+    local tempVariance = groundSystem.groundToTemperatureVariance[ground]
+    local humidVariance = groundSystem.groundToHumidityVariance[ground]
 
     local pairKey = tknMath.cantorPair(gx, gy)
-    local tempRand = tknMath.lcgRandom(mapSystem.temperatureSeed + pairKey)
-    local humidRand = tknMath.lcgRandom(mapSystem.humiditySeed + pairKey)
+    local tempRand = tknMath.lcgRandom(map.temperatureSeed + pairKey)
+    local humidRand = tknMath.lcgRandom(map.humiditySeed + pairKey)
 
     -- Normalise [0, 0xFFFFFFFF] → [-1, 1]
     local tempNorm = (tempRand % 65536) / 32767.5 - 1.0
@@ -137,7 +127,7 @@ local function sharpenT(t)
     end
 end
 
-local function getTemperatureHumidityFromGroundMap(rvx, rvy)
+local function getTemperatureHumidityFromGroundMap(map, rvx, rvy)
     local gx0 = math.floor(rvx)
     local gy0 = math.floor(rvy)
     local gx1 = gx0 + 1
@@ -146,10 +136,10 @@ local function getTemperatureHumidityFromGroundMap(rvx, rvy)
     local tx = sharpenT(rvx - gx0)
     local ty = sharpenT(rvy - gy0)
 
-    local t00, h00 = getGroundTempHumidity(gx0, gy0)
-    local t10, h10 = getGroundTempHumidity(gx1, gy0)
-    local t01, h01 = getGroundTempHumidity(gx0, gy1)
-    local t11, h11 = getGroundTempHumidity(gx1, gy1)
+    local t00, h00 = getGroundTempHumidity(map, gx0, gy0)
+    local t10, h10 = getGroundTempHumidity(map, gx1, gy0)
+    local t01, h01 = getGroundTempHumidity(map, gx0, gy1)
+    local t11, h11 = getGroundTempHumidity(map, gx1, gy1)
 
     local temperature = tknMath.lerp(tknMath.lerp(t00, t10, tx), tknMath.lerp(t01, t11, tx), ty)
     local humidity = tknMath.lerp(tknMath.lerp(h00, h10, tx), tknMath.lerp(h01, h11, tx), ty)
@@ -158,18 +148,18 @@ end
 
 local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy, vx, vy)
     local voxel
-    local ground = mapSystem.getGround(temperature, humidity)
+    local ground = groundSystem.getGround(temperature, humidity)
     local height
-    if ground == mapSystem.ground.snow or ground == mapSystem.ground.ice then
+    if ground == groundSystem.ground.snow or ground == groundSystem.ground.ice then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 14, rvy * 14)
         noise = noise * noise * noise
         voxel = voxelConfig.rock
         height = (noise + 1) * 1.5
-    elseif ground == mapSystem.ground.sand or ground == mapSystem.ground.grass or ground == mapSystem.ground.water then
+    elseif ground == groundSystem.ground.sand or ground == groundSystem.ground.grass or ground == groundSystem.ground.water then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 7.77, rvy * 7.77)
         voxel = voxelConfig.dirt
         height = (noise + 1) * 1.5
-    elseif ground == mapSystem.ground.lava or ground == mapSystem.ground.volcanic then
+    elseif ground == groundSystem.ground.lava or ground == groundSystem.ground.volcanic then
         local noise = tknMath.perlinNoise2D(seed + 54213, rvx * 17, rvy * 17)
         noise = noise * noise * noise
         voxel = voxelConfig.darkRock
@@ -183,7 +173,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         columnVoxels[h] = voxel
     end
 
-    if ground == mapSystem.ground.snow then
+    if ground == groundSystem.ground.snow then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 4, rvy * 4)
         local voxel = voxelConfig.snow
         local step = 0.2
@@ -199,7 +189,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
                 columnVoxels[h] = voxel
             end
         end
-    elseif ground == mapSystem.ground.ice then
+    elseif ground == groundSystem.ground.ice then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 4, rvy * 4)
         local voxel = voxelConfig.ice
         local step = 0.4
@@ -215,7 +205,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
                 columnVoxels[h] = voxel
             end
         end
-    elseif ground == mapSystem.ground.sand then
+    elseif ground == groundSystem.ground.sand then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 2, rvy * 2)
         local voxel
         if noise > 0.27 then
@@ -236,25 +226,27 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
                 columnVoxels[h] = voxel
             end
         end
-    elseif ground == mapSystem.ground.grass then
+    elseif ground == groundSystem.ground.grass then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 21, rvy * 21)
         local voxel
-        if noise > 0.6 then
+        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 11, rvy * 11)
+        local voxel
+        if noise > 0.5 then
             voxel = voxelConfig.darkGrass
             height = 3
-        elseif noise > -0.6 then
-            voxel = voxelConfig.dirt
-            height = 1
-        else
+        elseif noise > 0.45 then
             voxel = voxelConfig.lightGrass
             height = 2
+        else
+            voxel = voxelConfig.darkDirt
+            height = 1
         end
         for h = 1, height, 1 do
             if not columnVoxels[h] then
                 columnVoxels[h] = voxel
             end
         end
-    elseif ground == mapSystem.ground.water then
+    elseif ground == groundSystem.ground.water then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 1, rvy * 3)
         local voxel = voxelConfig.water
         if noise > 0 then
@@ -267,12 +259,14 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
                 columnVoxels[h] = voxel
             end
         end
-    elseif ground == mapSystem.ground.lava then
-        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 2, rvy * 2)
-        local voxel = voxelConfig.lava
-        if noise > 0 then
+    elseif ground == groundSystem.ground.lava then
+        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 7, rvy * 7)
+        local voxel
+        if noise > 0.3 then
+            voxel = voxelConfig.lightLava
             height = 3
         else
+            voxel = voxelConfig.lava
             height = 2
         end
         for h = 1, height, 1 do
@@ -280,7 +274,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
                 columnVoxels[h] = voxel
             end
         end
-    elseif ground == mapSystem.ground.volcanic then
+    elseif ground == groundSystem.ground.volcanic then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 21, rvy * 21)
         local voxel
         if noise > 0.3 then
@@ -305,20 +299,20 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
 end
 
 local function getSurfaceVoxel(temperature, humidity)
-    local ground = mapSystem.getGround(temperature, humidity)
-    if ground == mapSystem.ground.snow then
+    local ground = groundSystem.getGround(temperature, humidity)
+    if ground == groundSystem.ground.snow then
         return voxelConfig.snow
-    elseif ground == mapSystem.ground.ice then
+    elseif ground == groundSystem.ground.ice then
         return voxelConfig.ice
-    elseif ground == mapSystem.ground.sand then
+    elseif ground == groundSystem.ground.sand then
         return voxelConfig.sand
-    elseif ground == mapSystem.ground.grass then
+    elseif ground == groundSystem.ground.grass then
         return voxelConfig.grass
-    elseif ground == mapSystem.ground.water then
+    elseif ground == groundSystem.ground.water then
         return voxelConfig.water
-    elseif ground == mapSystem.ground.lava then
+    elseif ground == groundSystem.ground.lava then
         return voxelConfig.lava
-    elseif ground == mapSystem.ground.volcanic then
+    elseif ground == groundSystem.ground.volcanic then
         return voxelConfig.volcanic
     end
 end
@@ -341,27 +335,29 @@ local function calculateNormal(voxelMap, x, y, z)
 end
 
 -- groundMap is optional.  When provided it must be a 2-D table [1..length][1..width]
--- whose values are mapSystem.ground constants.  When omitted the groundMap is built
+-- whose values are groundSystem.ground constants.  When omitted the groundMap is built
 -- from Perlin-noise temperature / humidity as before.
-function mapSystem.generateRoom(seed, length, width, voxelPerMeter, groundMap)
-    mapSystem.seed = seed
-    mapSystem.temperatureSeed = seed + 1
-    mapSystem.humiditySeed = seed + 2
-    mapSystem.length = length
-    mapSystem.width = width
-    mapSystem.voxelPerMeter = voxelPerMeter
-    mapSystem.groundMap = groundMap
+-- Returns a map object containing all generated data.
+function groundSystem.createMap(seed, length, width, voxelPerMeter, groundMap)
+    local map = {}
+    map.seed = seed
+    map.temperatureSeed = seed + 1
+    map.humiditySeed = seed + 2
+    map.length = length
+    map.width = width
+    map.voxelPerMeter = voxelPerMeter
 
     -- Build or adopt the ground map
     if groundMap then
+        map.groundMap = groundMap
     else
-        mapSystem.groundMap = {}
-        for x = 1, mapSystem.length do
-            mapSystem.groundMap[x] = {}
-            for y = 1, mapSystem.width do
-                local temperature = mapSystem.getTemperature(mapSystem.temperatureSeed, x, y)
-                local humidity = mapSystem.getHumidity(mapSystem.humiditySeed, x, y)
-                mapSystem.groundMap[x][y] = mapSystem.getGround(temperature, humidity)
+        map.groundMap = {}
+        for x = 1, length do
+            map.groundMap[x] = {}
+            for y = 1, width do
+                local temperature = groundSystem.getTemperature(map.temperatureSeed, x, y)
+                local humidity = groundSystem.getHumidity(map.humiditySeed, x, y)
+                map.groundMap[x][y] = groundSystem.getGround(temperature, humidity)
             end
         end
     end
@@ -371,52 +367,65 @@ function mapSystem.generateRoom(seed, length, width, voxelPerMeter, groundMap)
     -- ground cells via bilinear interpolation + per-ground-type LCG fluctuation.
     local metersPerVoxel = 1 / voxelPerMeter
     local halfVoxelPerMeter = voxelPerMeter / 2
-    mapSystem.voxelMap = {}
-    for x = 1, mapSystem.length do
-        for y = 1, mapSystem.width do
+    map.voxelMap = {}
+    for x = 1, length do
+        for y = 1, width do
             for lvx = 1, voxelPerMeter do
                 local vx = (x - 1) * voxelPerMeter + lvx
-                if not mapSystem.voxelMap[vx] then
-                    mapSystem.voxelMap[vx] = {}
+                if not map.voxelMap[vx] then
+                    map.voxelMap[vx] = {}
                 end
 
                 for lvy = 1, voxelPerMeter do
                     local vy = (y - 1) * voxelPerMeter + lvy
-                    if not mapSystem.voxelMap[vx][vy] then
-                        mapSystem.voxelMap[vx][vy] = {}
+                    if not map.voxelMap[vx][vy] then
+                        map.voxelMap[vx][vy] = {}
                     end
                     -- Real-space position of this voxel in ground-cell coordinates
                     local rvx = x + (lvx - halfVoxelPerMeter - 0.5) * metersPerVoxel
                     local rvy = y + (lvy - halfVoxelPerMeter - 0.5) * metersPerVoxel
 
-                    local voxelTemperature, voxelHumidity = getTemperatureHumidityFromGroundMap(rvx, rvy)
+                    local voxelTemperature, voxelHumidity = getTemperatureHumidityFromGroundMap(map, rvx, rvy)
 
-                    setBaseVoxel(voxelTemperature, voxelHumidity, mapSystem.voxelMap[vx][vy], seed, rvx, rvy, vx, vy)
+                    setBaseVoxel(voxelTemperature, voxelHumidity, map.voxelMap[vx][vy], seed, rvx, rvy, vx, vy)
                 end
             end
         end
     end
+
+    return map
 end
 
-function mapSystem.createMesh(pTknGfxContext)
+function groundSystem.destroyMap(map)
+    map.seed = nil
+    map.temperatureSeed = nil
+    map.humiditySeed = nil
+    map.length = nil
+    map.width = nil
+    map.groundMap = nil
+    map.voxelMap = nil
+    map.voxelPerMeter = nil
+end
+
+function groundSystem.createMesh(pTknGfxContext, map)
     local vertices = {
         position = {},
         color = {},
         normal = {},
         pbr = {},
     }
-    local voxelPerMeter = mapSystem.voxelPerMeter
-    for x = 1, mapSystem.length * mapSystem.voxelPerMeter do
-        for y = 1, mapSystem.width * mapSystem.voxelPerMeter do
-            -- print(x, y, mapSystem.voxelMap[x], mapSystem.voxelMap[x][y])
-            for z = 1, #mapSystem.voxelMap[x][y], 1 do
-                local voxel = mapSystem.voxelMap[x][y][z]
+    local voxelPerMeter = map.voxelPerMeter
+    for x = 1, map.length * map.voxelPerMeter do
+        for y = 1, map.width * map.voxelPerMeter do
+            -- print(x, y, map.voxelMap[x], map.voxelMap[x][y])
+            for z = 1, #map.voxelMap[x][y], 1 do
+                local voxel = map.voxelMap[x][y][z]
                 if voxel then
                     table.insert(vertices.position, x)
                     table.insert(vertices.position, y)
                     table.insert(vertices.position, z)
                     table.insert(vertices.color, tknMath.rgbaToAbgr(voxel.color))
-                    local normal = calculateNormal(mapSystem.voxelMap, x, y, z)
+                    local normal = calculateNormal(map.voxelMap, x, y, z)
                     table.insert(vertices.normal, normal)
                     local pbr = (voxel.emissive & 0xF) | ((voxel.roughness & 0xF) << 4) | ((voxel.metallic & 0xF) << 8)
                     table.insert(vertices.pbr, pbr)
@@ -425,7 +434,7 @@ function mapSystem.createMesh(pTknGfxContext)
         end
     end
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
-    local scale = 1.0 / mapSystem.voxelPerMeter
+    local scale = 1.0 / map.voxelPerMeter
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
         model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, scale * -2, 1},
     })
@@ -433,10 +442,10 @@ function mapSystem.createMesh(pTknGfxContext)
     return pTknMesh, pTknInstance, pTknDrawCall
 end
 
-function mapSystem.destroyMesh(pTknGfxContext, pTknMesh, pTknInstance, pTknDrawCall)
+function groundSystem.destroyMesh(pTknGfxContext, pTknMesh, pTknInstance, pTknDrawCall)
     tkn.tknDestroyDrawCallPtr(pTknGfxContext, pTknDrawCall)
     tkn.tknDestroyInstancePtr(pTknGfxContext, pTknInstance)
     tkn.tknDestroyMeshPtr(pTknGfxContext, pTknMesh)
 end
 
-return mapSystem
+return groundSystem

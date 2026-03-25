@@ -1,7 +1,7 @@
 local voxelConfig = {
     darkDirt = {
         name = "darkDirt",
-        color = 0x654321FF,
+        color = 0x3C2713FF,
         emissive = 0,
         roughness = 14,
         metallic = 0,
@@ -15,7 +15,7 @@ local voxelConfig = {
     },
     lightDirt = {
         name = "lightDirt",
-        color = 0xA0522DFF,
+        color = 0xBD7435FF,
         emissive = 0,
         roughness = 12,
         metallic = 0,
@@ -41,6 +41,7 @@ local voxelConfig = {
         roughness = 10,
         metallic = 0,
     },
+
     darkGrass = {
         name = "darkGrass",
         color = 0x2E711BFF,
@@ -85,7 +86,14 @@ local voxelConfig = {
     },
     lava = {
         name = "lava",
-        color = 0xEE1F00FF,
+        color = 0xFF0800FF,
+        emissive = 15,
+        roughness = 8,
+        metallic = 0,
+    },
+    lightLava = {
+        name = "lightLava",
+        color = 0xFF2800FF,
         emissive = 15,
         roughness = 8,
         metallic = 0,

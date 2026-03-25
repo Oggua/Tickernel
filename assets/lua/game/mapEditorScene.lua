@@ -1,6 +1,6 @@
 local mapEditorScene = {}
 local ui = require("ui.ui")
-local mapSystem = require("game.mapSystem")
+local groundSystem = require("game.groundSystem")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
 local tknButtonWidget = require("engine.widgets.tknButtonWidget")
 local tknToggleWidget = require("engine.widgets.tknToggleWidget")
@@ -24,7 +24,7 @@ local saveBtnW = 200
 
 -- Returns the ground name string for a given ground id
 local function groundIdToName(id)
-    for name, gid in pairs(mapSystem.ground) do
+    for name, gid in pairs(groundSystem.ground) do
         if gid == id then
             return name
         end
@@ -167,14 +167,14 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 function mapEditorScene.start(pTknGfxContext, game)
-    mapSystem.setup()
+    groundSystem.setup()
 
     -- ── Editor state ────────────────────────────────────────────────────────
     mapEditorScene.editorLength = 8
     mapEditorScene.editorWidth = 8
-    mapEditorScene.selectedGround = mapSystem.ground.grass
+    mapEditorScene.selectedGround = groundSystem.ground.grass
 
-    local defaultGround = mapSystem.ground.grass
+    local defaultGround = groundSystem.ground.grass
     mapEditorScene.editGroundMap = {}
     for x = 1, 64 do
         mapEditorScene.editGroundMap[x] = {}
@@ -183,6 +183,7 @@ function mapEditorScene.start(pTknGfxContext, game)
         end
     end
 
+    mapEditorScene.groundMap = nil
     mapEditorScene.pGroundTknMesh = nil
     mapEditorScene.pGroundTknInstance = nil
     mapEditorScene.pGroundTknDrawCall = nil
@@ -278,7 +279,7 @@ function mapEditorScene.start(pTknGfxContext, game)
         for x = 1, L do
             mapEditorScene.editGroundMap[x] = {}
             for y = 1, W do
-                mapEditorScene.editGroundMap[x][y] = mapSystem.ground.grass
+                mapEditorScene.editGroundMap[x][y] = groundSystem.ground.grass
             end
         end
         mapEditorScene.pendingLength = L
@@ -289,7 +290,7 @@ function mapEditorScene.start(pTknGfxContext, game)
 
     -- ── 4. Ground-type toggle row ────────────────────────────────────────────
     local entries = {}
-    for name, id in pairs(mapSystem.ground) do
+    for name, id in pairs(groundSystem.ground) do
         table.insert(entries, {
             name = name,
             id = id,
@@ -353,7 +354,7 @@ function mapEditorScene.start(pTknGfxContext, game)
             end
         end)
 
-        local isInitiallySelected = (id == mapSystem.ground.grass)
+        local isInitiallySelected = (id == groundSystem.ground.grass)
         local whiteLbl = tknTextNode.add(pTknGfxContext, "toggleLblWhite_" .. name, toggle.backgroundNode, 2, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, name, tknWidgetConfig.smallFontSize, 0xFFFFFFFF, 0.5, 0.5)
         local darkLbl = tknTextNode.add(pTknGfxContext, "toggleLblDark_" .. name, toggle.backgroundNode, 3, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, name, tknWidgetConfig.smallFontSize, tknWidgetConfig.color.darker, 0.5, 0.5)
         ui.setNodeTransformActive(whiteLbl, not isInitiallySelected)
@@ -458,7 +459,7 @@ function mapEditorScene.stop(game)
     game.sharedSeed = 321312
     game.sharedLength = mapEditorScene.editorLength
     game.sharedWidth = mapEditorScene.editorWidth
-    mapSystem.teardown()
+    groundSystem.teardown()
     mapEditorScene.editGroundMap = nil
 end
 
@@ -505,13 +506,18 @@ function mapEditorScene.stopGfx(game, pTknGfxContext)
     tknWindowWidget.remove(pTknGfxContext, mapEditorScene.window)
     mapEditorScene.window = nil
 
-    -- Mesh
+    -- Mesh & map
     if mapEditorScene.pGroundTknDrawCall then
-        mapSystem.destroyMesh(pTknGfxContext, mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall)
+        groundSystem.destroyMesh(pTknGfxContext, mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall)
     end
     mapEditorScene.pGroundTknMesh = nil
     mapEditorScene.pGroundTknInstance = nil
     mapEditorScene.pGroundTknDrawCall = nil
+
+    if mapEditorScene.groundMap then
+        groundSystem.destroyMap(mapEditorScene.groundMap)
+        mapEditorScene.groundMap = nil
+    end
 end
 
 function mapEditorScene.update(game)
@@ -533,14 +539,19 @@ function mapEditorScene.updateGfx(game, pTknGfxContext, width, height)
         mapEditorScene.pendingMeshRebuild = false
 
         if mapEditorScene.pGroundTknDrawCall then
-            mapSystem.destroyMesh(pTknGfxContext, mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall)
+            groundSystem.destroyMesh(pTknGfxContext, mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall)
             mapEditorScene.pGroundTknMesh = nil
             mapEditorScene.pGroundTknInstance = nil
             mapEditorScene.pGroundTknDrawCall = nil
         end
 
-        mapSystem.generateRoom(321312, mapEditorScene.editorLength, mapEditorScene.editorWidth, game.voxelPerMeter, mapEditorScene.editGroundMap)
-        mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall = mapSystem.createMesh(pTknGfxContext)
+        if mapEditorScene.groundMap then
+            groundSystem.destroyMap(mapEditorScene.groundMap)
+            mapEditorScene.groundMap = nil
+        end
+
+        mapEditorScene.groundMap = groundSystem.createMap(321312, mapEditorScene.editorLength, mapEditorScene.editorWidth, game.voxelPerMeter, mapEditorScene.editGroundMap)
+        mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall = groundSystem.createMesh(pTknGfxContext, mapEditorScene.groundMap)
     end
 end
 

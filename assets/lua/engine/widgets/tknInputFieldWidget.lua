@@ -7,7 +7,9 @@ local tknInputFieldWidget = {}
 
 -- UTF-8 helpers: cursorPos is byte count before cursor (0 = before first char)
 local function utf8PrevPos(text, pos)
-    if pos <= 0 then return 0 end
+    if pos <= 0 then
+        return 0
+    end
     local i = pos
     while i > 1 and string.byte(text, i) >= 0x80 and string.byte(text, i) < 0xC0 do
         i = i - 1
@@ -16,12 +18,19 @@ local function utf8PrevPos(text, pos)
 end
 
 local function utf8NextPos(text, pos)
-    if pos >= #text then return #text end
+    if pos >= #text then
+        return #text
+    end
     local b = string.byte(text, pos + 1)
-    if b < 0x80 then return pos + 1
-    elseif b < 0xE0 then return pos + 2
-    elseif b < 0xF0 then return pos + 3
-    else return pos + 4 end
+    if b < 0x80 then
+        return pos + 1
+    elseif b < 0xE0 then
+        return pos + 2
+    elseif b < 0xF0 then
+        return pos + 3
+    else
+        return pos + 4
+    end
 end
 
 function tknInputFieldWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical, placeholder, onValueChange)
@@ -43,9 +52,7 @@ function tknInputFieldWidget.add(pTknGfxContext, name, parent, index, horizontal
                 tknInputFieldWidget.setFocused(widget, true)
             end
         else
-            if inputState == input.inputState.up then
-                tknInputFieldWidget.setFocused(widget, false)
-            end
+            tknInputFieldWidget.setFocused(widget, false)
         end
         return widget.isFocused
     end
