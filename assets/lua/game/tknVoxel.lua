@@ -8,7 +8,7 @@ local function ensureRenderDeps()
         tkn = require("tkn")
     end
     if not deferredRenderPass then
-        deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+        deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
     end
 end
 

@@ -1,6 +1,6 @@
 local tkn = require("tkn")
 local tknVoxel = require("game.tknVoxel")
-local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
 local transformSystem = require("game.transformSystem")
 local structureConfig = require("game.structureConfig")
 local structureSystem = {}

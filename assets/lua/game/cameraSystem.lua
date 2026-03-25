@@ -3,7 +3,7 @@ local cameraSystem = {}
 local tkn = require("tkn")
 local input = require("input")
 local tknMath = require("tknMath")
-local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
 local transformSystem = require("game.transformSystem")
 
 -- local function buildViewMatrix(eyeX, eyeY, eyeZ, centerX, centerY, centerZ)

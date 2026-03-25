@@ -1,6 +1,6 @@
 local tknMath = require("tknMath")
 local tkn = require("tkn")
-local deferredRenderPass = require("deferredRenderer.deferredRenderPass")
+local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
 local voxelConfig = require("game.voxelConfig")
 local groundSystem = {}
 
@@ -25,6 +25,8 @@ function groundSystem.setup()
 
     groundSystem.temperatureStep = 0.27
     groundSystem.humidityStep = 0.27
+
+    groundSystem.voxelPerMeter = 1
 end
 
 function groundSystem.teardown()
@@ -32,6 +34,7 @@ function groundSystem.teardown()
     groundSystem.humidityStep = nil
     groundSystem.temperatureNoiseScale = nil
     groundSystem.humidityNoiseScale = nil
+    groundSystem.voxelPerMeter = nil
 
     groundSystem.ground = nil
     groundSystem.groundToTemperature = nil
@@ -78,26 +81,24 @@ end
 
 function groundSystem.getTemperature(seed, x, y)
     local temperature = tknMath.perlinNoise2D(seed, x * groundSystem.temperatureNoiseScale, y * groundSystem.temperatureNoiseScale)
-    -- local t = (1.0 * y / map.width - 0.5)
-    -- temperature = temperature * temperature * temperature + t * t * t * 5
     return temperature
 end
 
 -- Returns temperature and humidity for a single ground cell at integer coords (gx, gy),
 -- with LCG-based fluctuation whose range is determined by the ground type.
-local function getGroundTempHumidity(map, gx, gy)
-    gx = math.max(1, math.min(map.length, math.floor(gx)))
-    gy = math.max(1, math.min(map.width, math.floor(gy)))
+local function getGroundTempHumidity(groundMap, gx, gy)
+    gx = math.max(1, math.min(groundMap.length, math.floor(gx)))
+    gy = math.max(1, math.min(groundMap.width, math.floor(gy)))
 
-    local ground = map.groundMap[gx][gy]
+    local ground = groundMap.groundMap[gx][gy]
     local baseTemp = groundSystem.groundToTemperature[ground]
     local baseHumidity = groundSystem.groundToHumidity[ground]
     local tempVariance = groundSystem.groundToTemperatureVariance[ground]
     local humidVariance = groundSystem.groundToHumidityVariance[ground]
 
     local pairKey = tknMath.cantorPair(gx, gy)
-    local tempRand = tknMath.lcgRandom(map.temperatureSeed + pairKey)
-    local humidRand = tknMath.lcgRandom(map.humiditySeed + pairKey)
+    local tempRand = tknMath.lcgRandom(groundMap.temperatureSeed + pairKey)
+    local humidRand = tknMath.lcgRandom(groundMap.humiditySeed + pairKey)
 
     -- Normalise [0, 0xFFFFFFFF] → [-1, 1]
     local tempNorm = (tempRand % 65536) / 32767.5 - 1.0
@@ -127,7 +128,7 @@ local function sharpenT(t)
     end
 end
 
-local function getTemperatureHumidityFromGroundMap(map, rvx, rvy)
+local function getTemperatureHumidityFromGroundMap(groundMap, rvx, rvy)
     local gx0 = math.floor(rvx)
     local gy0 = math.floor(rvy)
     local gx1 = gx0 + 1
@@ -136,10 +137,10 @@ local function getTemperatureHumidityFromGroundMap(map, rvx, rvy)
     local tx = sharpenT(rvx - gx0)
     local ty = sharpenT(rvy - gy0)
 
-    local t00, h00 = getGroundTempHumidity(map, gx0, gy0)
-    local t10, h10 = getGroundTempHumidity(map, gx1, gy0)
-    local t01, h01 = getGroundTempHumidity(map, gx0, gy1)
-    local t11, h11 = getGroundTempHumidity(map, gx1, gy1)
+    local t00, h00 = getGroundTempHumidity(groundMap, gx0, gy0)
+    local t10, h10 = getGroundTempHumidity(groundMap, gx1, gy0)
+    local t01, h01 = getGroundTempHumidity(groundMap, gx0, gy1)
+    local t11, h11 = getGroundTempHumidity(groundMap, gx1, gy1)
 
     local temperature = tknMath.lerp(tknMath.lerp(t00, t10, tx), tknMath.lerp(t01, t11, tx), ty)
     local humidity = tknMath.lerp(tknMath.lerp(h00, h10, tx), tknMath.lerp(h01, h11, tx), ty)
@@ -337,95 +338,81 @@ end
 -- groundMap is optional.  When provided it must be a 2-D table [1..length][1..width]
 -- whose values are groundSystem.ground constants.  When omitted the groundMap is built
 -- from Perlin-noise temperature / humidity as before.
--- Returns a map object containing all generated data.
-function groundSystem.createMap(seed, length, width, voxelPerMeter, groundMap)
-    local map = {}
-    map.seed = seed
-    map.temperatureSeed = seed + 1
-    map.humiditySeed = seed + 2
-    map.length = length
-    map.width = width
-    map.voxelPerMeter = voxelPerMeter
+-- Returns a groundMap object containing all generated data.
+function groundSystem.createMap(seed, length, width, inputGroundMap)
+    local groundMap = {}
+    groundMap.seed = seed
+    groundMap.temperatureSeed = seed + 1
+    groundMap.humiditySeed = seed + 2
+    groundMap.length = length
+    groundMap.width = width
+    groundMap.voxelPerMeter = groundSystem.voxelPerMeter
+    groundMap.groundMap = inputGroundMap
 
-    -- Build or adopt the ground map
-    if groundMap then
-        map.groundMap = groundMap
-    else
-        map.groundMap = {}
-        for x = 1, length do
-            map.groundMap[x] = {}
-            for y = 1, width do
-                local temperature = groundSystem.getTemperature(map.temperatureSeed, x, y)
-                local humidity = groundSystem.getHumidity(map.humiditySeed, x, y)
-                map.groundMap[x][y] = groundSystem.getGround(temperature, humidity)
-            end
-        end
-    end
-
-    -- Generate voxel map.
+    -- Generate voxel groundMap.
     -- Temperature/humidity for each voxel are derived from the 4 surrounding
     -- ground cells via bilinear interpolation + per-ground-type LCG fluctuation.
-    local metersPerVoxel = 1 / voxelPerMeter
-    local halfVoxelPerMeter = voxelPerMeter / 2
-    map.voxelMap = {}
+    local metersPerVoxel = 1 / groundSystem.voxelPerMeter
+    local halfVoxelPerMeter = groundSystem.voxelPerMeter / 2
+    groundMap.voxelMap = {}
     for x = 1, length do
         for y = 1, width do
-            for lvx = 1, voxelPerMeter do
-                local vx = (x - 1) * voxelPerMeter + lvx
-                if not map.voxelMap[vx] then
-                    map.voxelMap[vx] = {}
+            for lvx = 1, groundSystem.voxelPerMeter do
+                local vx = (x - 1) * groundSystem.voxelPerMeter + lvx
+                if not groundMap.voxelMap[vx] then
+                    groundMap.voxelMap[vx] = {}
                 end
 
-                for lvy = 1, voxelPerMeter do
-                    local vy = (y - 1) * voxelPerMeter + lvy
-                    if not map.voxelMap[vx][vy] then
-                        map.voxelMap[vx][vy] = {}
+                for lvy = 1, groundSystem.voxelPerMeter do
+                    local vy = (y - 1) * groundSystem.voxelPerMeter + lvy
+                    if not groundMap.voxelMap[vx][vy] then
+                        groundMap.voxelMap[vx][vy] = {}
                     end
                     -- Real-space position of this voxel in ground-cell coordinates
                     local rvx = x + (lvx - halfVoxelPerMeter - 0.5) * metersPerVoxel
                     local rvy = y + (lvy - halfVoxelPerMeter - 0.5) * metersPerVoxel
 
-                    local voxelTemperature, voxelHumidity = getTemperatureHumidityFromGroundMap(map, rvx, rvy)
+                    local voxelTemperature, voxelHumidity = getTemperatureHumidityFromGroundMap(groundMap, rvx, rvy)
 
-                    setBaseVoxel(voxelTemperature, voxelHumidity, map.voxelMap[vx][vy], seed, rvx, rvy, vx, vy)
+                    setBaseVoxel(voxelTemperature, voxelHumidity, groundMap.voxelMap[vx][vy], seed, rvx, rvy, vx, vy)
                 end
             end
         end
     end
 
-    return map
+    return groundMap
 end
 
-function groundSystem.destroyMap(map)
-    map.seed = nil
-    map.temperatureSeed = nil
-    map.humiditySeed = nil
-    map.length = nil
-    map.width = nil
-    map.groundMap = nil
-    map.voxelMap = nil
-    map.voxelPerMeter = nil
+function groundSystem.destroyMap(groundMap)
+    groundMap.seed = nil
+    groundMap.temperatureSeed = nil
+    groundMap.humiditySeed = nil
+    groundMap.length = nil
+    groundMap.width = nil
+    groundMap.groundMap = nil
+    groundMap.voxelMap = nil
+    groundMap.voxelPerMeter = nil
 end
 
-function groundSystem.createMesh(pTknGfxContext, map)
+function groundSystem.createMesh(pTknGfxContext, groundMap)
     local vertices = {
         position = {},
         color = {},
         normal = {},
         pbr = {},
     }
-    local voxelPerMeter = map.voxelPerMeter
-    for x = 1, map.length * map.voxelPerMeter do
-        for y = 1, map.width * map.voxelPerMeter do
-            -- print(x, y, map.voxelMap[x], map.voxelMap[x][y])
-            for z = 1, #map.voxelMap[x][y], 1 do
-                local voxel = map.voxelMap[x][y][z]
+    local voxelPerMeter = groundMap.voxelPerMeter
+    for x = 1, groundMap.length * groundMap.voxelPerMeter do
+        for y = 1, groundMap.width * groundMap.voxelPerMeter do
+            -- print(x, y, groundMap.voxelMap[x], groundMap.voxelMap[x][y])
+            for z = 1, #groundMap.voxelMap[x][y], 1 do
+                local voxel = groundMap.voxelMap[x][y][z]
                 if voxel then
                     table.insert(vertices.position, x)
                     table.insert(vertices.position, y)
                     table.insert(vertices.position, z)
                     table.insert(vertices.color, tknMath.rgbaToAbgr(voxel.color))
-                    local normal = calculateNormal(map.voxelMap, x, y, z)
+                    local normal = calculateNormal(groundMap.voxelMap, x, y, z)
                     table.insert(vertices.normal, normal)
                     local pbr = (voxel.emissive & 0xF) | ((voxel.roughness & 0xF) << 4) | ((voxel.metallic & 0xF) << 8)
                     table.insert(vertices.pbr, pbr)
@@ -434,7 +421,7 @@ function groundSystem.createMesh(pTknGfxContext, map)
         end
     end
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
-    local scale = 1.0 / map.voxelPerMeter
+    local scale = 1.0 / groundMap.voxelPerMeter
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
         model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, scale * -2, 1},
     })

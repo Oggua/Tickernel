@@ -168,6 +168,7 @@ end
 
 function mapEditorScene.start(pTknGfxContext, game)
     groundSystem.setup()
+    groundSystem.voxelPerMeter = game.voxelPerMeter
 
     -- ── Editor state ────────────────────────────────────────────────────────
     mapEditorScene.editorLength = 8
@@ -449,7 +450,7 @@ function mapEditorScene.start(pTknGfxContext, game)
         length = btnH,
         offset = -sp,
     }, function()
-        game.switchScene(require("game.mainScene"))
+        game.switchScene(require("game.scenes.mainScene"))
     end)
     tknTextNode.add(pTknGfxContext, "backBtnLabel", mapEditorScene.backBtn.backgroundNode, 1, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.fullRelativeOrientation, tknWidgetConfig.defaultTransform, "Back", tknWidgetConfig.normalFontSize, 0xFFFFFFFF, 0.5, 0.5)
 end
@@ -550,7 +551,7 @@ function mapEditorScene.updateGfx(game, pTknGfxContext, width, height)
             mapEditorScene.groundMap = nil
         end
 
-        mapEditorScene.groundMap = groundSystem.createMap(321312, mapEditorScene.editorLength, mapEditorScene.editorWidth, game.voxelPerMeter, mapEditorScene.editGroundMap)
+        mapEditorScene.groundMap = groundSystem.createMap(321312, mapEditorScene.editorLength, mapEditorScene.editorWidth, mapEditorScene.editGroundMap)
         mapEditorScene.pGroundTknMesh, mapEditorScene.pGroundTknInstance, mapEditorScene.pGroundTknDrawCall = groundSystem.createMesh(pTknGfxContext, mapEditorScene.groundMap)
     end
 end

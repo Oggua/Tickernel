@@ -1,7 +1,7 @@
 local tkn = require("tkn")
 local vulkan = require("vulkan")
-local geometryPipeline = require("deferredRenderer.geometryPipeline")
-local lightingPipeline = require("deferredRenderer.lightingPipeline")
+local geometryPipeline = require("game.deferredRenderer.geometryPipeline")
+local lightingPipeline = require("game.deferredRenderer.lightingPipeline")
 local deferredRenderPass = {}
 
 function deferredRenderPass.setup(pTknGfxContext, assetsPath, renderPassIndex, pDepthStencilAttachment, pSwapchainAttachment)

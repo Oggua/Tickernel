@@ -1,5 +1,5 @@
 local game = {}
-local mainScene = require("game.mainScene")
+local mainScene = require("game.scenes.mainScene")
 local ui = require("ui.ui")
 local tkn = require("tkn")
 local tknMath = require("tknMath")
