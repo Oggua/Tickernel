@@ -4,7 +4,7 @@ local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
 local voxelConfig = require("game.voxelConfig")
 local groundSystem = {}
 
-function groundSystem.setup()
+function groundSystem.setup(voxelPerMeter)
     groundSystem.ground = {
         snow = 1,
         ice = 2,
@@ -20,13 +20,10 @@ function groundSystem.setup()
     groundSystem.groundToTemperatureVariance = {0.15, 0.15, 0.18, 0.18, 0.15, 0.15, 0.15}
     groundSystem.groundToHumidityVariance = {0.15, 0.12, 0.15, 0.18, 0.12, 0.12, 0.15}
 
-    groundSystem.temperatureNoiseScale = 0.37
-    groundSystem.humidityNoiseScale = 0.37
-
     groundSystem.temperatureStep = 0.27
     groundSystem.humidityStep = 0.27
 
-    groundSystem.voxelPerMeter = 1
+    groundSystem.voxelPerMeter = voxelPerMeter
 end
 
 function groundSystem.teardown()
@@ -72,16 +69,6 @@ function groundSystem.getGround(temperature, humidity)
     end
 
     return result
-end
-
-function groundSystem.getHumidity(seed, x, y)
-    local humidity = tknMath.perlinNoise2D(seed, x * groundSystem.humidityNoiseScale, y * groundSystem.humidityNoiseScale)
-    return humidity
-end
-
-function groundSystem.getTemperature(seed, x, y)
-    local temperature = tknMath.perlinNoise2D(seed, x * groundSystem.temperatureNoiseScale, y * groundSystem.temperatureNoiseScale)
-    return temperature
 end
 
 -- Returns temperature and humidity for a single ground cell at integer coords (gx, gy),
@@ -346,7 +333,6 @@ function groundSystem.createMap(seed, length, width, inputGroundMap)
     groundMap.humiditySeed = seed + 2
     groundMap.length = length
     groundMap.width = width
-    groundMap.voxelPerMeter = groundSystem.voxelPerMeter
     groundMap.groundMap = inputGroundMap
 
     -- Generate voxel groundMap.
@@ -391,7 +377,6 @@ function groundSystem.destroyMap(groundMap)
     groundMap.width = nil
     groundMap.groundMap = nil
     groundMap.voxelMap = nil
-    groundMap.voxelPerMeter = nil
 end
 
 function groundSystem.createMesh(pTknGfxContext, groundMap)
@@ -401,9 +386,9 @@ function groundSystem.createMesh(pTknGfxContext, groundMap)
         normal = {},
         pbr = {},
     }
-    local voxelPerMeter = groundMap.voxelPerMeter
-    for x = 1, groundMap.length * groundMap.voxelPerMeter do
-        for y = 1, groundMap.width * groundMap.voxelPerMeter do
+    local voxelPerMeter = groundSystem.voxelPerMeter
+    for x = 1, groundMap.length * groundSystem.voxelPerMeter do
+        for y = 1, groundMap.width * groundSystem.voxelPerMeter do
             -- print(x, y, groundMap.voxelMap[x], groundMap.voxelMap[x][y])
             for z = 1, #groundMap.voxelMap[x][y], 1 do
                 local voxel = groundMap.voxelMap[x][y][z]
@@ -421,7 +406,7 @@ function groundSystem.createMesh(pTknGfxContext, groundMap)
         end
     end
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
-    local scale = 1.0 / groundMap.voxelPerMeter
+    local scale = 1.0 / groundSystem.voxelPerMeter
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
         model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, scale * -2, 1},
     })

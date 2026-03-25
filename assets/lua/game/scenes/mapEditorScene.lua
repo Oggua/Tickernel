@@ -167,8 +167,7 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 function mapEditorScene.start(pTknGfxContext, game)
-    groundSystem.setup()
-    groundSystem.voxelPerMeter = game.voxelPerMeter
+    groundSystem.setup(game.voxelPerMeter)
 
     -- ── Editor state ────────────────────────────────────────────────────────
     mapEditorScene.editorLength = 8

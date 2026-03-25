@@ -14,7 +14,7 @@ local function getTemperature(seed, x, y)
     local temperature = tknMath.perlinNoise2D(seed, x * temperatureNoiseScale, y * temperatureNoiseScale)
     return temperature
 end
-function wildMap.create(voxelPerMeter)
+function wildMap.create(pTknGfxContext, voxelPerMeter)
     groundSystem.voxelPerMeter = voxelPerMeter
     local map = {
         length = 64,
@@ -34,7 +34,13 @@ function wildMap.create(voxelPerMeter)
     for x = 1, map.length do
         map.structureMap[x] = {}
         for y = 1, map.width do
-            
+            local random = tknMath.lcgRandom(tknMath.cantorPair(x, y) + 321312) -- 321312 is just a random number to make the pattern different from the ground noise
+            random = random % 100
+            if random < 5 then
+
+            else
+            end
+
         end
     end
     return map
