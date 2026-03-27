@@ -1,13 +1,10 @@
 local ui = require("ui.ui")
 local input = require("input")
-local tknMath = require("tknMath")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
-local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 local tknDragWidget = require("engine.widgets.tknDragWidget")
 local tknButtonWidget = require("engine.widgets.tknButtonWidget")
 local tknImageNode = require("engine.widgets.tknImageNode")
 local tknTextNode = require("engine.widgets.tknTextNode")
-local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknWindowWidget = {}
 
 function tknWindowWidget.add(pTknGfxContext, name, parent, index, horizontal, vertical, title)

@@ -2,68 +2,112 @@ local tkn = require("tkn")
 local tknVoxel = require("game.tknVoxel")
 local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
 local transformSystem = require("game.transformSystem")
-local structureConfig = require("game.structureConfig")
+local tknMath = require("tknMath")
 local structureSystem = {}
 
 function structureSystem.setup(assetsPath, voxelPerMeter)
     structureSystem.assetPath = assetsPath
     structureSystem.scale = 1.0 / voxelPerMeter
-    structureSystem.typeToStructures = {}
-    structureSystem.typeToPTknMesh = {}
-    structureSystem.typeToPInstance = {}
-    structureSystem.typeToPDrawCall = {}
+
+    structureSystem.structure = {
+        iceWall = 1,
+        dirtWall = 2,
+        volcanicWall = 3,
+    }
+
+    structureSystem.structureConfig = {
+        [1] = {
+            name = "iceWall",
+            temperature = 1,
+            humidity = 7,
+            integrity = 256,
+        },
+        [2] = {
+            name = "dirtWall",
+            temperature = 4,
+            humidity = 4,
+            integrity = 256,
+        },
+        [3] = {
+            name = "volcanicWall",
+            temperature = 7,
+            humidity = 1,
+            integrity = 256,
+        },
+    }
 end
 
 function structureSystem.teardown()
-    structureSystem.typeToStructures = nil
-    structureSystem.typeToPTknMesh = nil
-    structureSystem.typeToPInstance = nil
-    structureSystem.typeToPDrawCall = nil
     structureSystem.assetPath = nil
     structureSystem.scale = nil
+    structureSystem.structure = nil
+    structureSystem.structureConfig = nil
 end
 
 function structureSystem.createMap(length, width)
-    local structureMap = {}
+    local map = {
+        spatialMap = {},
+        typeToStructures = {},
+        typeToPTknMesh = {},
+        typeToPInstance = {},
+        typeToPDrawCall = {},
+    }
     for x = 1, length do
-        structureMap[x] = {}
+        map.spatialMap[x] = {}
         for y = 1, width do
-            structureMap[x][y] = nil
+            map.spatialMap[x][y] = nil
         end
     end
-    return structureMap
+    return map
 end
 
 function structureSystem.destroyMap(structureMap)
-    for x, column in pairs(structureMap) do
+    for x, column in pairs(structureMap.spatialMap) do
         for y, structureObj in pairs(column) do
             if structureObj then
-                structureSystem.remove(structureObj)
+                structureSystem.remove(structureMap, structureObj)
             end
         end
     end
     structureMap = nil
 end
 
-function structureSystem.add(pTknGfxContext, type, x, y)
-    local transform = transformSystem.add(x, y, 0, 0, 0, 0, 1, structureSystem.scale, structureSystem.scale, structureSystem.scale, transformSystem.rootTransform, nil)
-    local config = structureConfig.types[type]
+function structureSystem.add(pTknGfxContext, structureMap, id, x, y)
+    -- Calculate rotation based on coordinate pairing
+    -- Use cantorPair to combine x, y into single value, then lcgRandom for direction
+    local pairKey = tknMath.cantorPair(x, y)
+    local directionRand = tknMath.lcgRandom(pairKey) % 4
+
+    -- Convert direction (0-3) to Z-axis rotation quaternion
+    -- rotation = directionRand * 90 degrees around Z-axis (vertical)
+    -- rz = sin(directionRand * π/4), rw = cos(directionRand * π/4)
+    local rotations = {{0, 0, 0, 1}, -- 0°
+    {0, 0, 0.7071067811865476, 0.7071067811865476}, -- 90°
+    {0, 0, 1, 0}, -- 180°
+    {0, 0, 0.7071067811865476, -0.7071067811865476} -- 270°
+    }
+    local rot = rotations[directionRand + 1]
+
+    local transform = transformSystem.add(x, y, 0, rot[1], rot[2], rot[3], rot[4], structureSystem.scale, structureSystem.scale, structureSystem.scale, transformSystem.rootTransform, nil)
+    local config = structureSystem.structureConfig[id]
     local structure = {
-        type = type,
+        id = id,
         transform = transform,
         temperature = config.temperature,
         humidity = config.humidity,
         integrity = config.integrity,
+        direction = directionRand,
     }
 
-    if not structureSystem.typeToStructures[type] then
-        structureSystem.typeToStructures[type] = {}
-        structureSystem.typeToPTknMesh[type] = tknVoxel.readTvox(structureSystem.assetPath .. "/models/" .. type .. ".tvox", pTknGfxContext, {0.5, 0.5, 0})
-        structureSystem.typeToPInstance[type] = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {})
-        structureSystem.typeToPDrawCall[type] = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, structureSystem.typeToPTknMesh[type], structureSystem.typeToPInstance[type])
+    if not structureMap.typeToStructures[id] then
+        structureMap.typeToStructures[id] = {}
+        local meshPath = structureSystem.assetPath .. "/models/" .. config.name .. ".tvox"
+        structureMap.typeToPTknMesh[id] = tknVoxel.readTvox(meshPath, pTknGfxContext, {0.5, 0.5, 0})
+        structureMap.typeToPInstance[id] = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {})
+        structureMap.typeToPDrawCall[id] = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, structureMap.typeToPTknMesh[id], structureMap.typeToPInstance[id])
     end
 
-    table.insert(structureSystem.typeToStructures[type], structure)
+    table.insert(structureMap.typeToStructures[id], structure)
     return structure
 end
 
@@ -88,8 +132,8 @@ local function transposeToColumnMajor(m, out, offset)
     out[offset + 16] = m[16]
 end
 
-function structureSystem.updateInstances(pTknGfxContext)
-    for type, list in pairs(structureSystem.typeToStructures) do
+function structureSystem.updateInstances(pTknGfxContext, structureMap)
+    for type, list in pairs(structureMap.typeToStructures) do
         local model = {}
         for i, s in ipairs(list) do
             local m = s.transform.model
@@ -102,15 +146,15 @@ function structureSystem.updateInstances(pTknGfxContext)
                 end
             end
         end
-        tkn.tknUpdateInstancePtr(pTknGfxContext, structureSystem.typeToPInstance[type], deferredRenderPass.instanceFormat, {
+        tkn.tknUpdateInstancePtr(pTknGfxContext, structureMap.typeToPInstance[type], deferredRenderPass.instanceFormat, {
             model = model,
         })
     end
 end
 
-function structureSystem.remove(pTknGfxContext, structure)
-    local type = structure.type
-    local list = structureSystem.typeToStructures[type]
+function structureSystem.remove(structureMap, structure)
+    local id = structure.id
+    local list = structureMap.typeToStructures[id]
 
     if not list then
         return

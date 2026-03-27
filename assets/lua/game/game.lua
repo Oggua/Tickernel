@@ -1,27 +1,32 @@
 local game = {}
 local mainScene = require("game.scenes.mainScene")
-local ui = require("ui.ui")
-local tkn = require("tkn")
-local tknMath = require("tknMath")
-local input = require("input")
-local tknSliderWidget = require("engine.widgets.tknSliderWidget")
 
+local groundSystem = require("game.groundSystem")
+local structureSystem = require("game.structureSystem")
 function game.start(pTknGfxContext, assetsPath, rootUINode, voxelPerMeter)
     game.assetsPath = assetsPath
     game.currentScene = mainScene
     game.nextScene = mainScene
     game.rootUINode = rootUINode
     game.voxelPerMeter = voxelPerMeter
+
+    groundSystem.setup(game.voxelPerMeter)
+    structureSystem.setup(game.assetsPath, game.voxelPerMeter)
+
     game.currentScene.start(pTknGfxContext, game)
 end
 
 function game.stop()
     game.currentScene.stop(game)
+
+    groundSystem.teardown()
+    structureSystem.teardown()
 end
 
 function game.stopGfx(pTknGfxContext)
     game.currentScene.stopGfx(game, pTknGfxContext)
     game.currentScene = nil
+
 end
 
 function game.update()

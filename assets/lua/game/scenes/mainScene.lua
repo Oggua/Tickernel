@@ -1,12 +1,5 @@
 local mainScene = {}
-local ui = require("ui.ui")
-local input = require("input")
 local mainPanel = require("game.panels.mainPanel")
-local tkn = require("tkn")
-local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
-local groundSystem = require("game.groundSystem")
-local tknVoxel = require("game.tknVoxel")
-local structureSystem = require("game.structureSystem")
 function mainScene.start(pTknGfxContext, game)
     mainScene.mainPanel = mainPanel.create(pTknGfxContext, game, game.rootUINode)
 end

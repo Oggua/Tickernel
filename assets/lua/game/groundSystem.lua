@@ -14,11 +14,58 @@ function groundSystem.setup(voxelPerMeter)
         lava = 6,
         volcanic = 7,
     }
-    groundSystem.groundToTemperature = {-1, -1, 0, 0, 0, 1, 1}
-    groundSystem.groundToHumidity = {0, 1, -1, 0, 1, -1, 0}
 
-    groundSystem.groundToTemperatureVariance = {0.15, 0.15, 0.18, 0.18, 0.15, 0.15, 0.15}
-    groundSystem.groundToHumidityVariance = {0.15, 0.12, 0.15, 0.18, 0.12, 0.12, 0.15}
+    groundSystem.groundConfig = {
+        [1] = {
+            name = "snow",
+            temperature = -1,
+            humidity = 0,
+            temperatureVariance = 0.15,
+            humidityVariance = 0.15,
+        },
+        [2] = {
+            name = "ice",
+            temperature = -1,
+            humidity = 1,
+            temperatureVariance = 0.15,
+            humidityVariance = 0.12,
+        },
+        [3] = {
+            name = "sand",
+            temperature = 0,
+            humidity = -1,
+            temperatureVariance = 0.18,
+            humidityVariance = 0.15,
+        },
+        [4] = {
+            name = "grass",
+            temperature = 0,
+            humidity = 0,
+            temperatureVariance = 0.18,
+            humidityVariance = 0.18,
+        },
+        [5] = {
+            name = "water",
+            temperature = 0,
+            humidity = 1,
+            temperatureVariance = 0.15,
+            humidityVariance = 0.12,
+        },
+        [6] = {
+            name = "lava",
+            temperature = 1,
+            humidity = -1,
+            temperatureVariance = 0.15,
+            humidityVariance = 0.12,
+        },
+        [7] = {
+            name = "volcanic",
+            temperature = 1,
+            humidity = 0,
+            temperatureVariance = 0.15,
+            humidityVariance = 0.15,
+        },
+    }
 
     groundSystem.temperatureStep = 0.27
     groundSystem.humidityStep = 0.27
@@ -34,10 +81,7 @@ function groundSystem.teardown()
     groundSystem.voxelPerMeter = nil
 
     groundSystem.ground = nil
-    groundSystem.groundToTemperature = nil
-    groundSystem.groundToHumidity = nil
-    groundSystem.groundToTemperatureVariance = nil
-    groundSystem.groundToHumidityVariance = nil
+    groundSystem.groundConfig = nil
 end
 
 function groundSystem.getGround(temperature, humidity)
@@ -78,10 +122,11 @@ local function getGroundTempHumidity(groundMap, gx, gy)
     gy = math.max(1, math.min(groundMap.width, math.floor(gy)))
 
     local ground = groundMap.groundMap[gx][gy]
-    local baseTemp = groundSystem.groundToTemperature[ground]
-    local baseHumidity = groundSystem.groundToHumidity[ground]
-    local tempVariance = groundSystem.groundToTemperatureVariance[ground]
-    local humidVariance = groundSystem.groundToHumidityVariance[ground]
+    local groundData = groundSystem.groundConfig[ground]
+    local baseTemp = groundData.temperature
+    local baseHumidity = groundData.humidity
+    local tempVariance = groundData.temperatureVariance
+    local humidVariance = groundData.humidityVariance
 
     local pairKey = tknMath.cantorPair(gx, gy)
     local tempRand = tknMath.lcgRandom(groundMap.temperatureSeed + pairKey)
@@ -219,10 +264,10 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         local voxel
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 11, rvy * 11)
         local voxel
-        if noise > 0.5 then
+        if noise > 0.63 then
             voxel = voxelConfig.darkGrass
             height = 3
-        elseif noise > 0.45 then
+        elseif noise > 0.6 then
             voxel = voxelConfig.lightGrass
             height = 2
         else

@@ -1,13 +1,10 @@
 local luaInspectorPanel = {}
 local ui = require("ui.ui")
 local tknWidgetConfig = require("engine.widgets.tknWidgetConfig")
-local tknDropdownWidget = require("engine.widgets.tknDropdownWidget")
 local tknButtonWidget = require("engine.widgets.tknButtonWidget")
 local tknWindowWidget = require("engine.widgets.tknWindowWidget")
-local tknToggleWidget = require("engine.widgets.tknToggleWidget")
 local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknTextNode = require("engine.widgets.tknTextNode")
-local tknImageNode = require("engine.widgets.tknImageNode")
 local tknTreeNodeWidget = require("engine.widgets.tknTreeNodeWidget")
 local tknInputFieldWidget = require("engine.widgets.tknInputFieldWidget")
 

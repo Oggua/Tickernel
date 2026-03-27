@@ -167,7 +167,6 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 
 function mapEditorScene.start(pTknGfxContext, game)
-    groundSystem.setup(game.voxelPerMeter)
 
     -- ── Editor state ────────────────────────────────────────────────────────
     mapEditorScene.editorLength = 8
@@ -459,7 +458,6 @@ function mapEditorScene.stop(game)
     game.sharedSeed = 321312
     game.sharedLength = mapEditorScene.editorLength
     game.sharedWidth = mapEditorScene.editorWidth
-    groundSystem.teardown()
     mapEditorScene.editGroundMap = nil
 end
 
