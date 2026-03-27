@@ -72,7 +72,7 @@ local voxelConfig = {
     },
     lightSand = {
         name = "lightSand",
-        color = 0xD4B388FF,
+        color = 0xE4C388FF,
         emissive = 0,
         roughness = 9,
         metallic = 0,

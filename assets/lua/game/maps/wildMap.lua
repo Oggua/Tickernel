@@ -40,7 +40,7 @@ function wildMap.create(pTknGfxContext)
         map.structureMap.spatialMap[x] = {}
         for y = 1, map.width do
             local noise = tknMath.perlinNoise2D(438, x * 0.27, y * 0.27)
-            if noise < -0.3 then
+            if noise < -0.27 then
                 local ground = map.groundMap.groundMap[x][y]
                 local structureId
                 if ground == groundSystem.ground.snow or ground == groundSystem.ground.ice then

@@ -248,9 +248,10 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         else
             height = 2
         end
-        noise = tknMath.lcgRandom(seed + tknMath.cantorPair(vx, vy)) % 16
+        noise = tknMath.lcgRandom(seed + tknMath.cantorPair(vx, vy)) % 128
         if noise < 2 then
-            voxel = voxelConfig.lightSand
+            voxel = voxelConfig.lightRock
+            height = 4
         else
             voxel = voxelConfig.sand
         end
@@ -265,14 +266,26 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 11, rvy * 11)
         local voxel
         if noise > 0.63 then
-            voxel = voxelConfig.darkGrass
-            height = 3
-        elseif noise > 0.6 then
             voxel = voxelConfig.lightGrass
             height = 2
-        else
+        elseif noise > 0.6 then
+            voxel = voxelConfig.dirt
+            height = 2
+        elseif noise > 0.57 then
+            voxel = voxelConfig.lightRock
+            height = 3
+        elseif noise > 0.53 then
+            voxel = voxelConfig.lightRock
+            height = 4
+        elseif noise > 0.1 then
             voxel = voxelConfig.darkDirt
             height = 1
+        elseif noise > -0.4 then
+            voxel = voxelConfig.dirt
+            height = 2
+        else
+            voxel = voxelConfig.dirt
+            height = 3
         end
         for h = 1, height, 1 do
             if not columnVoxels[h] then
