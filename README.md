@@ -125,5 +125,5 @@ Function names use camelCase. Loop indices must be descriptive (`deviceIndex`, n
 ### Performance by Default
 Conditional checks belong at system boundaries, not scattered through hot paths. Unnecessary guards slow down the runtime and inflate code size without providing safety.
 
-### API Surface Discipline
-All GFX functions are **parameter-based**: they accept typed arguments and construct `VkCreateInfo` structures internally. Raw `CreateInfo` structs are never exposed as public API parameters.
+### Platform Strategy
+Initial development targets **macOS** exclusively. macOS provides best-in-class GPU profiling tooling (Instruments, Metal Performance HUD, Xcode GPU Frame Capture) that makes it straightforward to validate Vulkan workloads via MoltenVK and catch performance regressions early. Cross-platform support (Linux, Windows) will be added incrementally once the core rendering and systems are stable.
