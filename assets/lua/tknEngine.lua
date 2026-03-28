@@ -11,7 +11,7 @@ local cameraTransformController = require("cameraTransformController")
 local deferredRenderPass = require("game.deferredRenderer.deferredRenderPass")
 local tknScrollViewWidget = require("engine.widgets.tknScrollViewWidget")
 local tknInputFieldWidget = require("engine.widgets.tknInputFieldWidget")
-local tknEngine = {} 
+local tknEngine = {}
 
 local function setupGlobalMaterial(pTknGfxContext)
     tknEngine.globalUniformBufferFormat = {{
@@ -141,7 +141,7 @@ function tknEngine.start(pTknGfxContext, assetsPath)
     tknEngine.voxelPerMeter = 16
     game.start(pTknGfxContext, assetsPath, tknEngine.gameRootUINode, tknEngine.voxelPerMeter)
 
-    tknEngine.camera = cameraSystem.add(10, 0, 0, 0, 0, 0, 1, transformSystem.rootTransform, 0.01, 16, 60)
+    tknEngine.camera = cameraSystem.add(10, 0, 0, 0, 0, 0, 1, transformSystem.rootTransform, 0.01, 18, 60)
 end
 
 function tknEngine.stop(pTknGfxContext)

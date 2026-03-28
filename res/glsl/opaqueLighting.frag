@@ -116,31 +116,31 @@ void main() {
     float fogFactor = smoothstep(globalUniform.near, globalUniform.far, distanceToCamera);
     outputRgb = mix(outputRgb, fogColor, fogFactor);
 
-    // Grid lines: ray-plane intersection with z=0，透过实体，颜色随距原点变化
-    vec3 rayDir = normalize(position - cameraPosition);
-    if(abs(rayDir.z) > 0.001) {
-        float t = -cameraPosition.z / rayDir.z;
-        if(t > 0.0) {
-            vec3 gridPos = cameraPosition + t * rayDir;
-            float gx = fract(gridPos.x - 0.5);
-            float gy = fract(gridPos.y - 0.5);
-            float lx = min(gx, 1.0 - gx);
-            float ly = min(gy, 1.0 - gy);
-            float lineWidth = 0.02;
-            if(lx < lineWidth || ly < lineWidth) {
-                float dist = length(gridPos.xy);
-                float brightness = exp(-dist * 0.05);
-                vec3 axisColor = vec3(max(gridPos.x / (dist + 0.001), 0.0), // +X = R
-                max(gridPos.y / (dist + 0.001), 0.0), // +Y = G
-                1.0);
-                vec3 gridColor = mix(axisColor, vec3(1.0), brightness) * brightness;
+    // // Grid lines: ray-plane intersection with z=0，透过实体，颜色随距原点变化
+    // vec3 rayDir = normalize(position - cameraPosition);
+    // if(abs(rayDir.z) > 0.001) {
+    //     float t = -cameraPosition.z / rayDir.z;
+    //     if(t > 0.0) {
+    //         vec3 gridPos = cameraPosition + t * rayDir;
+    //         float gx = fract(gridPos.x - 0.5);
+    //         float gy = fract(gridPos.y - 0.5);
+    //         float lx = min(gx, 1.0 - gx);
+    //         float ly = min(gy, 1.0 - gy);
+    //         float lineWidth = 0.02;
+    //         if(lx < lineWidth || ly < lineWidth) {
+    //             float dist = length(gridPos.xy);
+    //             float brightness = exp(-dist * 0.05);
+    //             vec3 axisColor = vec3(max(gridPos.x / (dist + 0.001), 0.0), // +X = R
+    //             max(gridPos.y / (dist + 0.001), 0.0), // +Y = G
+    //             1.0);
+    //             vec3 gridColor = mix(axisColor, vec3(1.0), brightness) * brightness;
 
-                float gridFog = smoothstep(globalUniform.near, globalUniform.far, t);
-                float alpha = 0.7 * (1.0 - gridFog);
-                outputRgb = mix(outputRgb, gridColor, alpha);
-            }
-        }
-    }
+    //             float gridFog = smoothstep(globalUniform.near, globalUniform.far, t);
+    //             float alpha = 0.7 * (1.0 - gridFog);
+    //             outputRgb = mix(outputRgb, gridColor, alpha);
+    //         }
+    //     }
+    // }
 
     outputRgb = ACESToneMapping(outputRgb);
 

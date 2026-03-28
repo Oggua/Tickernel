@@ -261,9 +261,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
             end
         end
     elseif ground == groundSystem.ground.grass then
-        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 21, rvy * 21)
-        local voxel
-        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 11, rvy * 11)
+        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 5, rvy * 5)
         local voxel
         if noise > 0.63 then
             voxel = voxelConfig.lightGrass
@@ -293,7 +291,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
             end
         end
     elseif ground == groundSystem.ground.water then
-        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 1, rvy * 3)
+        local noise = tknMath.perlinNoise2D(seed + 21, rvx * 2, rvy * 3)
         local voxel = voxelConfig.water
         if noise > 0 then
             height = 4
