@@ -205,7 +205,7 @@ local function setBaseVoxel(temperature, humidity, columnVoxels, seed, rvx, rvy,
         -- columnVoxels[h] = voxels[tknMath.lcgRandom(seed + vx + vy + h) % #voxels + 1]
         columnVoxels[h] = voxel
     end
-
+    
     if ground == groundSystem.ground.snow then
         local noise = tknMath.perlinNoise2D(seed + 21, rvx * 4, rvy * 4)
         local voxel = voxelConfig.snow
@@ -464,7 +464,7 @@ function groundSystem.createMesh(pTknGfxContext, groundMap)
     local pTknMesh = tkn.tknCreateMeshPtrWithData(pTknGfxContext, deferredRenderPass.pVoxelVertexInputLayout, deferredRenderPass.vertexFormat, vertices, nil, nil)
     local scale = 1.0 / groundSystem.voxelPerMeter
     local pTknInstance = tkn.tknCreateInstancePtr(pTknGfxContext, deferredRenderPass.pInstanceVertexInputLayout, deferredRenderPass.instanceFormat, {
-        model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, scale * -2, 1},
+        model = {scale, 0, 0, 0, 0, scale, 0, 0, 0, 0, scale, 0, 0.5, 0.5, scale * -4, 1},
     })
     local pTknDrawCall = tkn.tknCreateDrawCallPtr(pTknGfxContext, deferredRenderPass.pGeometryPipeline, deferredRenderPass.pGeometryMaterial, pTknMesh, pTknInstance)
     return pTknMesh, pTknInstance, pTknDrawCall

@@ -13,13 +13,13 @@ local function ensureRenderDeps()
 end
 
 local TVOX_MAGIC = "TVOX"
-local TVOX_VERSION = 1
-local TVOX_RECORD_SIZE = 17 -- I2 I2 I2 I4 I4 B B B
+local TVOX_VERSION = 2
+local TVOX_RECORD_SIZE = 11 -- I2 I2 I2 I1 I4  (x y z materialId normal)
 
 local neighbors = {{-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, -1, 0}, {-1, 1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 0, -1}, {-1, 0, 1}, {1, 0, -1}, {1, 0, 1}, {0, -1, -1}, {0, -1, 1}, {0, 1, -1}, {0, 1, 1}, {-1, -1, -1}, {-1, -1, 1}, {-1, 1, -1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {1, 1, -1}, {1, 1, 1}}
 
 local materialByColor = {}
-for _, material in pairs(voxelConfig) do
+for _, material in ipairs(voxelConfig) do
     if material.color and material.emissive and material.roughness and material.metallic then
         materialByColor[material.color] = material
     end
@@ -65,7 +65,7 @@ local function writeTvoxFile(tvoxFilePath, sizeX, sizeY, sizeZ, records)
             error("Voxel coordinate exceeds TVOX uint16 limit: (" .. record.x .. ", " .. record.y .. ", " .. record.z .. ")")
         end
 
-        out:write(string.pack("<I2I2I2I4I4I1I1I1", record.x, record.y, record.z, record.color, record.normal, record.emissive, record.roughness, record.metallic))
+        out:write(string.pack("<I2I2I2I1I4", record.x, record.y, record.z, record.materialId or 0, record.normal or 0))
     end
     out:close()
 end
@@ -328,11 +328,8 @@ local function buildPackedVoxelRecords(model, palette)
             end
             shadeMappedColorSet[rgba] = material.name
         end
-        record.color = colorAbgr
+        record.materialId = material.id or 0
         record.normal = calculateNormalMask(occupancy, record.x, record.y, record.z)
-        record.emissive = material and (material.emissive & 0xFF) or 0
-        record.roughness = material and (material.roughness & 0xFF) or 0
-        record.metallic = material and (material.metallic & 0xFF) or 0
     end
 
     if next(shadeMappedColorSet) then
@@ -357,19 +354,16 @@ local function normalizeAndFinalizeRecords(records, options)
         if not record.x or not record.y or not record.z then
             error("Record missing position fields x/y/z at index " .. tostring(i))
         end
-        if not record.color then
-            error("Record missing color field at index " .. tostring(i))
+        if not record.materialId then
+            error("Record missing materialId field at index " .. tostring(i))
         end
 
         local finalizedRecord = {
             x = record.x,
             y = record.y,
             z = record.z,
-            color = record.color,
+            materialId = record.materialId,
             normal = record.normal or 0,
-            emissive = record.emissive or 0,
-            roughness = record.roughness or 0,
-            metallic = record.metallic or 0,
         }
         finalized[i] = finalizedRecord
         occupancy[occupancyKey(finalizedRecord.x, finalizedRecord.y, finalizedRecord.z)] = true
@@ -406,6 +400,10 @@ function tknVoxel.writeTvoxRecords(tvoxFilePath, sizeX, sizeY, sizeZ, records, o
     return tvoxFilePath, #finalizedRecords
 end
 
+function tknVoxel.normalizeRecords(records, options)
+    return normalizeAndFinalizeRecords(records, options)
+end
+
 local function readTvoxRaw(tvoxFilePath)
     local data = readAllBytes(tvoxFilePath)
     local reader = createReader(data)
@@ -433,17 +431,14 @@ local function readTvoxRaw(tvoxFilePath)
 
     local records = {}
     for i = 1, voxelCount do
-        local x, y, z, color, normal, emissive, roughness, metallic
-        x, y, z, color, normal, emissive, roughness, metallic, reader.pos = string.unpack("<I2I2I2I4I4I1I1I1", reader.data, reader.pos)
+        local x, y, z, materialId, normal
+        x, y, z, materialId, normal, reader.pos = string.unpack("<I2I2I2I1I4", reader.data, reader.pos)
         records[i] = {
             x = x,
             y = y,
             z = z,
-            color = color,
+            materialId = materialId,
             normal = normal,
-            emissive = emissive,
-            roughness = roughness,
-            metallic = metallic,
         }
     end
 
@@ -458,8 +453,6 @@ end
 
 function tknVoxel.readTvox(tvoxFilePath, pTknGfxContext, pivot)
     local tvox = readTvoxRaw(tvoxFilePath)
-
-    -- 保留参数兼容：不传渲染上下文时，只返回数据
     if not pTknGfxContext and not pivot then
         return tvox
     end
@@ -485,12 +478,22 @@ function tknVoxel.readTvox(tvoxFilePath, pTknGfxContext, pivot)
     }
 
     for _, record in ipairs(tvox.records) do
+        local mat = voxelConfig[record.materialId]
+        local rgba = mat and mat.color or 0x888888FF
+        local r = (rgba >> 24) & 0xFF
+        local g = (rgba >> 16) & 0xFF
+        local b = (rgba >> 8) & 0xFF
+        local a = rgba & 0xFF
+        local color = r | (g << 8) | (b << 16) | (a << 24)
+        local emissive = mat and mat.emissive or 0
+        local roughness = mat and mat.roughness or 0
+        local metallic = mat and mat.metallic or 0
         table.insert(vertices.position, record.x - pivotOffsetX)
         table.insert(vertices.position, record.y - pivotOffsetY)
         table.insert(vertices.position, record.z - pivotOffsetZ)
-        table.insert(vertices.color, record.color)
+        table.insert(vertices.color, color)
         table.insert(vertices.normal, record.normal)
-        local pbr = (record.emissive & 0xF) | ((record.roughness & 0xF) << 4) | ((record.metallic & 0xF) << 8)
+        local pbr = (emissive & 0xF) | ((roughness & 0xF) << 4) | ((metallic & 0xF) << 8)
         table.insert(vertices.pbr, pbr)
     end
 

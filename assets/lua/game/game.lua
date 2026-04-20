@@ -3,6 +3,7 @@ local mainScene = require("game.scenes.mainScene")
 
 local groundSystem = require("game.groundSystem")
 local structureSystem = require("game.structureSystem")
+local characterSystem = require("game.characterSystem")
 function game.start(pTknGfxContext, assetsPath, rootUINode, voxelPerMeter)
     game.assetsPath = assetsPath
     game.currentScene = mainScene
@@ -12,6 +13,7 @@ function game.start(pTknGfxContext, assetsPath, rootUINode, voxelPerMeter)
 
     groundSystem.setup(game.voxelPerMeter)
     structureSystem.setup(game.assetsPath, game.voxelPerMeter)
+    characterSystem.setup(game.assetsPath, game.voxelPerMeter)
 
     game.currentScene.start(pTknGfxContext, game)
 end
@@ -21,6 +23,7 @@ function game.stop()
 
     groundSystem.teardown()
     structureSystem.teardown()
+    characterSystem.teardown()
 end
 
 function game.stopGfx(pTknGfxContext)
